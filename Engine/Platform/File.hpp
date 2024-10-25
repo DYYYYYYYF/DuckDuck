@@ -1,0 +1,31 @@
+#pragma once
+
+#include "Defines.hpp"
+#include <string>
+#include <vector>
+
+#include <fstream>
+#include <sstream>
+
+enum class eFileMode {
+	Read = 0x1,
+	Write = 0x2
+};
+
+class File {
+public:
+	File(){}
+	File(const std::string& filename);
+	virtual ~File() {}
+
+public:
+	std::string GetFilename() const { return Name; }
+	std::string ReadBytes();
+	bool WriteBytes(std::vector<char> source);
+	void Close();
+	bool IsExist();
+
+private:
+	std::string Name;
+	bool IsValid;
+};

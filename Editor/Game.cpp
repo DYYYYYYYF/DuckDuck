@@ -29,14 +29,6 @@ bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventCont
             GameInst->HoveredObjectID = context.data.u32[0];
             return true;
         }break;
-        case eEventCode::Reload_Shader_Module:
-        {
-            for (uint32_t i = 0; i < 10; ++i) {
-                if (GameInst->Meshes[i].Generation != INVALID_ID_U8) {
-                    GameInst->Meshes[i].ReloadMaterial();
-                }
-            }
-        }
         default: return true;
     }
 
@@ -435,14 +427,14 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	if (Controller::IsKeyUp(eKeys::G) &&Controller::WasKeyDown(eKeys::G)) {
-		TestPython.ExecuteFunc("CompileShaders", "glsl");
+		//TestPython.ExecuteFunc("CompileShaders", "glsl");
 
 		// Reload
 		SEventContext Context = {};
 		EngineEvent::Fire(eEventCode::Reload_Shader_Module, this, Context);
 	}
 	if (Controller::IsKeyUp(eKeys::H) &&Controller::WasKeyDown(eKeys::H)) {
-		TestPython.ExecuteFunc("CompileShaders", "hlsl");
+		//TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
 		SEventContext Context = {};

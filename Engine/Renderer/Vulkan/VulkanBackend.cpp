@@ -1181,6 +1181,8 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 	vk::Device LogicalDevice = Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = Context.Allocator;
 
+	LogicalDevice.waitIdle();
+
 	// Descriptor set layouts.
 	for (uint32_t i = 0; i < VkShader->Config.descriptor_set_count; ++i) {
 		if (VkShader->DescriptorSetLayouts[i]) {
@@ -1212,9 +1214,7 @@ bool VulkanBackend::DestroyShader(Shader* shader) {
 	Memory::Zero(&VkShader->Config, sizeof(VulkanShaderConfig));
 
 	// Free hash mem.
-	shader->UniformLookup.Destroy();
-	// Free the internal data memory;
-	Memory::Free(VkShader, sizeof(VulkanShader), MemoryType::eMemory_Type_Renderer);
+	shader->HashMap.clear();
 
 	return true;
 }
@@ -1229,18 +1229,8 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 		return false;
 	}
 
-	VulkanShader* InternalShader = (VulkanShader*)shader;
-
-	// Create a module for each stage.
-	Memory::Zero(InternalShader->Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
-	for (uint32_t i = 0; i < InternalShader->Config.stage_count; ++i) {
-		if (!CreateModule(InternalShader, InternalShader->Config.stages[i], &InternalShader->Stages[i])) {
-			LOG_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", InternalShader->Config.stages[i].filename, shader->Name);
-			return false;
-		}
-	}
-
 	// Static lookup table for our types->vulkan once.
+	VulkanShader* vkShader = (VulkanShader*)shader;
 	static vk::Format* Types = nullptr;
 	static vk::Format t[11];
 	if (!Types) {
@@ -1269,30 +1259,41 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 			.setFormat(Types[shader->Attributes[i].type]);
 
 		// Push into the config's attribute collection and add to the stride.
-		InternalShader->Config.attributes[i] = Attribute;
+		vkShader->Config.attributes[i] = Attribute;
 		Offset += shader->Attributes[i].size;
 	}
 
 	// Descriptor pool.
-	vk::DescriptorPoolCreateInfo PoolInfo;
-	PoolInfo.setPoolSizeCount(2)
-		.setPPoolSizes(InternalShader->Config.pool_sizes)
-		.setMaxSets(InternalShader->Config.max_descriptor_set_count)
-		.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+	if (vkShader->State == ShaderState::eShader_State_Uninitialized) {
+		vk::DescriptorPoolCreateInfo PoolInfo;
+		PoolInfo.setPoolSizeCount(2)
+			.setPPoolSizes(vkShader->Config.pool_sizes)
+			.setMaxSets(vkShader->Config.max_descriptor_set_count)
+			.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
-	// Create descriptor pool.
-	InternalShader->DescriptorPool = LogicalDevice.createDescriptorPool(PoolInfo, VkAllocator);
-	ASSERT(InternalShader->DescriptorPool);
+		// Create descriptor pool.
+		vkShader->DescriptorPool = LogicalDevice.createDescriptorPool(PoolInfo, VkAllocator);
+		ASSERT(vkShader->DescriptorPool);
+	}
+
+	// Create a module for each stage.
+	Memory::Zero(vkShader->Stages, sizeof(VulkanShaderStage) * VULKAN_SHADER_MAX_STAGES);
+	for (uint32_t i = 0; i < vkShader->Config.stage_count; ++i) {
+		if (!CreateModule(vkShader, vkShader->Config.stages[i], &vkShader->Stages[i])) {
+			LOG_ERROR("Unable to create %s shader module for '%s'. Shader will be destroyed.", vkShader->Config.stages[i].filename, shader->Name);
+			return false;
+		}
+	}
 
 	// Create descriptor set layouts.
-	Memory::Zero(InternalShader->DescriptorSetLayouts, sizeof(vk::DescriptorSetLayout) * InternalShader->Config.descriptor_set_count);
-	for (uint32_t i = 0; i < InternalShader->Config.descriptor_set_count; ++i) {
-
-		vk::DescriptorSetLayoutCreateInfo LayoutInfo;
-		LayoutInfo.setBindingCount(InternalShader->Config.descriptor_sets[i].binding_count)
-			.setPBindings(InternalShader->Config.descriptor_sets[i].bindings);
-		InternalShader->DescriptorSetLayouts[i] = LogicalDevice.createDescriptorSetLayout(LayoutInfo, VkAllocator);
-		ASSERT(InternalShader->DescriptorSetLayouts[i]);
+	for (uint32_t i = 0; i < vkShader->Config.descriptor_set_count; ++i) {
+		if (!vkShader->DescriptorSetLayouts[i]) {
+			vk::DescriptorSetLayoutCreateInfo LayoutInfo;
+			LayoutInfo.setBindingCount(vkShader->Config.descriptor_sets[i].binding_count)
+				.setPBindings(vkShader->Config.descriptor_sets[i].bindings);
+			vkShader->DescriptorSetLayouts[i] = LogicalDevice.createDescriptorSetLayout(LayoutInfo, VkAllocator);
+		}
+		ASSERT(vkShader->DescriptorSetLayouts[i]);
 	}
 
 	// TODO: This feels wrong to have these here, at least in this fashion. Should probably
@@ -1313,28 +1314,28 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 
 	vk::PipelineShaderStageCreateInfo StageCreateInfos[VULKAN_SHADER_MAX_STAGES];
 	Memory::Zero(StageCreateInfos, sizeof(vk::PipelineShaderStageCreateInfo) * VULKAN_SHADER_MAX_STAGES);
-	for (uint32_t i = 0; i < InternalShader->Config.stage_count; ++i) {
-		StageCreateInfos[i] = InternalShader->Stages[i].shader_stage_create_info;
+	for (uint32_t i = 0; i < vkShader->Config.stage_count; ++i) {
+		StageCreateInfos[i] = vkShader->Stages[i].shader_stage_create_info;
 	}
 
 	VulkanPipelineConfig PipelineConfig;
-	PipelineConfig.renderpass = InternalShader->Renderpass;
+	PipelineConfig.renderpass = vkShader->Renderpass;
 	PipelineConfig.stride = shader->AttributeStride;
 	PipelineConfig.attribute_count = (uint32_t)shader->Attributes.size();
-	PipelineConfig.attributes = InternalShader->Config.attributes;
-	PipelineConfig.descriptor_set_layout_count = InternalShader->Config.descriptor_set_count;
-	PipelineConfig.descriptor_set_layout = InternalShader->DescriptorSetLayouts;
-	PipelineConfig.stage_count = InternalShader->Config.stage_count;
+	PipelineConfig.attributes = vkShader->Config.attributes;
+	PipelineConfig.descriptor_set_layout_count = vkShader->Config.descriptor_set_count;
+	PipelineConfig.descriptor_set_layout = vkShader->DescriptorSetLayouts;
+	PipelineConfig.stage_count = vkShader->Config.stage_count;
 	PipelineConfig.stages = StageCreateInfos;
 	PipelineConfig.viewport = Viewport;
 	PipelineConfig.scissor = Scissor;
-	PipelineConfig.cull_mode = InternalShader->Config.cull_mode;
-	PipelineConfig.is_wireframe = InternalShader->Config.pology_mode == ePology_Mode_Fill ? ePology_Mode_Fill : ePology_Mode_Line;
+	PipelineConfig.cull_mode = vkShader->Config.cull_mode;
+	PipelineConfig.is_wireframe = vkShader->Config.pology_mode == ePology_Mode_Fill ? ePology_Mode_Fill : ePology_Mode_Line;
 	PipelineConfig.shaderFlags = shader->Flags;
 	PipelineConfig.push_constant_range_count = shader->PushConstantsRangeCount;
 	PipelineConfig.push_constant_ranges = shader->PushConstantsRanges;
 
-	if (!InternalShader->Pipeline.Create(&Context, PipelineConfig)){
+	if (!vkShader->Pipeline.Create(&Context, PipelineConfig)){
 		LOG_ERROR("Failed to load graphics pipeline for object shader.");
 		return false;
 	}
@@ -1350,33 +1351,33 @@ bool VulkanBackend::InitializeShader(Shader* shader) {
 	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
 	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
 	size_t TotalBufferSize = shader->GlobalUboStride + (shader->UboStride * VULKAN_MAX_MATERIAL_COUNT);
-	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &InternalShader->UniformBuffer)) {
+	if (!CreateRenderbuffer(RenderbufferType::eRenderbuffer_Type_Uniform, TotalBufferSize, true, &vkShader->UniformBuffer)) {
 		LOG_ERROR("Vulkan buffer creation failed for object shader.");
 		return false;
 	}
-	BindRenderbuffer(&InternalShader->UniformBuffer, 0);
+	BindRenderbuffer(&vkShader->UniformBuffer, 0);
 
 	// Allocate space for the global UBO, which should occupy the _stride_ space, _not_ the actual size used.
-	if (!AllocateRenderbuffer(&InternalShader->UniformBuffer, shader->GlobalUboStride, &shader->GlobalUboOffset)) {
+	if (!AllocateRenderbuffer(&vkShader->UniformBuffer, shader->GlobalUboStride, &shader->GlobalUboOffset)) {
 		LOG_ERROR("Failed to allocate space for the uniform buffer!");
 		return false;
 	}
 
 	// Map the entire buffer's memory.
-	InternalShader->MappedUniformBufferBlock = MapMemory(&InternalShader->UniformBuffer, 0, TotalBufferSize/*TotalBufferSize*/);
+	vkShader->MappedUniformBufferBlock = MapMemory(&vkShader->UniformBuffer, 0, TotalBufferSize/*TotalBufferSize*/);
 
 	// Allocate global descriptor sets, one per frame. Global is always the first set.
 	vk::DescriptorSetLayout GlobalLayouts[3] = {
-		InternalShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
-		InternalShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
-		InternalShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL]
+		vkShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
+		vkShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL],
+		vkShader->DescriptorSetLayouts[DESC_SET_INDEX_GLOBAL]
 	};
 
 	vk::DescriptorSetAllocateInfo AllocInfo;
-	AllocInfo.setDescriptorPool(InternalShader->DescriptorPool)
+	AllocInfo.setDescriptorPool(vkShader->DescriptorPool)
 		.setDescriptorSetCount(3)
 		.setPSetLayouts(GlobalLayouts);
-	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, InternalShader->GlobalDescriptorSets)
+	if (LogicalDevice.allocateDescriptorSets(&AllocInfo, vkShader->GlobalDescriptorSets)
 		!= vk::Result::eSuccess) {
 		LOG_ERROR("Allocate descriptor sets failed.");
 		return false;
@@ -1728,11 +1729,12 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	AllocInfo.setDescriptorPool(VkShader->DescriptorPool)
 		.setDescriptorSetCount(3)
 		.setPSetLayouts(Layouts);
-	if(Context.Device.GetLogicalDevice().allocateDescriptorSets(&AllocInfo, InstanceState->descriptor_set_state.descriptorSets)
+	if(Context.Device.GetLogicalDevice().allocateDescriptorSets(&AllocInfo, InstanceState->descriptor_set_state.descriptorSets.data())
 		!= vk::Result::eSuccess) {
 			LOG_ERROR("Allocate descriptor sets failed.");
 			return INVALID_ID;
 	}
+	VkShader->InstanceCount = OutInstanceID;
 
 	return OutInstanceID;
 }
@@ -1749,7 +1751,7 @@ bool VulkanBackend::ReleaseInstanceResource(Shader* shader, uint32_t instance_id
 	Context.Device.GetLogicalDevice().waitIdle();
 
 	// Free 3 descriptor sets (one per frame)
-	Context.Device.GetLogicalDevice().freeDescriptorSets(VkShader->DescriptorPool, 3, InstanceState->descriptor_set_state.descriptorSets);
+	Context.Device.GetLogicalDevice().freeDescriptorSets(VkShader->DescriptorPool, 3, InstanceState->descriptor_set_state.descriptorSets.data());
 
 	// Destroy descriptor states.
 	Memory::Zero(InstanceState->descriptor_set_state.descriptor_states, sizeof(VulkanDescriptorState) * VULKAN_SHADER_MAX_BINDINGS);
@@ -1803,13 +1805,14 @@ bool VulkanBackend::SetUniform(Shader* shader, ShaderUniform* uniform, const voi
 	return true;
 }
 
-bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig config, VulkanShaderStage* shader_stage) {
+bool VulkanBackend::CreateModule(VulkanShader* vkShader, VulkanShaderStageConfig config, VulkanShaderStage* shader_stage) {
 	// Read the resource.
 	Resource BinaryResource;
 	if (!ResourceSystem::Load(config.filename, ResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
 		LOG_ERROR("Unable to read shader module: %s.", config.filename);
 		return false;
 	}
+
 	Memory::Zero(&shader_stage->create_info, sizeof(vk::ShaderModuleCreateInfo));
 	shader_stage->create_info.sType = vk::StructureType::eShaderModuleCreateInfo;
 	// Use the resource's size and data directly.
@@ -1821,6 +1824,13 @@ bool VulkanBackend::CreateModule(VulkanShader* Shader, VulkanShaderStageConfig c
 
 	// Release the resource.
 	ResourceSystem::Unload(&BinaryResource);
+
+	// Shader stage info.
+	Memory::Zero(&shader_stage->shader_stage_create_info, sizeof(vk::ShaderModuleCreateInfo));
+	shader_stage->shader_stage_create_info.sType = vk::StructureType::ePipelineShaderStageCreateInfo;
+	shader_stage->shader_stage_create_info.stage = config.stage;
+	shader_stage->shader_stage_create_info.module = shader_stage->shader_module;
+	shader_stage->shader_stage_create_info.pName = "main";
 
 	// Shader stage info.
 	Memory::Zero(&shader_stage->shader_stage_create_info, sizeof(vk::ShaderModuleCreateInfo));

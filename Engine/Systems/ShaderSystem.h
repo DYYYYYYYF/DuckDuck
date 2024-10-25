@@ -3,6 +3,8 @@
 #include "Defines.hpp"
 #include "Containers/THashTable.hpp"
 #include "Resources/ResourceTypes.hpp"
+#include <functional>
+#include <map>
 
 class IRenderer;
 
@@ -166,6 +168,8 @@ public:
 	static bool BindInstance(uint32_t instance_id);
 
 	static void Destroy(const char* shader_name);
+
+	static bool Reload(Shader* shader);
 	
 private:
 	static bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
@@ -182,8 +186,7 @@ private:
 public:
 	static IRenderer* Renderer;
 	static ShaderSystem::Config ShaderSystemConfig;
-	static HashTable Lookup;
-	static void* LookupMemory;
+	static std::unordered_map<std::string, uint32_t> HashMap;
 	
 	static uint32_t CurrentShaderID;
 	static std::vector<Shader*> Shaders;

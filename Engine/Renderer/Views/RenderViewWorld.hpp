@@ -28,7 +28,7 @@ public:
 	}
 
 	void SetShader(Shader* shader) { UsedShader = shader; }
-	const Shader* GetShader() const { return UsedShader; }
+	Shader* GetShader() const { return UsedShader; }
 
 
 private:

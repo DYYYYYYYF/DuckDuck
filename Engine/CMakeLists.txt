@@ -52,13 +52,13 @@ if(${APPLE})
     set_target_properties(engine PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
 elseif(${WIN32})
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(GLSLANGL_IBS
-        shaderc_shared
-    )
+        set(GLSLANGL_IBS
+            shaderc_combinedd
+        )
     else()
-    set(GLSLANGL_IBS
-        shaderc_combined
-    )
+        set(GLSLANGL_IBS
+            shaderc_combined
+        )
     endif()
 
     target_link_libraries(engine PUBLIC "${GLSLANGL_IBS}")

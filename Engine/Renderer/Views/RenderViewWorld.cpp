@@ -80,25 +80,14 @@ bool ReloadShader(eEventCode code, void* sender, void* listenerInst, SEventConte
 		return false;
 	}
 
-	// Builtin world shader.
-	const char* ShaderName = "Shader.Builtin.World";
-	Resource ConfigResource;
-	if (!ResourceSystem::Load(ShaderName, ResourceType::eResource_Type_Shader, nullptr, &ConfigResource)) {
-		LOG_ERROR("Failed to load builtin skybox shader.");
-		return false;
-	}
-
-	ShaderConfig* Config = (ShaderConfig*)ConfigResource.Data;
 	// NOTE: Assuming the first pass since that's all this view has.
-	if (!ShaderSystem::Create(&self->GetRenderpass()[0], Config)) {
+	Shader* UsedShader = self->GetShader();
+	ASSERT(UsedShader);
+
+	if (!ShaderSystem::Reload(self->GetShader())) {
 		LOG_ERROR("Failed to load builtin world shader.");
 		return false;
 	}
-	ResourceSystem::Unload(&ConfigResource);
-
-	Shader* s = ShaderSystem::Get(ShaderName);
-	self->SetShader(s);
-	RenderViewSystem::RegenerateRendertargets(self);
 
 	return true;
 }

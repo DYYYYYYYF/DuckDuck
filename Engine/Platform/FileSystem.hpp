@@ -94,3 +94,4 @@ DAPI bool FileSystemReadAllBytes(FileHandle* handle, unsigned char* out_bytes, s
 DAPI bool FileSystemReadAllText(FileHandle* handle,char* out_text, size_t* out_bytes_read);
 
 DAPI bool FileSystemWrite(FileHandle* handle, size_t data_size, void* data, size_t* out_bytes_written);
+

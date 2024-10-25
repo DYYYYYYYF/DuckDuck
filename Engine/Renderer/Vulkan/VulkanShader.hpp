@@ -43,12 +43,12 @@ struct VulkanShaderConfig {
 
 struct VulkanDescriptorState {
 	// One per frame
-	uint32_t generations[3];
-	uint32_t ids[3];
+	uint32_t generations[3] = { INVALID_ID };
+	uint32_t ids[3] = {INVALID_ID};
 };
 
 struct VulkanShaderDescriptorSetState {
-	vk::DescriptorSet descriptorSets[3];
+	std::array<vk::DescriptorSet, 3> descriptorSets;
 	VulkanDescriptorState descriptor_states[VULKAN_SHADER_MAX_BINDINGS];
 };
 
@@ -67,7 +67,8 @@ struct VulkanShaderInstanceState {
 
 class VulkanShader : public Shader {
 public:
-	virtual std::vector<uint32_t> CreateShaderModule(const char* filename, EShLanguage Stage);
+	VulkanShader() {}
+	virtual ~VulkanShader() {}
 
 public:
 	void* MappedUniformBufferBlock = nullptr;

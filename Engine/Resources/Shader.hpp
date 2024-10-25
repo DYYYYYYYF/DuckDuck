@@ -1,14 +1,9 @@
 #pragma once
 
-#include "Containers/THashTable.hpp"
-#include "Math/MathTypes.hpp"
 #include "Resource.hpp"
-
-// Shader compiler
-#include <spirv_cross/spirv_cross.hpp>
-#include <spirv_cross/spirv_glsl.hpp>
-#include <glslang/Public/ShaderLang.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
+#include "Math/MathTypes.hpp"
+#include "Containers/THashTable.hpp"
+#include <unordered_map>
 
 struct TextureMap;
 
@@ -23,6 +18,7 @@ enum ShaderState {
 	eShader_State_Not_Created,
 	eShader_State_Uninitialized,
 	eShader_State_Initialized,
+	eShader_State_Reloading
 };
 
 enum ShaderStage {
@@ -181,14 +177,24 @@ struct ShaderConfig {
 
 class Shader{
 public:
-	virtual std::vector<uint32_t> CreateShaderModule(const char* filename, EShLanguage Stage) = 0;
+	Shader() {
+		ID = INVALID_ID;
+		Name = nullptr;
+		RenderFrameNumber = INVALID_ID_U64;
+		PushConstantsRangeCount = 0;
+		BoundInstanceId = INVALID_ID;
+		AttributeStride = 0;
+		State = ShaderState::eShader_State_Uninitialized;
+	}
+
+	virtual ~Shader() {}
 
 public:
 	ShaderFlagBits Flags;
-	uint32_t ID = INVALID_ID;
-	char* Name = nullptr;
+	uint32_t ID;
+	char* Name;
 
-	size_t RenderFrameNumber = INVALID_ID_U64;
+	size_t RenderFrameNumber;
 	size_t RequiredUboAlignment;
 	size_t GlobalUboSize;
 	size_t GlobalUboOffset;
@@ -201,8 +207,7 @@ public:
 	ShaderScope BoundScope;
 	uint32_t BoundInstanceId;
 	uint32_t BoundUboOffset;
-	void* HashtableBlock = nullptr;
-	HashTable UniformLookup;
+	std::unordered_map<std::string, unsigned short> HashMap;
 	ShaderState State;
 	unsigned short PushConstantsRangeCount;
 	Range PushConstantsRanges[32];
