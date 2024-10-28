@@ -104,6 +104,7 @@ void MaterialSystem::Shutdown() {
 			DestroyMaterial(m);
 		}
 	}
+	DestroyMaterial(&DefaultMaterial);
 }
 
 Material* MaterialSystem::Acquire(const char* name) {
@@ -137,12 +138,12 @@ Material* MaterialSystem::Acquire(const char* name) {
 
 Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	// Return default material.
-	if (StringEquali(config.name, DEFAULT_MATERIAL_NAME)) {
+	if (StringEquali(config.name.c_str(), DEFAULT_MATERIAL_NAME)) {
 		return &DefaultMaterial;
 	}
 
 	SMaterialReference Ref;
-	if (RegisteredMaterialTable.Get(config.name, &Ref)) {
+	if (RegisteredMaterialTable.Get(config.name.c_str(), &Ref)) {
 		// This can only be changed the first time a material is loaded.
 		if (Ref.reference_count == 0) {
 			Ref.auto_release = config.auto_release;
@@ -217,7 +218,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 		}
 
 		// Update the entry.
-		RegisteredMaterialTable.Set(config.name, &Ref);
+		RegisteredMaterialTable.Set(config.name.c_str(), &Ref);
 		return &RegisteredMaterials[Ref.handle];
 	}
 
@@ -278,8 +279,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	Memory::Zero(mat, sizeof(Material));
 
 	// name
-	strncpy(mat->Name, config.name, MATERIAL_NAME_MAX_LENGTH);
-
+	mat->Name = config.name;
 	mat->ShaderID = ShaderSystem::GetID(config.shader_name);
 
 	// Diffuse color
@@ -423,7 +423,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	Memory::Zero(&DefaultMaterial, sizeof(Material));
 	DefaultMaterial.Id = INVALID_ID;
 	DefaultMaterial.Generation = INVALID_ID;
-	auto res = strncpy(DefaultMaterial.Name, DEFAULT_MATERIAL_NAME, MATERIAL_NAME_MAX_LENGTH);
+	DefaultMaterial.Name = DEFAULT_MATERIAL_NAME;
 	DefaultMaterial.DiffuseColor = Vec4{1.0f, 1.0f, 1.0f, 1.0f};
 	DefaultMaterial.DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 	DefaultMaterial.DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -432,6 +432,10 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial.DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial.DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial.DiffuseMap)) {
+		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		return false;
+	}
 
 	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
 	DefaultMaterial.SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -440,6 +444,10 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.SpecularMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial.SpecularMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial.SpecularMap)) {
+		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		return false;
+	}
 
 	DefaultMaterial.NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
 	DefaultMaterial.NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -448,6 +456,10 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial.NormalMap.repeat_v = eTexture_Repeat_Repeat;
 	DefaultMaterial.NormalMap.repeat_w = eTexture_Repeat_Repeat;
 	DefaultMaterial.NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial.NormalMap)) {
+		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		return false;
+	}
 
 	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };
 

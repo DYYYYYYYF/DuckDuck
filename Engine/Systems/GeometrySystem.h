@@ -20,7 +20,11 @@ struct GeometryData {
 	size_t index_buffer_offset;
 };
 
-struct DAPI SGeometryConfig {
+struct SGeometryConfig {
+public:
+	std::string GetMaterialName() { return material_name; }
+	std::string GetName() { return name; }
+
 	// Vertices
 	uint32_t vertex_size;
 	uint32_t vertex_count;
@@ -35,8 +39,8 @@ struct DAPI SGeometryConfig {
 	Vec3 min_extents;
 	Vec3 max_extents;
 
-	char name[GEOMETRY_NAME_MAX_LENGTH];
-	char material_name[MATERIAL_NAME_MAX_LENGTH];
+	std::string name;
+	std::string material_name;
 };
 
 struct SGeometryReference {

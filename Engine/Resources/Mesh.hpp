@@ -8,7 +8,8 @@
 enum MeshFileType {
 	eMesh_File_Type_Not_Found,
 	eMesh_File_Type_DSM,
-	eMesh_File_Type_OBJ
+	eMesh_File_Type_OBJ,
+	eMesh_File_Type_GLTF
 };
 
 struct SupportedMeshFileType {

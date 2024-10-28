@@ -231,7 +231,7 @@ bool GameInstance::Initialize() {
 	SponzaMesh->UniqueID = Identifier::AcquireNewID(SponzaMesh);
 
 	BunnyMesh = &Meshes[5];
-	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(10.0f));
 	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
 
 	DragonMesh = &Meshes[6];
@@ -244,8 +244,8 @@ bool GameInstance::Initialize() {
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
 	UIConfig.index_count = 6;
-	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
-	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+	UIConfig.material_name = "Material.UI";
+	UIConfig.name = "Material.UI";
 
 	const float h = AppConfig.start_height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
@@ -664,8 +664,8 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
 	UIConfig.index_count = 6;
-	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
-	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+	UIConfig.material_name = "Material.UI";
+	UIConfig.name = "Material.UI";
 
 	const float h = Height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
