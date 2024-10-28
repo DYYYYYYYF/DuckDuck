@@ -1809,8 +1809,26 @@ bool VulkanBackend::CreateModule(VulkanShader* vkShader, VulkanShaderStageConfig
 	// Read the resource.
 	Resource BinaryResource;
 	if (!ResourceSystem::Load(config.filename, ResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
-		LOG_ERROR("Unable to read shader module: %s.", config.filename);
-		return false;
+		shaderc_shader_kind ShadercStage;
+		switch (config.stage)
+		{
+		case vk::ShaderStageFlagBits::eVertex:
+			ShadercStage = shaderc_shader_kind::shaderc_vertex_shader;
+			break;
+		case vk::ShaderStageFlagBits::eFragment:
+			ShadercStage = shaderc_shader_kind::shaderc_fragment_shader;
+			break;
+		default:
+			ShadercStage = shaderc_shader_kind::shaderc_vertex_shader;
+			break;
+		}
+
+		vkShader->CompileShaderFile(config.filename, ShadercStage);
+		if (!ResourceSystem::Load(config.filename, ResourceType::eResource_type_Binary, nullptr, &BinaryResource)) {
+			LOG_ERROR("Unable to read shader module: %s.", config.filename);
+			return false;
+		}
+		LOG_INFO("Compile shader sucessfully!");
 	}
 
 	Memory::Zero(&shader_stage->create_info, sizeof(vk::ShaderModuleCreateInfo));

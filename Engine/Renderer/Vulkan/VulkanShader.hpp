@@ -71,6 +71,9 @@ public:
 	virtual ~VulkanShader() {}
 
 public:
+	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) override;
+
+public:
 	void* MappedUniformBufferBlock = nullptr;
 	uint32_t ID;
 	VulkanShaderConfig Config;

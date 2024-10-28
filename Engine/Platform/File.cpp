@@ -27,8 +27,8 @@ std::string File::ReadBytes() {
 	return std::string(buffer.str());
 }
 
-bool File::WriteBytes(std::vector<char> source) {
-	std::ofstream outFile(Name);
+bool File::WriteBytes(const char* source, size_t size, std::ios::openmode mode) {
+	std::ofstream outFile(Name, mode);
 
 	if (!outFile) { 
 		std::cerr << "无法打开文件!" << std::endl;
@@ -36,7 +36,7 @@ bool File::WriteBytes(std::vector<char> source) {
 	}
 
 	// 向文件写入内容
-	outFile << source.data();
+	outFile.write(source, size);
 	outFile.close(); // 关闭文件
 
 	return true;

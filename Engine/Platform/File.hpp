@@ -21,8 +21,7 @@ public:
 public:
 	std::string GetFilename() const { return Name; }
 	std::string ReadBytes();
-	bool WriteBytes(std::vector<char> source);
-	void Close();
+	bool WriteBytes(const char* source, size_t size, std::ios::openmode mode = std::ios::ate);
 	bool IsExist();
 
 private:

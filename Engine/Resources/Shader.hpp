@@ -1,11 +1,21 @@
 #pragma once
 
+#define GlobalShaderType ShaderType::eGLSL
+
 #include "Resource.hpp"
 #include "Math/MathTypes.hpp"
 #include "Containers/THashTable.hpp"
 #include <unordered_map>
 
+// Shader compiler
+#include <shaderc/shaderc.hpp>
+
 struct TextureMap;
+
+enum class ShaderType {
+	eHLSL,
+	eGLSL
+};
 
 enum ShaderRenderMode {
 	eShader_Render_Mode_Default,
@@ -185,14 +195,19 @@ public:
 		BoundInstanceId = INVALID_ID;
 		AttributeStride = 0;
 		State = ShaderState::eShader_State_Uninitialized;
+		Type = GlobalShaderType;
 	}
 
 	virtual ~Shader() {}
 
 public:
+	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) = 0;
+
+public:
 	ShaderFlagBits Flags;
 	uint32_t ID;
 	char* Name;
+	ShaderType Type;
 
 	size_t RenderFrameNumber;
 	size_t RequiredUboAlignment;
