@@ -17,74 +17,65 @@
 
 static bool EnableFrustumCulling = false;
 
-bool ConfigureRenderviews(SApplicationConfig* config);
+bool ConfigureRenderviews(Application::SConfig* config);
 
-bool GameOnEvent(unsigned short code, void* sender, void* listender_inst, SEventContext context) {
-	SGame* GameInstance = (SGame*)listender_inst;
-	SGameState* State = (SGameState*)GameInstance->state;
+bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
+	GameInstance* GameInst = (GameInstance*)listender_inst;
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Object_Hover_ID_Changed: 
-	{
-		State->HoveredObjectID = context.data.u32[0];
-		return true;
-	}break;
-	case Core::eEvent_Code_Reload_Shader_Module:
-	{
-		for (uint32_t i = 0; i < 10; ++i) {
-			if (State->Meshes[i].Generation != INVALID_ID_U8) {
-				State->Meshes[i].ReloadMaterial();
-			}
-		}
-	}
-	}
+        case eEventCode::Object_Hover_ID_Changed: 
+        {
+            GameInst->HoveredObjectID = context.data.u32[0];
+            return true;
+        }break;
+        default: return true;
+    }
 
 	return false;
 }
 
-bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
-	SGame* GameInstance = (SGame*)listener_instance;
-	SGameState* State = (SGameState*)GameInstance->state;
+bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	GameInstance* GameInst = (GameInstance*)listener_instance;
 
-	if (code == Core::eEvent_Code_Debug_0) {
-		if (State->SponzaMesh->Generation == INVALID_ID_U8) {
+	if (code == eEventCode::Debug_0) {
+		if (GameInst->SponzaMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading sponza...");
 
-			if (!State->SponzaMesh->LoadFromResource("sponza")) {
+			if (!GameInst->SponzaMesh->LoadFromResource("sponza")) {
 				LOG_ERROR("Failed to load sponza mesh!");
 			}
 		}
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_1) {
-		if (State->CarMesh->Generation == INVALID_ID_U8) {
+	else if (code == eEventCode::Debug_1) {
+		if (GameInst->CarMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading falcon...");
 
-			if (!State->CarMesh->LoadFromResource("falcon")) {
+			if (!GameInst->CarMesh->LoadFromResource("falcon")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_2) {
-		if (State->BunnyMesh->Generation == INVALID_ID_U8) {
+	else if (code == eEventCode::Debug_2) {
+		if (GameInst->BunnyMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading bunny...");
 
-			if (!State->BunnyMesh->LoadFromResource("bunny")) {
+			if (!GameInst->BunnyMesh->LoadFromResource("bunny")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
 
 		return true;
 	}
-	else if (code == Core::eEvent_Code_Debug_3) {
-		if (State->DragonMesh->Generation == INVALID_ID_U8) {
+	else if (code == eEventCode::Debug_3) {
+		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading dragon...");
 
-			if (!State->DragonMesh->LoadFromResource("dragon")) {
+			if (!GameInst->DragonMesh->LoadFromResource("dragon")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
@@ -96,20 +87,19 @@ bool GameOnDebugEvent(unsigned short code, void* sender, void* listener_instance
 }
 
 
-bool GameOnKey(unsigned short code, void* sender, void* listener_instance, SEventContext context) {
-	if (code == Core::eEvent_Code_Key_Pressed) {
-		unsigned short KeyCode = context.data.u16[0];
-		if (KeyCode == eKeys_Escape) {
+bool GameOnKey(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
+	if (code == eEventCode::Key_Pressed) {
+		eKeys KeyCode = eKeys(context.data.u16[0]);
+		if (KeyCode == eKeys::Escape) {
 			// NOTE: Technically dispatch an event to itself, but there may be other listeners.
 			SEventContext data = {};
-			Core::EventFire(Core::eEvent_Code_Application_Quit, 0, data);
+			EngineEvent::Fire(eEventCode::Application_Quit, 0, data);
 
 			// Block anything else from processing this.
 			return true;
 		}
 	}
-	else if (code == Core::eEvent_Code_Key_Released) {
-		unsigned short KeyCode = context.data.u16[0];
+	else if (code == eEventCode::Key_Released) {
 
 		return true;
 	}
@@ -117,11 +107,10 @@ bool GameOnKey(unsigned short code, void* sender, void* listener_instance, SEven
 	return false;
 }
 
-bool GameBoot(SGame* gameInstance, IRenderer* renderer) {
+bool GameInstance::Boot(IRenderer* renderer) {
 	LOG_INFO("Booting...");
 
 	Renderer = renderer;
-	SApplicationConfig* Config = &gameInstance->app_config;
 	
 	// Configure fonts.
 	BitmapFontConfig BmpFontConfig;
@@ -134,18 +123,18 @@ bool GameBoot(SGame* gameInstance, IRenderer* renderer) {
 	SysFontConfig.name = "Noto Sans";
 	SysFontConfig.resourceName = "NotoSansCJK";
 
-	Config->FontConfig.autoRelease = false;
-	Config->FontConfig.defaultBitmapFontCount = 1;
-	Config->FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	Config->FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
-	Config->FontConfig.defaultSystemFontCount = 1;
-	Config->FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	Config->FontConfig.systemFontConfigs[0] = SysFontConfig;
-	Config->FontConfig.maxBitmapFontCount = 100;
-	Config->FontConfig.maxSystemFontCount = 100;
+	AppConfig.FontConfig.autoRelease = false;
+	AppConfig.FontConfig.defaultBitmapFontCount = 1;
+	AppConfig.FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
+	AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
+	AppConfig.FontConfig.defaultSystemFontCount = 1;
+	AppConfig.FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
+	AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
+	AppConfig.FontConfig.maxBitmapFontCount = 100;
+	AppConfig.FontConfig.maxSystemFontCount = 100;
 
 	// Configure render views.  TODO: read from file.
-	if (!ConfigureRenderviews(Config)) {
+	if (!ConfigureRenderviews(&AppConfig)) {
 		LOG_ERROR("Failed to configure renderer views. Aborting application.");
 		return false;
 	}
@@ -153,54 +142,53 @@ bool GameBoot(SGame* gameInstance, IRenderer* renderer) {
 	return true;
 }
 
-bool GameInitialize(SGame* game_instance) {
+bool GameInstance::Initialize() {
 	LOG_DEBUG("GameInitialize() called.");
 
-	SGameState* State = (SGameState*)game_instance->state;
-
 	// Load python script
-	State->TestPython.SetPythonFile("recompile_shader");
+	TestPython.SetPythonFile("recompile_shader");
 
-	State->WorldCamera = CameraSystem::GetDefault();
-	State->WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 40.0f));
+	WorldCamera = CameraSystem::GetDefault();
+	WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 40.0f));
 
 	// Create test ui text objects.
-	if (!State->TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
+	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	State->TestText.SetPosition(Vec3(150, 450, 0));
+	TestText.SetPosition(Vec3(150, 450, 0));
 
-	if (!State->TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
+	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
 		"Noto Sans CJK JP", 26, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: sponza P: car\
 		\n\tK: dragon L: bunny\
 		\nM: Watch memory usage.\
-		\nF1: Default shader mode.\
-		\nF2: Lighting shader mode.\
-		\nF3: Normals shader mode."))
+		\nF1: Default view.\
+		\nF2: Lighting view.\
+		\nF3: Normals view.\
+		\nF4: Depth view."))
 	{
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	State->TestSysText.SetPosition(Vec3(100, 200, 0));
+	TestSysText.SetPosition(Vec3(100, 200, 0));
 
 	// Skybox
-	if (!State->SB.Create("SkyboxCube", Renderer)) {
+	if (!SB.Create("SkyboxCube", Renderer)) {
 		LOG_ERROR("Failed to create skybox. Exiting...");
 		return false;
 	}
 
 	// World meshes
-	State->Meshes.resize(10);
-	State->UIMeshes.resize(10);
+	Meshes.resize(10);
+	UIMeshes.resize(10);
 	for (uint32_t i = 0; i < 10; ++i) {
-		State->Meshes[i].Generation = INVALID_ID_U8;
-		State->UIMeshes[i].Generation = INVALID_ID_U8;
+		Meshes[i].Generation = INVALID_ID_U8;
+		UIMeshes[i].Generation = INVALID_ID_U8;
 	}
 
-	Mesh* CubeMesh = &State->Meshes[0];
+	Mesh* CubeMesh = &Meshes[0];
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
@@ -209,7 +197,7 @@ bool GameInitialize(SGame* game_instance) {
 	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
 	CubeMesh->Transform = Transform();
 
-	Mesh* CubeMesh2 = &State->Meshes[1];
+	Mesh* CubeMesh2 = &Meshes[1];
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
@@ -219,7 +207,7 @@ bool GameInitialize(SGame* game_instance) {
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
 
-	Mesh* CubeMesh3 = &State->Meshes[2];
+	Mesh* CubeMesh3 = &Meshes[2];
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
@@ -234,21 +222,21 @@ bool GameInitialize(SGame* game_instance) {
 	GeometrySystem::ConfigDispose(&GeoConfig2);
 	GeometrySystem::ConfigDispose(&GeoConfig3);
 
-	State->CarMesh = &State->Meshes[3];
-	State->CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
-	State->CarMesh->UniqueID = Identifier::AcquireNewID(State->CarMesh);
+	CarMesh = &Meshes[3];
+	CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
+	CarMesh->UniqueID = Identifier::AcquireNewID(CarMesh);
 
-	State->SponzaMesh = &State->Meshes[4];
-	State->SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
-	State->SponzaMesh->UniqueID = Identifier::AcquireNewID(State->SponzaMesh);
+	SponzaMesh = &Meshes[4];
+	SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
+	SponzaMesh->UniqueID = Identifier::AcquireNewID(SponzaMesh);
 
-	State->BunnyMesh = &State->Meshes[5];
-	State->BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
-	State->BunnyMesh->UniqueID = Identifier::AcquireNewID(State->BunnyMesh);
+	BunnyMesh = &Meshes[5];
+	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(10.0f));
+	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
 
-	State->DragonMesh = &State->Meshes[6];
-	State->DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
-	State->DragonMesh->UniqueID = Identifier::AcquireNewID(State->DragonMesh);
+	DragonMesh = &Meshes[6];
+	DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
+	DragonMesh->UniqueID = Identifier::AcquireNewID(DragonMesh);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -256,10 +244,10 @@ bool GameInitialize(SGame* game_instance) {
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
 	UIConfig.index_count = 6;
-	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
-	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+	UIConfig.material_name = "Material.UI";
+	UIConfig.name = "Material.UI";
 
-	const float h = game_instance->app_config.start_height / 3.0f;
+	const float h = AppConfig.start_height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
 	const float y = 0.0f;
@@ -292,7 +280,7 @@ bool GameInitialize(SGame* game_instance) {
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	Mesh* UIMesh = &State->UIMeshes[0];
+	Mesh* UIMesh = &UIMeshes[0];
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
@@ -301,176 +289,176 @@ bool GameInitialize(SGame* game_instance) {
 	UIMesh->Transform = Transform();
 
 	// TODO: TEMP
-	Core::EventRegister(Core::eEvent_Code_Debug_0, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_1, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_2, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Debug_3, game_instance, GameOnDebugEvent);
-	Core::EventRegister(Core::eEvent_Code_Object_Hover_ID_Changed, game_instance, GameOnEvent);
-	Core::EventRegister(Core::eEvent_Code_Reload_Shader_Module, game_instance, GameOnEvent);
+	EngineEvent::Register(eEventCode::Debug_0, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::Debug_1, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::Debug_2, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::Debug_3, this, GameOnDebugEvent);
+	EngineEvent::Register(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
+	EngineEvent::Register(eEventCode::Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	Core::EventRegister(Core::eEvent_Code_Key_Pressed, game_instance, GameOnKey);
-	Core::EventRegister(Core::eEvent_Code_Key_Released, game_instance, GameOnKey);
+	EngineEvent::Register(eEventCode::Key_Pressed, this, GameOnKey);
+	EngineEvent::Register(eEventCode::Key_Released, this, GameOnKey);
 
 	return true;
 }
 
-void GameShutdown(SGame* gameInstance) {
-	SGameState* State = (SGameState*)gameInstance->state;
-
+void GameInstance::Shutdown() {
 	// TODO: Temp
-	State->SB.Destroy();
+	SB.Destroy();
 
-	State->TestText.Destroy();
-	State->TestSysText.Destroy();
+	TestText.Destroy();
+	TestSysText.Destroy();
 
 	// TODO: TEMP
-	Core::EventUnregister(Core::eEvent_Code_Debug_0, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_1, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_2, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Debug_3, gameInstance, GameOnDebugEvent);
-	Core::EventUnregister(Core::eEvent_Code_Object_Hover_ID_Changed, gameInstance, GameOnEvent);
-	Core::EventUnregister(Core::eEvent_Code_Reload_Shader_Module, gameInstance, GameOnEvent);
+	EngineEvent::Unregister(eEventCode::Debug_0, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::Debug_1, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::Debug_2, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::Debug_3, this, GameOnDebugEvent);
+	EngineEvent::Unregister(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
+	EngineEvent::Unregister(eEventCode::Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	Core::EventUnregister(Core::eEvent_Code_Key_Pressed, gameInstance, GameOnKey);
-	Core::EventUnregister(Core::eEvent_Code_Key_Released, gameInstance, GameOnKey);
-
-	State = nullptr;
+	EngineEvent::Unregister(eEventCode::Key_Pressed, this, GameOnKey);
+	EngineEvent::Unregister(eEventCode::Key_Released, this, GameOnKey);
 }
 
-bool GameUpdate(SGame* game_instance, float delta_time) {
+bool GameInstance::Update(float delta_time) {
 	// Ensure this is cleaned up to avoid leaking memory.
 	// TODO: Need a version of this that uses the frame allocator.
-	if (!game_instance->FrameData.WorldGeometries.empty()) {
-		game_instance->FrameData.WorldGeometries.clear();
-		std::vector<GeometryRenderData>().swap(game_instance->FrameData.WorldGeometries);
+	if (!FrameData.WorldGeometries.empty()) {
+		FrameData.WorldGeometries.clear();
+		std::vector<GeometryRenderData>().swap(FrameData.WorldGeometries);
 	}
 
 	static size_t AllocCount = 0;
 	size_t PrevAllocCount = AllocCount;
 	AllocCount = Memory::GetAllocateCount();
-	if (Core::InputIsKeyUp(eKeys_M) && Core::InputWasKeyDown(eKeys_M)) {
+    size_t UsedMemory = AllocCount - PrevAllocCount;
+	if (Controller::IsKeyUp(eKeys::M) && Controller::WasKeyDown(eKeys::M)) {
 		char* Usage = Memory::GetMemoryUsageStr();
 		LOG_INFO(Usage);
 		StringFree(Usage);
-		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, AllocCount - PrevAllocCount);
+		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
 	}
-
-	SGameState* State = (SGameState*)game_instance->state;
 
 	// Temp shader debug
-	if (Core::InputIsKeyUp(eKeys_F1) && Core::InputWasKeyDown(eKeys_F1)) {
+	if (Controller::IsKeyUp(eKeys::F1) && Controller::WasKeyDown(eKeys::F1)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
-		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_F2) && Core::InputWasKeyDown(eKeys_F2)) {
+	if (Controller::IsKeyUp(eKeys::F2) && Controller::WasKeyDown(eKeys::F2)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
-		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_F3) && Core::InputWasKeyDown(eKeys_F3)) {
+	if (Controller::IsKeyUp(eKeys::F3) &&Controller::WasKeyDown(eKeys::F3)) {
 		SEventContext Context;
 		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
-		Core::EventFire(Core::eEvent_Code_Set_Render_Mode, nullptr, Context);
+		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
+	}
+	if (Controller::IsKeyUp(eKeys::F4) &&Controller::WasKeyDown(eKeys::F4)) {
+		SEventContext Context;
+		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Depth;
+		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
 	}
 
-	if (Core::InputIsKeyDown(eKeys_Left)) {
-		State->WorldCamera->RotateYaw(1.0f * delta_time);
+	if (Controller::IsKeyDown(eKeys::Left)) {
+		WorldCamera->RotateYaw(1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(eKeys_Right)) {
-		State->WorldCamera->RotateYaw(-1.0f * delta_time);
+	if (Controller::IsKeyDown(eKeys::Right)) {
+		WorldCamera->RotateYaw(-1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Up)) {
-		State->WorldCamera->RotatePitch(1.0f * delta_time);
+	if (Controller::IsKeyDown(eKeys::Up)) {
+		WorldCamera->RotatePitch(1.0f * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Down)) {
-		State->WorldCamera->RotatePitch(-1.0f * delta_time);
+	if (Controller::IsKeyDown(eKeys::Down)) {
+		WorldCamera->RotatePitch(-1.0f * delta_time);
 	}
 
 	float TempMoveSpeed = 50.0f;
-	if (Core::InputIsKeyDown(Keys::eKeys_Shift)) {
+	if (Controller::IsKeyDown(eKeys::Shift)) {
 		TempMoveSpeed *= 2.0f;
 	}
 
-	if (Core::InputIsKeyDown(Keys::eKeys_W)) {
-		State->WorldCamera->MoveForward(TempMoveSpeed * delta_time);
+	if (Controller::IsKeyDown(eKeys::W)) {
+		WorldCamera->MoveForward(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_S)) {
-		State->WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
+	if (Controller::IsKeyDown(eKeys::S)) {
+		WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_A)) {
-		State->WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
+	if (Controller::IsKeyDown(eKeys::A)) {
+		WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_D)) {
-		State->WorldCamera->MoveRight(TempMoveSpeed * delta_time);
+	if (Controller::IsKeyDown(eKeys::D)) {
+		WorldCamera->MoveRight(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_Q)) {
-		State->WorldCamera->MoveDown(TempMoveSpeed * delta_time);
+	if (Controller::IsKeyDown(eKeys::Q)) {
+		WorldCamera->MoveDown(TempMoveSpeed * delta_time);
 	}
-	if (Core::InputIsKeyDown(Keys::eKeys_E)) {
-		State->WorldCamera->MoveUp(TempMoveSpeed * delta_time);
+	if (Controller::IsKeyDown(eKeys::E)) {
+		WorldCamera->MoveUp(TempMoveSpeed * delta_time);
 	}
 
-	if (Core::InputIsKeyDown(Keys::eKeys_R)) {
-		State->WorldCamera->Reset();
+	if (Controller::IsKeyDown(eKeys::R)) {
+		WorldCamera->Reset();
 	}
 
 	// TODO: Remove
-	if (Core::InputIsKeyUp(eKeys_O) && Core::InputWasKeyDown(eKeys_O)) {
+	if (Controller::IsKeyUp(eKeys::O) &&Controller::WasKeyDown(eKeys::O)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_0, game_instance, Context);
+		EngineEvent::Fire(eEventCode::Debug_0, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_L) && Core::InputWasKeyDown(eKeys_L)) {
+	if (Controller::IsKeyUp(eKeys::L) &&Controller::WasKeyDown(eKeys::L)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_2, game_instance, Context);
+		EngineEvent::Fire(eEventCode::Debug_2, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_K) && Core::InputWasKeyDown(eKeys_K)) {
+	if (Controller::IsKeyUp(eKeys::K) &&Controller::WasKeyDown(eKeys::K)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_3, game_instance, Context);
+		EngineEvent::Fire(eEventCode::Debug_3, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_P) && Core::InputWasKeyDown(eKeys_P)) {
+	if (Controller::IsKeyUp(eKeys::P) &&Controller::WasKeyDown(eKeys::P)) {
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Debug_1, game_instance, Context);
+		EngineEvent::Fire(eEventCode::Debug_1, this, Context);
 	}
 
-	if (Core::InputIsKeyUp(eKeys_G) && Core::InputWasKeyDown(eKeys_G)) {
-		State->TestPython.ExecuteFunc("CompileShaders", "glsl");
+	if (Controller::IsKeyUp(eKeys::G) &&Controller::WasKeyDown(eKeys::G)) {
+		//TestPython.ExecuteFunc("CompileShaders", "glsl");
 
 		// Reload
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
+		EngineEvent::Fire(eEventCode::Reload_Shader_Module, this, Context);
 	}
-	if (Core::InputIsKeyUp(eKeys_H) && Core::InputWasKeyDown(eKeys_H)) {
-		State->TestPython.ExecuteFunc("CompileShaders", "hlsl");
+	if (Controller::IsKeyUp(eKeys::H) &&Controller::WasKeyDown(eKeys::H)) {
+		//TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
 		SEventContext Context = {};
-		Core::EventFire(Core::eEvent_Code_Reload_Shader_Module, game_instance, Context);
+		EngineEvent::Fire(eEventCode::Reload_Shader_Module, this, Context);
 	}
 	// Remove
 
 	int px, py, cx, cy;
-	Core::InputGetMousePosition(cx, cy);
-	Core::InputGetPreviousMousePosition(px, py);
+	Controller::GetMousePosition(cx, cy);
+	Controller::GetPreviousMousePosition(px, py);
 	float MouseMoveSpeed = 0.005f;
-	if (Core::InputeIsButtonDown(eButton_Right)) {
+	if (Controller::IsButtonDown(eButtons::Right)) {
 		if (cx != px) {
-			State->WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
+			WorldCamera->RotateYaw((px - cx) * MouseMoveSpeed);
 		}
 		if (cy != py) {
-			State->WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
+			WorldCamera->RotatePitch((py - cy) * MouseMoveSpeed);
 		}
 	}
 
 	Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)delta_time, false);
-	State->Meshes[0].Transform.Rotate(Rotation);
-	State->Meshes[1].Transform.Rotate(Rotation);
-	State->Meshes[2].Transform.Rotate(Rotation);
+	Meshes[0].Transform.Rotate(Rotation);
+	Meshes[1].Transform.Rotate(Rotation);
+	Meshes[2].Transform.Rotate(Rotation);
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
@@ -478,30 +466,30 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 	Vec3 Rot = WorldCamera->GetEulerAngles();
 
 	// Mouse state
-	bool LeftDown = Core::InputeIsButtonDown(eButton_Left);
-	bool RightDown = Core::InputeIsButtonDown(eButton_Right);
+	bool LeftDown =Controller::IsButtonDown(eButtons::Left);
+	bool RightDown =Controller::IsButtonDown(eButtons::Right);
 	int MouseX, MouseY;
-	Core::InputGetMousePosition(MouseX, MouseY);
+	Controller::GetMousePosition(MouseX, MouseY);
 
 	// Convert to NDC.
-	float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)State->Width, -1.0f, 1.0f);
-	float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)State->Height, -1.0f, 1.0f);
+	float MouseX_NDC = RangeConvertfloat((float)MouseX, 0.0f, (float)Width, -1.0f, 1.0f);
+	float MouseY_NDC = RangeConvertfloat((float)MouseY, 0.0f, (float)Height, -1.0f, 1.0f);
 
 	double FPS, FrameTime;
 	Metrics::Frame(&FPS, &FrameTime);
 
 	// Update the frustum.
-	Vec3 Forward = State->WorldCamera->Forward();
-	Vec3 Right = State->WorldCamera->Right();
-	Vec3 Up = State->WorldCamera->Up();
+	Vec3 Forward = WorldCamera->Forward();
+	Vec3 Right = WorldCamera->Right();
+	Vec3 Up = WorldCamera->Up();
 	// TODO: Get camera fov, aspect etc.
-	State->CameraFrustum = Frustum(State->WorldCamera->GetPosition(), Forward, Right, Up, (float)State->Width / (float)State->Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
+	CameraFrustum = Frustum(WorldCamera->GetPosition(), Forward, Right, Up, (float)Width / (float)Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
-	game_instance->FrameData.WorldGeometries.reserve(512);
+	FrameData.WorldGeometries.reserve(512);
 	for (uint32_t i = 0; i < 10; ++i) {
-		Mesh* m = &State->Meshes[i];
+		Mesh* m = &Meshes[i];
 		if (m == nullptr) {
 			continue;
 		}
@@ -552,13 +540,13 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 						Dabs(ExtentsMax.z - Center.z)
 					};
 
-					if (State->CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
+					if (CameraFrustum.IntersectsAABB(Center, HalfExtents) && EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
 						Data.model = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->UniqueID;
-						game_instance->FrameData.WorldGeometries.push_back(Data);
+						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
 					else if (!EnableFrustumCulling){
@@ -567,7 +555,7 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 						Data.model = Model;
 						Data.geometry = g;
 						Data.uniqueID = m->UniqueID;
-						game_instance->FrameData.WorldGeometries.push_back(Data);
+						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
 				}
@@ -588,19 +576,18 @@ bool GameUpdate(SGame* game_instance, float delta_time) {
 		Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
 		LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
 		MouseX_NDC, MouseY_NDC,
-		State->HoveredObjectID == INVALID_ID ? "None" : "",
-		State->HoveredObjectID == INVALID_ID ? 0 : State->HoveredObjectID,
+		HoveredObjectID == INVALID_ID ? "None" : "",
+		HoveredObjectID == INVALID_ID ? 0 : HoveredObjectID,
 		(int)FPS,
 		(float)FrameTime,
 		DrawCount
 	);
-	State->TestText.SetText(FPSText);
+	TestText.SetText(FPSText);
 
 	return true;
 }
 
-bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
-	SGameState* State = (SGameState*)game_instance->state;
+bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 
 	// TODO: Read from config.
 	packet->view_count = 4;
@@ -610,37 +597,37 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 
 	// Skybox
 	SkyboxPacketData SkyboxData;
-	SkyboxData.sb = &State->SB;
+	SkyboxData.sb = &SB;
 	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Skybox"), &SkyboxData, &packet->views[0])) {
 		LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
 		return false;
 	}
 
 	// World
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &game_instance->FrameData.WorldGeometries, &packet->views[1])) {
+	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &FrameData.WorldGeometries, &packet->views[1])) {
 		LOG_ERROR("Failed to build packet for view 'World'.");
 		return false;
 	}
 
 	// UI
 	uint32_t UIMeshCount = 0;
-	Mesh** UIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
+	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < 10; ++i) {
-		if (State->UIMeshes[i].Generation != INVALID_ID_U8) {
-			UIMeshes[UIMeshCount] = &State->UIMeshes[i];
+		if (UIMeshes[i].Generation != INVALID_ID_U8) {
+			TempUIMeshes[UIMeshCount] = &UIMeshes[i];
 			UIMeshCount++;
 		}
 	}
 
 
 	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 2, MemoryType::eMemory_Type_Array);
-	Texts[0] = &State->TestText;
-	Texts[1] = &State->TestSysText;
+	Texts[0] = &TestText;
+	Texts[1] = &TestSysText;
 
 	UIPacketData UIPacket;
 	UIPacket.meshData.mesh_count = UIMeshCount;
-	UIPacket.meshData.meshes = UIMeshes;
+	UIPacket.meshData.meshes = TempUIMeshes;
 	UIPacket.textCount = 2;
 	UIPacket.Textes = Texts;
 
@@ -652,7 +639,7 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 	// Pick uses both world and ui packet data.
 	PickPacketData PickPacket;
 	PickPacket.UIMeshData = UIPacket.meshData;
-	PickPacket.WorldMeshData = game_instance->FrameData.WorldGeometries;
+	PickPacket.WorldMeshData = FrameData.WorldGeometries;
 	PickPacket.Texts = UIPacket.Textes;
 	PickPacket.TextCount = UIPacket.textCount;
 
@@ -664,14 +651,12 @@ bool GameRender(SGame* game_instance, SRenderPacket* packet, float delta_time) {
 	return true;
 }
 
-void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height) {
-	SGameState* State = (SGameState*)game_instance->state;
+void GameInstance::OnResize(unsigned int width, unsigned int height) {
+	Width = width;
+	Height = height;
 
-	State->Width = width;
-	State->Height = height;
-
-	State->TestText.SetPosition(Vec3(180, (float)height - 150, 0));
-	State->TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
+	TestText.SetPosition(Vec3(180, (float)height - 150, 0));
+	TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;
@@ -679,10 +664,10 @@ void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height)
 	UIConfig.vertex_count = 4;
 	UIConfig.index_size = sizeof(uint32_t);
 	UIConfig.index_count = 6;
-	strncpy(UIConfig.material_name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
-	strncpy(UIConfig.name, "Material.UI", MATERIAL_NAME_MAX_LENGTH);
+	UIConfig.material_name = "Material.UI";
+	UIConfig.name = "Material.UI";
 
-	const float h = State->Height / 3.0f;
+	const float h = Height / 3.0f;
 	const float w = h * 200.0f / 470.0f;
 	const float x = 0.0f;
 	const float y = 0.0f;
@@ -714,10 +699,10 @@ void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height)
 	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 	UIConfig.indices = UIIndices;
 
-	State->UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 }
 
-bool ConfigureRenderviews(SApplicationConfig* config) {
+bool ConfigureRenderviews(Application::SConfig* config) {
 	RenderViewConfig SkyboxConfig;
 	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
 	SkyboxConfig.width = 0;
@@ -743,7 +728,6 @@ bool ConfigureRenderviews(SApplicationConfig* config) {
 	SkyboxTargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	SkyboxTargetAttachment.presentAfter = false;
 
-	SkyboxPasses[0].target.attachmentCount = 1;
 	SkyboxPasses[0].target.attachments.push_back(SkyboxTargetAttachment);
 	SkyboxPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
 
@@ -785,7 +769,6 @@ bool ConfigureRenderviews(SApplicationConfig* config) {
 	WorldTargetDepthAttachments.presentAfter = false;
 	WorldPasses[0].target.attachments.push_back(WorldTargetDepthAttachments);
 
-	WorldPasses[0].target.attachmentCount = 2;
 	WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
 
 	WorldViewConfig.passes = WorldPasses;
@@ -818,7 +801,6 @@ bool ConfigureRenderviews(SApplicationConfig* config) {
 	UITargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	UITargetAttachment.presentAfter = true;
 
-	UIPasses[0].target.attachmentCount = 1;
 	UIPasses[0].target.attachments.push_back(UITargetAttachment);
 	UIPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
 
@@ -861,7 +843,6 @@ bool ConfigureRenderviews(SApplicationConfig* config) {
 	WorldPickTargetDepthAttachments.presentAfter = false;
 	PickPasses[0].target.attachments.push_back(WorldPickTargetDepthAttachments);
 
-	PickPasses[0].target.attachmentCount = 2;
 	PickPasses[0].renderTargetCount = 1;
 
 	// UI pick pass
@@ -880,7 +861,6 @@ bool ConfigureRenderviews(SApplicationConfig* config) {
 	UIPickTargetColorAttachments.presentAfter = false;
 	PickPasses[1].target.attachments.push_back(UIPickTargetColorAttachments);
 
-	PickPasses[1].target.attachmentCount = 1;
 	PickPasses[1].renderTargetCount = 1;
 
 	PickViewConfig.passes = PickPasses;

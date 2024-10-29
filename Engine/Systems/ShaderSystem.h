@@ -3,28 +3,31 @@
 #include "Defines.hpp"
 #include "Containers/THashTable.hpp"
 #include "Resources/ResourceTypes.hpp"
+#include <functional>
+#include <map>
 
 class IRenderer;
 
-struct SShaderSystemConfig {
-	unsigned short max_shader_count;
-	unsigned short max_uniform_count;
-	unsigned short max_global_textures;
-	unsigned short max_instance_textures;
-};
+class ShaderSystem {
+public:
+	struct Config {
+		unsigned short max_shader_count;
+		unsigned short max_uniform_count;
+		unsigned short max_global_textures;
+		unsigned short max_instance_textures;
+	};
 
-class DAPI ShaderSystem {
 public:
 	/**
 	 * @brief Initializes the shader system using the supplied configuration.
 	 * NOTE: Call this twice, once to obtain memory requirement (memory = 0) and a second time
 	 * including allocated memory.
 	 *
-	 * @param renderer A pointer to Renderer frontend.
+	 * @param renderer A pointer to Renderer front-end.
 	 * @param config The configuration to be used when initializing the system.
 	 * @return b8 True on success; otherwise false.
 	 */
-	static bool Initialize(IRenderer* renderer, SShaderSystemConfig config);
+	static bool Initialize(IRenderer* renderer, ShaderSystem::Config config);
 
 	/**
 	 * @brief Shuts down the shader system.
@@ -165,6 +168,8 @@ public:
 	static bool BindInstance(uint32_t instance_id);
 
 	static void Destroy(const char* shader_name);
+
+	static bool Reload(Shader* shader);
 	
 private:
 	static bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
@@ -180,12 +185,11 @@ private:
 
 public:
 	static IRenderer* Renderer;
-	static SShaderSystemConfig Config;
-	static HashTable Lookup;
-	static void* LookupMemory;
+	static ShaderSystem::Config ShaderSystemConfig;
+	static std::unordered_map<std::string, uint32_t> HashMap;
 	
 	static uint32_t CurrentShaderID;
-	static Shader* Shaders;
+	static std::vector<Shader*> Shaders;
 	
 	static bool Initilized;
 };

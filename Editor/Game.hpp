@@ -7,11 +7,23 @@
 
 class Camera;
 
-struct SGameState {
-	float delta_time;
-	Camera* WorldCamera = nullptr;
-	short Width, Height;
+class GameInstance : public IGame {
+public:
+	GameInstance() : WorldCamera(nullptr), delta_time(0), Width(1920), Height(1080) {}
+	virtual ~GameInstance() {};
 
+public:
+	virtual bool Boot(IRenderer* renderer) override;
+	virtual void Shutdown() override;
+	virtual bool Initialize() override;
+	virtual bool Update(float delta_time) override;
+	virtual bool Render(struct SRenderPacket* packet, float delta_time) override;
+	virtual void OnResize(unsigned int width, unsigned int height) override;
+
+public:
+	float delta_time;
+	short Width, Height;
+	Camera* WorldCamera;
 	Frustum CameraFrustum;
 
 	// TODO: temp
@@ -32,10 +44,3 @@ struct SGameState {
 	// TODO: end temp
 
 };
-
-bool GameBoot(SGame* gameInstance, IRenderer* renderer);
-bool GameInitialize(SGame* game_instance);
-bool GameUpdate(SGame* game_instance, float delta_time);
-bool GameRender(SGame* game_instance, struct SRenderPacket* packet, float delta_time);
-void GameOnResize(SGame* game_instance, unsigned int width, unsigned int height);
-void GameShutdown(SGame* gameInstance);

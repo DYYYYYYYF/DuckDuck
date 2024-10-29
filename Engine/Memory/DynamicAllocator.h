@@ -16,7 +16,9 @@
 
 class DAPI DynamicAllocator {
 public:
-	/**
+	DynamicAllocator() : TotalSize(0), MemoryBlock(nullptr) {}
+public:					 
+	  /**					
 	 * @brief Creates a new dynamic allocator.
 	 * 
 	 * @param total_size The total size in bytes the allocator should hold. Note this size does not include the size of the internal state.

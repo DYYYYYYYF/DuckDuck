@@ -150,7 +150,8 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 			// TODO: check if a resize is actually needed for this target.
 			Renderer->DestroyRenderTarget(Target, false);
 
-			for (uint32_t a = 0; a < Target->attachment_count; ++a) {
+			uint32_t AttachCount = (uint32_t)Target->attachments.size();
+			for (uint32_t a = 0; a < AttachCount; ++a) {
 				RenderTargetAttachment* Attachment = &Target->attachments[a];
 				if (Attachment->source == RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default) {
 					if (Attachment->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
@@ -172,7 +173,7 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 			}
 
 			// Create the render target.
-			Renderer->CreateRenderTarget(Target->attachment_count, Target->attachments,
+			Renderer->CreateRenderTarget(AttachCount, Target->attachments,
 				Pass, Target->attachments[0].texture->Width, Target->attachments[0].texture->Height,
 				&Pass->Targets[i]);
 		}

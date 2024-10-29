@@ -9,7 +9,7 @@ struct DAPI Vec2 {
 public:
 	union
 	{
-		float elements[2];
+		float elements[2] = { 0.0f };
 		struct {
 			union
 			{
@@ -135,7 +135,7 @@ public:
 struct DAPI Vec3 {
 public:
 	union{
-		float elements[3];
+		float elements[3] = { 0.0f };
 		struct {
 			union
 			{
@@ -375,7 +375,7 @@ public:
 		alignas(16) __m128 data;
 #endif
 		// An array of x, y, z, w
-		alignas(16) float elements[4];
+		alignas(16) float elements[4] = { 0.0f };
 		struct
 		{
 			union
@@ -1326,8 +1326,7 @@ struct Vertex2D {
 // Frustum culling
 class DAPI Plane3D {
 public:
-	Plane3D() {}
-
+	Plane3D() : Normal({0}), Distance(0.0f) {}
 	Plane3D(Vec3 p1, Vec3 Norm) {
 		Normal = Norm.Normalize();
 		Distance = Normal.Dot(p1);

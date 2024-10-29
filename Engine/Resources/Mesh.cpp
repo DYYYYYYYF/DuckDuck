@@ -48,11 +48,12 @@ bool Mesh::LoadFromResource(const char* resource_name) {
 	Params.mesh_resource = {};
 
 	JobInfo Job = JobSystem::CreateJob(
-		Mesh::LoadJobStart,
-		Mesh::LoadJobSuccess,
-		Mesh::LoadJobFail,
-		&Params,
-		sizeof(MeshLoadParams), sizeof(MeshLoadParams));
+		std::bind(&Mesh::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&Mesh::LoadJobSuccess, this, std::placeholders::_1),
+		std::bind(&Mesh::LoadJobFail, this, std::placeholders::_1),
+		&Params, 
+		sizeof(MeshLoadParams), 
+		sizeof(MeshLoadParams));
 	JobSystem::Submit(Job);
 
 	return true;
@@ -69,14 +70,4 @@ void Mesh::Unload() {
 	// For good measure. Invalidate the geometry so it doesn't attemp to be renderer.
 	geometry_count = 0;
 	Generation = INVALID_ID_U8;
-}
-
-void Mesh::ReloadMaterial(const char* mat_name) {
-	if (geometry_count == 0 || geometries == nullptr) {
-		return;
-	}
-
-	for (uint32_t i = 0; i < geometry_count; ++i) {
-		geometries[i]->ReloadMaterial(mat_name);
-	}
 }

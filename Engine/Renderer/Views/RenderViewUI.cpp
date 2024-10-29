@@ -16,7 +16,7 @@
 #include "Renderer/Interface/IRendererBackend.hpp"
 #include "Resources/UIText.hpp"
 
-static bool RenderViewUIOnEvent(unsigned short code, void* sender, void* listenerInst, SEventContext context) {
+static bool RenderViewUIOnEvent(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	IRenderView* self = (IRenderView*)listenerInst;
 	if (self == nullptr) {
 		return false;
@@ -24,9 +24,10 @@ static bool RenderViewUIOnEvent(unsigned short code, void* sender, void* listene
 
 	switch (code)
 	{
-	case Core::eEvent_Code_Default_Rendertarget_Refresh_Required:
+	case eEventCode::Default_Rendertarget_Refresh_Required:
 		RenderViewSystem::RegenerateRendertargets(self);
 		return false;
+    default: break;
 	}
 
 	return false;
@@ -72,7 +73,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
 	ViewMatrix = Matrix4::Identity();
 
-	if (!Core::EventRegister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {
+	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
@@ -82,7 +83,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 }
 
 void RenderViewUI::OnDestroy() {
-	Core::EventUnregister(Core::eEvent_Code_Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent);
+	EngineEvent::Unregister(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent);
 }
 
 void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
@@ -189,7 +190,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name);
+				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
 				continue;
 			}
 			else {

@@ -3,14 +3,14 @@
 #include "Defines.hpp"
 
 struct DAPI FreelistNode {
-	size_t offset;
-	size_t size;
+	size_t offset = 0;
+	size_t size = 0;
 	struct FreelistNode* next = nullptr;
 };
 
 class DAPI Freelist {
 public:
-	Freelist() : ListMemory(nullptr), Head(nullptr), Nodes(nullptr) {}
+	Freelist() : ListMemory(nullptr), Head(nullptr), Nodes(nullptr), MaxEntries(50), TotalSize(0) {}
 
 public:
 	/*

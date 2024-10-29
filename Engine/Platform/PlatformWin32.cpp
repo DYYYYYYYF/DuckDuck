@@ -315,7 +315,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			return 1;
 		case WM_CLOSE:
 			SEventContext Context = SEventContext();
-			Core::EventFire(Core::SystemEventCode::eEvent_Code_Application_Quit, 0, Context);
+			EngineEvent::Fire(eEventCode::Application_Quit, 0, Context);
 			return 1;
 		case WM_DESTROY:
 			PostQuitMessage(0);
@@ -331,7 +331,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 			SEventContext Context = SEventContext();
 			Context.data.u16[0] = (unsigned short)Width;
 			Context.data.u16[1] = (unsigned short)Height;
-			Core::EventFire(Core::SystemEventCode::eEvent_Code_Resize, 0, Context);
+			EngineEvent::Fire(eEventCode::Resize, 0, Context);
 			break;
 		}
 		case WM_KEYDOWN:
@@ -340,23 +340,23 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_SYSKEYUP: {
 			// Key pressed/released
 			bool pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
-			Keys key = Keys(w_param);
+			eKeys key = eKeys(w_param);
 
 			// Pass to the input subsystem for processing.
-			Core::InputProcessKey(key, pressed);
+			Controller::ProcessKey(key, pressed);
 		} break;
 		case WM_MOUSEMOVE: {
 			int PositionX = GET_X_LPARAM(l_param);
 			int PositionY = GET_Y_LPARAM(l_param);
 
 			// Pass over to the input subsystem
-			Core::InputProcessMouseMove(PositionX, PositionY);
+			Controller::ProcessMouseMove(PositionX, PositionY);
 		}break;
 		case WM_MOUSEWHEEL: {
 			int DeltaZ = GET_WHEEL_DELTA_WPARAM(w_param);
 			if (DeltaZ != 0) {
 				DeltaZ = (DeltaZ < 0) ? -1 : 1;
-				Core::InputProcessMouseWheel(DeltaZ);
+				Controller::ProcessMouseWheel(DeltaZ);
 			}
 		}break;
 		case WM_LBUTTONDOWN:
@@ -366,27 +366,27 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, UINT32 msg, WPARAM w_param, LP
 		case WM_MBUTTONUP:
 		case WM_RBUTTONUP: {
 			bool pressed = msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN;
-			Buttons MouseButton = eButton_Max;
+			eButtons MouseButton = eButtons::Max;
 			switch (msg) {
 			case WM_LBUTTONDOWN:
 			case WM_LBUTTONUP:
-				MouseButton = eButton_Left;
+				MouseButton = eButtons::Left;
 				break;
 			case WM_MBUTTONDOWN:
 			case WM_MBUTTONUP:
-				MouseButton = eButton_Middle;
+				MouseButton = eButtons::Middle;
 				break;
 			case WM_RBUTTONDOWN:
-				MouseButton = eButton_Right;
+				MouseButton = eButtons::Right;
 				break;
 			case WM_RBUTTONUP:
-				MouseButton = eButton_Right;
+				MouseButton = eButtons::Right;
 				break;
 			}
 
 			// Pass over mouse button to input subsystem.
-			if (MouseButton != eButton_Max) {
-				Core::InputProcessButton(MouseButton, pressed);
+			if (MouseButton != eButtons::Max) {
+				Controller::ProcessButton(MouseButton, pressed);
 			}
 
 		}break;

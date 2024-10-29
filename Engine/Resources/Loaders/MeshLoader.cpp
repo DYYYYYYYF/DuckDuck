@@ -26,10 +26,11 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	const char* FormatStr = "%s/%s/%s%s";
 	FileHandle f;
 
-#define SUPPORTED_FILETYPE_COUNT 2
+#define SUPPORTED_FILETYPE_COUNT 3
 	SupportedMeshFileType SupportedFileTypes[SUPPORTED_FILETYPE_COUNT];
 	SupportedFileTypes[0] = SupportedMeshFileType{ ".dsm", MeshFileType::eMesh_File_Type_DSM, true };
 	SupportedFileTypes[1] = SupportedMeshFileType{ ".obj", MeshFileType::eMesh_File_Type_OBJ, false };
+	SupportedFileTypes[2] = SupportedMeshFileType{ ".gltf", MeshFileType::eMesh_File_Type_GLTF, false };
 
 	char FullFilePath[512];
 	MeshFileType Type = MeshFileType::eMesh_File_Type_Not_Found;
@@ -58,12 +59,20 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	ResourceDatas.reserve(25968);
 	bool Result = false;
 	switch (Type) {
+	case MeshFileType::eMesh_File_Type_GLTF:
+	{
+		// Generate the dsm filename.
+		char DsmFileName[512];
+		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsm");
+		Result = ImportGltfFile(FullFilePath, DsmFileName, ResourceDatas);
+	}break;
 	case MeshFileType::eMesh_File_Type_OBJ:
+	{
 		// Generate the dsm filename.
 		char DsmFileName[512];
 		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsm");
 		Result = ImportObjFile(&f, DsmFileName, ResourceDatas);
-		break;
+	}break;
 	case MeshFileType::eMesh_File_Type_DSM:
 		Result = LoadDsmFile(&f, ResourceDatas);
 		break;
@@ -316,12 +325,12 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			// Process each group as a subobject.
 			for (size_t i = 0; i < GroupCount; ++i) {
 				SGeometryConfig NewData;
-				strncpy(NewData.name, name, 255);
+				NewData.name = name;
 
 				if (i > 0) {
-					String::Append(NewData.name, GEOMETRY_NAME_MAX_LENGTH, NewData.name, (int)i);
+					NewData.name += (int)i;
 				}
-				strncpy(NewData.material_name, MaterialNames[i], 255);
+				NewData.material_name = MaterialNames[i];
 
 				ProcessSubobject(Positions, Normals, Texcoords, Groups[i].Faces, &NewData);
 				out_geometries.push_back(NewData);
@@ -354,12 +363,12 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	size_t GroupCount = Groups.size();
 	SGeometryConfig NewData;
 	for (size_t i = 0; i < GroupCount; ++i) {
-		strncpy(NewData.name, name, 255);
+		NewData.name = name;
 
 		if (i > 0) {
-			String::Append(NewData.name, GEOMETRY_NAME_MAX_LENGTH, NewData.name, (int)i);
+			NewData.name += (int)i;
 		}
-		strncpy(NewData.material_name, MaterialNames[i], 255);
+		NewData.material_name = MaterialNames[i];
 
 		ProcessSubobject(Positions, Normals, Texcoords, Groups[i].Faces, &NewData);
 		out_geometries.push_back(NewData);
@@ -392,7 +401,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	Vertex* UniqueVerts = nullptr;
 	for (size_t i = 0; i < Count; ++i) {
 		SGeometryConfig* g = &out_geometries[i];
-		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name);
+		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name.c_str());
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
 		// Destroy the old, large array.
@@ -446,7 +455,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 	}
 
 	for (size_t f = 0; f < FaceCount; ++f) {
-		// ���û�з�����Ϣ���ֶ����ɡ�
+		// 确保法线存在
 		Vec3 DefaultNormal = Vec3(0, 0, 1);
 		if (SkipNormal) {
 			MeshVertexIndexData IndexData1 = faces[f].vertices[0];
@@ -459,7 +468,6 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 
 			Vec3 Edge1 = Pos2 - Pos1;
 			Vec3 Edge2 = Pos3 - Pos2;
-			Vec3 Edge3 = Pos1 - Pos3;
 
 			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
 		}
@@ -693,7 +701,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				}
 
 				HitName = true;
-				strncpy(CurrentConfig.name, MaterialName, 256);
+				CurrentConfig.name = std::move(MaterialName);
 			}
 		}
 		}
@@ -727,7 +735,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	StringDirectoryFromPath(Directory, mtl_file_path);
 
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, Directory, config->name, ".dmt");
+	StringFormat(FullFilePath, 512, FormatStr, Directory, config->name.c_str(), ".dmt");
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Write, false, &f)) {
 		LOG_ERROR("Error opening material file for writing: '%s'.", FullFilePath);
 		return false;
@@ -738,7 +746,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, "#material file");
 	FileSystemWriteLine(&f, "");
 	FileSystemWriteLine(&f, "version=0.1");	// TODO: hardcoded version.
-	StringFormat(LineBuf, 512, "name=%s", config->name);
+	StringFormat(LineBuf, 512, "name=%s", config->name.c_str());
 	FileSystemWriteLine(&f, LineBuf);
 	StringFormat(LineBuf, 512, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
 	FileSystemWriteLine(&f, LineBuf);
@@ -756,7 +764,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 		StringFormat(LineBuf, 512, "normal_map_name=%s", config->normal_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
-	StringFormat(LineBuf, 512, "shader=%s", config->shader_name);
+	StringFormat(LineBuf, 512, "shader=%s", config->shader_name.c_str());
 	FileSystemWriteLine(&f, LineBuf);
 
 	FileSystemClose(&f);
@@ -799,12 +807,18 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		// Name
 		uint32_t GNameLength = 0;
 		FileSystemRead(dsm_file, sizeof(uint32_t), &GNameLength, &BytesRead);
-		FileSystemRead(dsm_file, sizeof(char) * GNameLength, g.name, &BytesRead);
+		char* gn = (char*)Memory::Allocate(sizeof(char) * GNameLength, MemoryType::eMemory_Type_String);
+		FileSystemRead(dsm_file, sizeof(char) * GNameLength, gn, &BytesRead);
+		g.name = std::string(gn);
+		Memory::Free(gn, sizeof(char) * GNameLength, MemoryType::eMemory_Type_String);
 
 		// Material name.
 		uint32_t MNameLength = 0;
 		FileSystemRead(dsm_file, sizeof(uint32_t), &MNameLength, &BytesRead);
-		FileSystemRead(dsm_file, sizeof(char) * MNameLength, g.material_name, &BytesRead);
+		char* mn = (char*)Memory::Allocate(sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
+		FileSystemRead(dsm_file, sizeof(char) * MNameLength, mn, &BytesRead);
+		g.material_name = std::string(mn);
+		Memory::Free(mn, sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
 
 		// Center
 		FileSystemRead(dsm_file, sizeof(Vec3), &g.center, &BytesRead);
@@ -861,14 +875,14 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geome
 		FileSystemWrite(&f, g->index_size * g->index_count, g->indices, &Written);
 
 		// Name
-		uint32_t GNameLength = (uint32_t)strlen(g->name) + 1;
+		uint32_t GNameLength = (uint32_t)g->name.length() + 1;
 		FileSystemWrite(&f, sizeof(uint32_t), &GNameLength, &Written);
-		FileSystemWrite(&f, sizeof(char) * GNameLength, g->name, &Written);
+		FileSystemWrite(&f, sizeof(char) * GNameLength, (void*)g->name.c_str(), &Written);
 
 		// Material Name
-		uint32_t MNameLength = (uint32_t)strlen(g->material_name) + 1;
+		uint32_t MNameLength = (uint32_t)g->material_name.length() + 1;
 		FileSystemWrite(&f, sizeof(uint32_t), &MNameLength, &Written);
-		FileSystemWrite(&f, sizeof(char) * MNameLength, g->material_name, &Written);
+		FileSystemWrite(&f, sizeof(char) * MNameLength, (void*)g->material_name.c_str(), &Written);
 
 		// Center
 		FileSystemWrite(&f, sizeof(Vec3), &g->center, &Written);
@@ -882,3 +896,220 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geome
 	return true;
 }
 
+// gltf define
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+// #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+#include <tiny_gltf.h>
+
+bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries){
+	tinygltf::Model model;
+	tinygltf::TinyGLTF loader;
+	std::string err;
+	std::string warn;
+
+	// 加载 GLTF 文件
+	bool success = loader.LoadASCIIFromFile(&model, &err, &warn, obj_file.c_str());
+	if (!success) {
+		std::cerr << "Failed to load GLTF model: " << err << std::endl;
+		return false;
+	}
+
+	// 遍历网格
+	// Positions
+	std::vector<Vec3> Positions;
+	Positions.reserve(65535);
+	// Normals
+	std::vector<Vec3> Normals;
+	Normals.reserve(65535);
+	// Texcoords
+	std::vector<Vec2> Texcoords;
+	Texcoords.reserve(65535);
+	// Tangents
+	std::vector<Vec3> Tangents;
+	Tangents.reserve(65535);
+	// Indices
+	std::vector<uint32_t> Indices;
+	// Groups
+	std::vector<MeshGroupData> Groups;
+	// Default name is filename.
+	std::string name = obj_file;
+	// Materials
+	std::vector<SMaterialConfig> MaterialNames;
+
+	for (const auto& mesh : model.meshes) {
+		MeshGroupData GroupData;
+		for (const auto& primitive : mesh.primitives) {
+			// 位置
+			if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
+				const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
+				const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
+				const float* positions = reinterpret_cast<const float*>(&model.buffers[positionView.buffer].data[positionView.byteOffset]);
+				for (size_t i = 0; i < positionAccessor.count; i++) {
+					Positions.push_back(Vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]));
+				}
+			}
+
+			 // 法线
+			if (primitive.attributes.find("NORMAL") != primitive.attributes.end()) {
+				int normalAccessorIndex = primitive.attributes.at("NORMAL");
+				const tinygltf::Accessor& normalAccessor = model.accessors[normalAccessorIndex];
+				const tinygltf::BufferView& normalView = model.bufferViews[normalAccessor.bufferView];
+				const float* normalData = reinterpret_cast<const float*>(&model.buffers[normalView.buffer].data[normalView.byteOffset]);
+
+				for (size_t i = 0; i < normalAccessor.count; i++) {
+					Normals.push_back(Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]));
+				}
+			}
+
+			// 纹理坐标
+			if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
+				int texCoordAccessorIndex = primitive.attributes.at("TEXCOORD_0");
+				const tinygltf::Accessor& texCoordAccessor = model.accessors[texCoordAccessorIndex];
+				const tinygltf::BufferView& texCoordView = model.bufferViews[texCoordAccessor.bufferView];
+				const float* texCoordData = reinterpret_cast<const float*>(&model.buffers[texCoordView.buffer].data[texCoordView.byteOffset]);
+
+				for (size_t i = 0; i < texCoordAccessor.count; i++) {
+					Texcoords.push_back(Vec2(texCoordData[i * 2], texCoordData[i * 2 + 1]));
+				}
+			}
+
+			// 切线
+			if (primitive.attributes.find("TANGENT") != primitive.attributes.end()) {
+				int tangentAccessorIndex = primitive.attributes.at("TANGENT");
+				const tinygltf::Accessor& tangentAccessor = model.accessors[tangentAccessorIndex];
+				const tinygltf::BufferView& tangentView = model.bufferViews[tangentAccessor.bufferView];
+				const float* tangentData = reinterpret_cast<const float*>(&model.buffers[tangentView.buffer].data[tangentView.byteOffset]);
+
+				for (size_t i = 0; i < tangentAccessor.count; i++) {
+					// TODO: 使用切线数据
+					Tangents.push_back(Vec3(tangentData[i * 2], tangentData[i * 2 + 1], tangentData[i * 2 + 2]));
+				}
+			}
+
+			// 顶点索引
+			const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+			const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
+			int byte_stride = indexAccessor.ByteStride(indexView);
+			
+			size_t indexCount = indexAccessor.count;
+			for (size_t i = 0; i < indexCount; i+=3) {
+				MeshFaceData MeshFace;
+
+				for (size_t f = 0; f < 3; f++) {
+					if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+						const uint32_t* indexData = reinterpret_cast<const uint32_t*>(&model.buffers[indexView.buffer].data[indexView.byteOffset]);
+						MeshFace.vertices[f].position_index = static_cast<uint32_t>(indexData[i] + 1);
+						MeshFace.vertices[f].texcoord_index = static_cast<uint32_t>(indexData[i] + 1);
+						MeshFace.vertices[f].normal_index = static_cast<uint32_t>(indexData[i] + 1);
+					}
+					else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+						const uint16_t* indexData = reinterpret_cast<const uint16_t*>(&model.buffers[indexView.buffer].data[indexView.byteOffset]);
+						MeshFace.vertices[f].position_index = static_cast<uint32_t>(indexData[i] + 1);
+						MeshFace.vertices[f].texcoord_index = static_cast<uint32_t>(indexData[i] + 1);
+						MeshFace.vertices[f].normal_index = static_cast<uint32_t>(indexData[i] + 1);
+					}
+				}
+				GroupData.Faces.push_back(MeshFace);
+			}
+		}
+
+		Groups.push_back(GroupData);
+	}
+
+	for (const auto& material : model.materials) {
+		SMaterialConfig CurrentConfig;
+		CurrentConfig.name = std::move(material.name);
+
+		// 
+		if (material.values.find("baseColorFactor") != material.values.end()) {
+			const auto& baseColorFactor = material.values.at("baseColorFactor").number_array;
+			CurrentConfig.diffuse_color = Vec4((float)baseColorFactor[0], (float)baseColorFactor[1], (float)baseColorFactor[2], (float)baseColorFactor[3]);
+		}
+
+		// 
+		if (material.values.find("metallicFactor") != material.values.end()) {
+			CurrentConfig.Metallic = (float)material.values.at("metallicFactor").Factor();
+		}
+		else {
+			CurrentConfig.Metallic = 0.0f;
+		}
+
+		if (material.values.find("roughnessFactor") != material.values.end()) {
+			CurrentConfig.Roughness = (float)material.values.at("roughnessFactor").Factor();
+		}
+		else {
+			CurrentConfig.Roughness = 1.0f;
+		}
+
+		// 
+		//if (material.values.find("baseColorTexture") != material.values.end()) {
+		//	const auto& textureInfo = material.values.at("baseColorTexture").TextureIndex();
+		//	const tinygltf::Texture& texture = model.textures[textureInfo.index];
+		//	mat.baseColorTexture = texture.source; // 
+		//	// 加载纹理图像数据
+		//}
+
+		MaterialNames.push_back(CurrentConfig);
+	}
+
+	SGeometryConfig NewData;
+	size_t GroupCount = Groups.size();
+	for (size_t i = 0; i < GroupCount; ++i) {
+		NewData.name = name;
+
+		if (i > 0) {
+			NewData.name += (int)i;
+		}
+		NewData.material_name = MaterialNames[i].name;
+
+		ProcessSubobject(Positions, Normals, Texcoords, Groups[i].Faces, &NewData);
+		out_geometries.push_back(NewData);
+
+		// Increment the number of objects.
+		Groups[i].Faces.clear();
+	}
+
+	Groups.clear();
+	Positions.clear();
+	Normals.clear();
+	Texcoords.clear();
+
+	//if (strlen(MaterialFileName) > 0) {
+	//	// Load up the material file.
+	//	char FullMtlPath[512];
+	//	Memory::Zero(FullMtlPath, sizeof(char) * 512);
+	//	StringDirectoryFromPath(FullMtlPath, out_dsm_filename);
+	//	String::Append(FullMtlPath, 512, FullMtlPath, MaterialFileName);
+
+	//	// Process material library file.
+	//	SMaterialConfig CurrentConfig;
+	//}
+
+	// De-duplicate geometry.
+	size_t Count = out_geometries.size();
+	uint32_t NewVertCount = 0;
+	Vertex* UniqueVerts = nullptr;
+	for (size_t i = 0; i < Count; ++i) {
+		SGeometryConfig* g = &out_geometries[i];
+		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name);
+		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
+
+		// Destroy the old, large array.
+		Memory::Free(g->vertices, g->vertex_count * g->vertex_size, MemoryType::eMemory_Type_Array);
+
+		// And replace with the de-duplicated one.
+		g->vertex_count = NewVertCount;
+		g->vertices = UniqueVerts;
+
+		// Take a copy of the indices as a normal.
+		uint32_t* Indices = (uint32_t*)Memory::Allocate(sizeof(uint32_t) * g->index_count, MemoryType::eMemory_Type_Array);
+		Memory::Copy(Indices, g->indices, sizeof(uint32_t) * g->index_count);
+		// Destroy.
+		Memory::Free(g->indices, sizeof(uint32_t) * g->index_count, MemoryType::eMemory_Type_Array);
+		g->indices = Indices;
+	}
+
+	// Output a .dsm file, which will be loaded in the future.
+	return WriteDsmFile(out_dsm_filename, name.c_str(), (uint32_t)Count, out_geometries);
+}

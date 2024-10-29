@@ -39,7 +39,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 	ResourceData->diffuse_color = Vec4(1.0f);	// White
 	ResourceData->diffuse_map_name[0] = '\0';
 	ResourceData->shininess = 32.0f;
-	strncpy(ResourceData->name, name, MATERIAL_NAME_MAX_LENGTH);
+	ResourceData->name = std::move(name);
 
 	char LineBuffer[512] = "";
 	char* p = &LineBuffer[0];
@@ -84,7 +84,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 
 		}
 		else if (strcmp(TrimmedVarName, "name") == 0) {
-			strncpy(ResourceData->name, TrimmedValue, MATERIAL_NAME_MAX_LENGTH);
+			ResourceData->name = std::move(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "diffuse_map_name") == 0) {
 			strncpy(ResourceData->diffuse_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
@@ -102,9 +102,7 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shader") == 0) {
-			// Take a copy of the material name.
-			size_t StrLen = strlen(TrimmedValue);
-			ResourceData->shader_name = StringCopy(TrimmedValue);
+			ResourceData->shader_name = std::string(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shininess") == 0){
 			if (!StringToFloat(TrimmedValue, &ResourceData->shininess)) {

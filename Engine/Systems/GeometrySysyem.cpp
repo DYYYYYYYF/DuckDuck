@@ -93,7 +93,6 @@ void GeometrySystem::Release(Geometry* geometry) {
 		SGeometryReference* Ref = &RegisteredGeometries[geometry->ID];
 
 		// Take a copy of id.
-		uint32_t id = geometry->ID;
 		if (Ref->geometry.ID == geometry->ID) {
 			if (Ref->reference_count > 0) {
 				Ref->reference_count--;
@@ -229,11 +228,11 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 	geometry->Center = config.center;
 	geometry->Extents.min = config.min_extents;
 	geometry->Extents.max = config.max_extents;
-	strncpy(geometry->name, config.name, GEOMETRY_NAME_MAX_LENGTH);
+	geometry->name = config.name;
 
 	// Acquire the material.
-	if (strlen(config.material_name) > 0) {
-		geometry->Material = MaterialSystem::Acquire(config.material_name);
+	if (config.material_name.length() > 0) {
+		geometry->Material = MaterialSystem::Acquire(config.material_name.c_str());
 	}
 
 	if (geometry->Material == nullptr) {
@@ -265,8 +264,8 @@ void GeometrySystem::DestroyGeometry(Geometry* geometry) {
 	geometry->name[0] = '0';
 
 	// Release the material.
-	if (geometry->Material && strlen(geometry->Material->Name) > 0) {
-		MaterialSystem::Release(geometry->Material->Name);
+	if (geometry->Material && geometry->Material->Name.length() > 0) {
+		MaterialSystem::Release(geometry->Material->Name.c_str());
 		geometry->Material = nullptr;
 	}
 }
@@ -366,17 +365,17 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 	}
 
 	if (name && strlen(name) > 0) {
-		strncpy(Config.name, name, GEOMETRY_NAME_MAX_LENGTH);
+		Config.name = name;
 	}
 	else {
-		strncpy(Config.name, DEFAULT_GEOMETRY_NAME, GEOMETRY_NAME_MAX_LENGTH);
+		Config.name = DEFAULT_GEOMETRY_NAME;
 	}
 
 	if (material_name && strlen(material_name) > 0) {
-		strncpy(Config.material_name, material_name, MATERIAL_NAME_MAX_LENGTH);
+		Config.material_name = material_name;
 	}
 	else {
-		strncpy(Config.material_name, DEFAULT_MATERIAL_NAME, MATERIAL_NAME_MAX_LENGTH);
+		Config.material_name = DEFAULT_MATERIAL_NAME;
 	}
 
 	return Config;
@@ -536,17 +535,17 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 		}
 
 		if (name && strlen(name) > 0) {
-			strncpy(Config.name, name, GEOMETRY_NAME_MAX_LENGTH);
+			Config.name = name;
 		}
 		else {
-			strncpy(Config.name, DEFAULT_GEOMETRY_NAME, GEOMETRY_NAME_MAX_LENGTH);
+			Config.name = DEFAULT_GEOMETRY_NAME;
 		}
 
 		if (material_name && strlen(material_name) > 0) {
-			strncpy(Config.material_name, material_name, MATERIAL_NAME_MAX_LENGTH);
+			Config.material_name = material_name;
 		}
 		else {
-			strncpy(Config.material_name, DEFAULT_MATERIAL_NAME, MATERIAL_NAME_MAX_LENGTH);
+			Config.material_name = DEFAULT_MATERIAL_NAME;
 		}
 
 		GeometryUtils::GenerateTangents(Config.vertex_count, (Vertex*)Config.vertices, Config.index_count, (uint32_t*)Config.indices);

@@ -50,7 +50,6 @@ struct RenderTargetAttachmentConfig {
 };
 
 struct RenderTargetConfig {
-	unsigned char attachmentCount;
 	std::vector<RenderTargetAttachmentConfig> attachments;
 };
 
@@ -66,7 +65,7 @@ struct RenderTargetAttachment {
 struct GeometryRenderData {
 	Matrix4 model;
 	class Geometry* geometry = nullptr;
-	uint32_t uniqueID;
+	uint32_t uniqueID = INVALID_ID;
 };
 
 struct SRenderViewPassConfig {
@@ -74,14 +73,13 @@ struct SRenderViewPassConfig {
 };
 
 struct SRenderPacket {
-	double delta_time;
-	unsigned short view_count;
+	double delta_time = 0.0;
+	unsigned short view_count = 0;
 	std::vector<struct RenderViewPacket> views;
 };
 
 struct RenderTarget {
-	bool sync_to_window_size;
-	unsigned char attachment_count;
+	bool sync_to_window_size = true;
 	std::vector<struct RenderTargetAttachment> attachments;
 	void* internal_framebuffer = nullptr;
 };

@@ -12,6 +12,6 @@ public:
 	IRenderer* Renderer = nullptr;
 	TextureMap CubeMap;
 	class Geometry* g = nullptr;
-	uint32_t InstanceID;
-	size_t RenderFrameNumber;
+	uint32_t InstanceID = INVALID_ID;
+	size_t RenderFrameNumber = 0;
 };

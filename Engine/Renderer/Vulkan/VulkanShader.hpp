@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include "Resources/ResourceTypes.hpp"
 #include "VulkanPipeline.hpp"
+#include "Resources/ResourceTypes.hpp"
 
 class VulkanRenderPass;
 
@@ -43,12 +43,12 @@ struct VulkanShaderConfig {
 
 struct VulkanDescriptorState {
 	// One per frame
-	uint32_t generations[3];
-	uint32_t ids[3];
+	uint32_t generations[3] = { INVALID_ID };
+	uint32_t ids[3] = {INVALID_ID};
 };
 
 struct VulkanShaderDescriptorSetState {
-	vk::DescriptorSet descriptorSets[3];
+	std::array<vk::DescriptorSet, 3> descriptorSets;
 	VulkanDescriptorState descriptor_states[VULKAN_SHADER_MAX_BINDINGS];
 };
 
@@ -65,7 +65,14 @@ struct VulkanShaderInstanceState {
 	std::vector<TextureMap*> instance_texture_maps;
 };
 
-class VulkanShader {
+class VulkanShader : public Shader {
+public:
+	VulkanShader() {}
+	virtual ~VulkanShader() {}
+
+public:
+	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) override;
+
 public:
 	void* MappedUniformBufferBlock = nullptr;
 	uint32_t ID;

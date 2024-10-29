@@ -8,7 +8,8 @@
 enum MeshFileType {
 	eMesh_File_Type_Not_Found,
 	eMesh_File_Type_DSM,
-	eMesh_File_Type_OBJ
+	eMesh_File_Type_OBJ,
+	eMesh_File_Type_GLTF
 };
 
 struct SupportedMeshFileType {
@@ -33,22 +34,20 @@ struct MeshGroupData {
 
 class DAPI Mesh {
 public:
-	Mesh() : geometries(nullptr), geometry_count(0) {}
+	Mesh() : geometries(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
 	bool LoadFromResource(const char* resource_name);
 	void Unload();
-	void ReloadMaterial(const char* mat_name = nullptr);
 
 private:
-	static void LoadJobSuccess(void* params);
-	static void LoadJobFail(void* params);
-	static bool LoadJobStart(void* params, void* result_data);
-
+	void LoadJobSuccess(void* params);
+	void LoadJobFail(void* params);
+	bool LoadJobStart(void* params, void* result_data);
 
 public:
 	uint32_t UniqueID;
 	unsigned char Generation;
 	unsigned short geometry_count;
-	Geometry** geometries = nullptr;
+	Geometry** geometries;
 	Transform Transform;
 };
 

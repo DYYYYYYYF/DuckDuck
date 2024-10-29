@@ -36,6 +36,9 @@ elseif(${LOG_LEVEL}  STREQUAL "FATAL")
     add_definitions(-DLEVEL_FATAL)
 endif()
 
+# Public header files
+ include_directories(${PROJECT_SOURCE_DIR}/3rd/gltf)
+
 if(${APPLE})
     message("-- Current environment: MacOS")
 

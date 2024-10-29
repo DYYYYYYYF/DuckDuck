@@ -6,17 +6,17 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
+#include "Renderer/Vulkan/VulkanShader.hpp"
 
 IRenderer* ShaderSystem::Renderer = nullptr;
-SShaderSystemConfig ShaderSystem::Config;
-HashTable ShaderSystem::Lookup;
-void* ShaderSystem::LookupMemory = nullptr;
+ShaderSystem::Config ShaderSystem::ShaderSystemConfig;
+std::unordered_map<std::string, uint32_t> ShaderSystem::HashMap;
 
 uint32_t ShaderSystem::CurrentShaderID;
-Shader* ShaderSystem::Shaders = nullptr;
+std::vector<Shader*> ShaderSystem::Shaders;
 bool ShaderSystem::Initilized = false;
 
-bool ShaderSystem::Initialize(IRenderer* renderer, SShaderSystemConfig config) {
+bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) {
 	if (renderer == nullptr) {
 		return false;
 	}
@@ -35,29 +35,9 @@ bool ShaderSystem::Initialize(IRenderer* renderer, SShaderSystemConfig config) {
 	
 	// Figure out how large of a hashtable is needed.
 	// Block of memory will contain state structure then the block for the hashtable.
-	LookupMemory = Memory::Allocate(sizeof(uint32_t) * config.max_shader_count, MemoryType::eMemory_Type_Hashtable);
-	Shaders = (Shader*)Memory::Allocate(sizeof(Shader) * config.max_shader_count, MemoryType::eMemory_Type_Array);
-	Config = config;
+	Shaders.resize(config.max_shader_count);
+	ShaderSystemConfig = config;
 	CurrentShaderID = INVALID_ID;
-
-	Lookup.Create(sizeof(uint32_t), config.max_shader_count, LookupMemory, false);
-
-	// Invalidate all shader ids.
-	for (uint32_t i = 0; i < config.max_shader_count; ++i) {
-		Shaders[i].ID = INVALID_ID;
-	}
-
-	// Fill the table with invalid ids.
-	uint32_t InvalidFillID = INVALID_ID;
-	if (!Lookup.Fill(&InvalidFillID)) {
-		LOG_ERROR("hashtable_fill failed.");
-		return false;
-	}
-
-	for (uint32_t i = 0; i < config.max_shader_count; ++i) {
-		Shaders[i].ID = INVALID_ID;
-		Shaders[i].RenderFrameNumber = INVALID_ID_U64;
-	}
 
 	Initilized = true;
 	return true;
@@ -65,31 +45,63 @@ bool ShaderSystem::Initialize(IRenderer* renderer, SShaderSystemConfig config) {
 
 void ShaderSystem::Shutdown() {
 	if (Initilized) {
-		for (uint32_t i = 0; i < Config.max_shader_count; ++i) {
-			Shader* s = &Shaders[i];
-			if (s->ID != INVALID_ID) {
-				DestroyShader(s);
+		for (uint32_t i = 0; i < ShaderSystemConfig.max_shader_count; ++i) {
+			Shader* s = Shaders[i];
+			if (s != nullptr) {
+				if (s->ID != INVALID_ID) {
+					DestroyShader(s);
+				}
+
+				DeleteObject(s);
 			}
 		}
 
-		Lookup.Destroy();
-		Memory::Free(Shaders, sizeof(Shader) * Config.max_shader_count, MemoryType::eMemory_Type_Array);
+		HashMap.clear();
+		std::vector<Shader*>().swap(Shaders);
 	}
+}
+
+bool ShaderSystem::Reload(Shader* shader) {
+	// Initialize the shader.
+	shader->State = ShaderState::eShader_State_Reloading;
+	if (!Renderer->InitializeRenderShader(shader)) {
+		LOG_ERROR("shader_system_create: initialization failed for shader '%s'.", shader->Name);
+		// NOTE: initialize automatically destroys the shader if it fails.
+		DestroyShader(shader);
+		return false;
+	}
+
+	shader->State = ShaderState::eShader_State_Initialized;
+	return true;
 }
 
 bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	uint32_t ID = GetShaderID(config->name);
 	if (ID == INVALID_ID) {
 		ID = NewShaderID();
+		HashMap[config->name] = ID;
 	}
 	else {
 		LOG_WARN("Shader named '%s' already create. It will be covered.", config->name);
 	}
 
-	Shader* OutShader = &Shaders[ID];
-	Memory::Zero(OutShader, sizeof(Shader));
-	OutShader = new (OutShader)Shader();
-
+	RendererBackendType BackendAPI = Renderer->GetBackendType();
+	switch (BackendAPI)
+	{
+	case eRenderer_Backend_Type_Vulkan:
+		Shaders[ID] = NewObject<VulkanShader>();
+		break;
+		// TODO
+	case eRenderer_Backend_Type_OpenGL:
+		break;
+	case eRenderer_Backend_Type_DirecX:
+		break;
+	default:
+		Shaders[ID] = NewObject<VulkanShader>();
+		break;
+	}
+	
+	Shader* OutShader = Shaders[ID];
 	OutShader->ID = ID;
 	if (OutShader->ID == INVALID_ID) {
 		LOG_ERROR("Unable to find free slot to create new shader. Aborting.");
@@ -97,22 +109,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	}
 	
 	OutShader->Name = StringCopy(config->name);
-	OutShader->State = eShader_State_Not_Created;
-	OutShader->PushConstantsRangeCount = 0;
-	OutShader->BoundInstanceId = INVALID_ID;
-	OutShader->AttributeStride = 0;
 	Memory::Zero(OutShader->PushConstantsRanges, sizeof(Range) * 32);
-
-	// Create a hashtable to store uniform array indexes. This provides a direct index into the
-	// 'uniforms' array stored in the shader for quick lookups by name.
-	size_t ElementSize = sizeof(unsigned short);
-	size_t ElementCount = 1024;
-	OutShader->HashtableBlock = Memory::Allocate(ElementCount * ElementSize, MemoryType::eMemory_Type_Hashtable);
-	OutShader->UniformLookup.Create(ElementSize, (uint32_t)ElementCount, OutShader->HashtableBlock, false);
-
-	// Invalidate all spots in the hashtable.
-	uint32_t Invalid = INVALID_ID;
-	OutShader->UniformLookup.Fill(&Invalid);
 
 	// A running total of the actual global uniform buffer object size.
 	OutShader->GlobalUboSize = 0;
@@ -136,21 +133,18 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	}
 
 
-	if (!Renderer->CreateRenderShader(OutShader, config, pass, config->stage_cout, config->stage_filenames, config->stages)) {
+	if (!Renderer->CreateRenderShader(OutShader, config, pass, config->stage_filenames, config->stages)) {
 		LOG_ERROR("Error creating shader.");
 		return false;
 	}
 
-	// Ready to be initialized.
-	OutShader->State = eShader_State_Uninitialized;
-
 	// Process attributes.
-	for (uint32_t i = 0; i < config->attribute_count; ++i) {
+	for (uint32_t i = 0; i < config->attributes.size(); ++i) {
 		AddAttribute(OutShader, config->attributes[i]);
 	}
 
 	// Process uniforms.
-	for (uint32_t i = 0; i < config->uniform_count; ++i) {
+	for (uint32_t i = 0; i < config->uniforms.size(); ++i) {
 		if (config->uniforms[i].type == eShader_Uniform_Type_Sampler) {
 			AddSampler(OutShader, config->uniforms[i]);
 		}
@@ -166,14 +160,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 		return false;
 	}
 
-	// At this point, creation is successful, so store the shader id in the hashtable
-	// so this can be looked up by name later.
-	if (!Lookup.Set(config->name, &OutShader->ID)) {
-		// Dangit, we got so far... welp, nuke the shader and boot.
-		Renderer->DestroyRenderShader(OutShader);
-		return false;
-	}
-
+	OutShader->State = ShaderState::eShader_State_Initialized;
 	return true;
 }
 
@@ -182,11 +169,11 @@ unsigned ShaderSystem::GetID(const char* shader_name) {
 }
 
 Shader* ShaderSystem::GetByID(uint32_t shader_id) {
-	if (shader_id >= Config.max_shader_count || Shaders[shader_id].ID == INVALID_ID) {
+	if (shader_id >= ShaderSystemConfig.max_shader_count || Shaders[shader_id]->ID == INVALID_ID) {
 		return nullptr;
 	}
 
-	return &Shaders[shader_id];
+	return Shaders[shader_id];
 }
 
 Shader* ShaderSystem::Get(const char* shader_name) {
@@ -202,7 +189,7 @@ void ShaderSystem::DestroyShader(Shader* s) {
 	Renderer->DestroyRenderShader(s);
 
 	// Set it to be unusable right away.
-	s->State = eShader_State_Not_Created;
+	s->State = ShaderState::eShader_State_Not_Created;
 
 	uint32_t SamplerCount = (uint32_t)s->GlobalTextureMaps.size();
 	for (uint32_t i = 0; i < SamplerCount; ++i) {
@@ -225,7 +212,7 @@ void ShaderSystem::Destroy(const char* shader_name) {
 		return;
 	}
 
-	Shader* s = &Shaders[ShaderID];
+	Shader* s = Shaders[ShaderID];
 	DestroyShader(s);
 }
 
@@ -261,12 +248,13 @@ unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform
 		return INVALID_ID_U16;
 	}
 
-	unsigned short Index = INVALID_ID_U16;
-	if (!shader->UniformLookup.Get(uniform_name, &Index)) {
+	auto it = shader->HashMap.find(uniform_name);
+	if (it == shader->HashMap.end()){
 		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
 		return INVALID_ID_U16;
 	}
 
+	unsigned short Index = it->second;
 	if ( Index == INVALID_ID_U16) {
 		LOG_ERROR("Shader '%s' does not have a registered uniform named '%s'", shader->Name, uniform_name);
 		return INVALID_ID_U16;
@@ -280,7 +268,7 @@ bool ShaderSystem::SetUniform(const char* uniform_name, const void* value) {
 		LOG_ERROR("shader_system_uniform_set called without a shader in use.");
 		return false;
 	}
-	Shader* s = &Shaders[CurrentShaderID];
+	Shader* s = Shaders[CurrentShaderID];
 	unsigned short Index = GetUniformIndex(s, uniform_name);
 	return SetUniformByIndex(Index, value);
 }
@@ -290,7 +278,7 @@ bool ShaderSystem::SetSampler(const char* sampler_name, const Texture* tex) {
 }
 
 bool ShaderSystem::SetUniformByIndex(unsigned short index, const void* value) {
-	Shader* Shader = &Shaders[CurrentShaderID];
+	Shader* Shader = Shaders[CurrentShaderID];
 	ShaderUniform* uniform = &Shader->Uniforms[index];
 	if (Shader->BoundScope != uniform->scope) {
 		if (uniform->scope == eShader_Scope_Global) {
@@ -312,21 +300,21 @@ bool ShaderSystem::SetSamplerByIndex(unsigned short index, const Texture* tex) {
 }
 
 bool ShaderSystem::ApplyGlobal() {
-	return Renderer->ApplyGlobalRenderShader(&Shaders[CurrentShaderID]);
+	return Renderer->ApplyGlobalRenderShader(Shaders[CurrentShaderID]);
 }
 
 bool ShaderSystem::ApplyInstance(bool need_update) {
-	return Renderer->ApplyInstanceRenderShader(&Shaders[CurrentShaderID], need_update);
+	return Renderer->ApplyInstanceRenderShader(Shaders[CurrentShaderID], need_update);
 }
 
 bool ShaderSystem::BindGlobal(uint32_t instance_id) {
-	Shader* s = &Shaders[CurrentShaderID];
+	Shader* s = Shaders[CurrentShaderID];
 	s->BoundInstanceId = instance_id;
 	return Renderer->BindGlobalsRenderShader(s);
 }
 
 bool ShaderSystem::BindInstance(uint32_t instance_id) {
-	Shader* s = &Shaders[CurrentShaderID];
+	Shader* s = Shaders[CurrentShaderID];
 	s->BoundInstanceId = instance_id;
 	return Renderer->BindInstanceRenderShader(s, instance_id);
 }
@@ -391,8 +379,8 @@ bool ShaderSystem::AddSampler(Shader* shader, ShaderUniformConfig& config) {
 	uint32_t Location = 0;
 	if (config.scope == eShader_Scope_Global) {
 		uint32_t GlobalTextureCount = (uint32_t)shader->GlobalTextureMaps.size();
-		if (GlobalTextureCount + 1 > Config.max_global_textures) {
-			LOG_ERROR("Shader global texture count %i exceeds max of %i", GlobalTextureCount, Config.max_global_textures);
+		if (GlobalTextureCount + 1 > ShaderSystemConfig.max_global_textures) {
+			LOG_ERROR("Shader global texture count %i exceeds max of %i", GlobalTextureCount, ShaderSystemConfig.max_global_textures);
 			return false;
 		}
 		Location = GlobalTextureCount;
@@ -419,8 +407,8 @@ bool ShaderSystem::AddSampler(Shader* shader, ShaderUniformConfig& config) {
 	}
 	else {
 		// Otherwise, it's instance-level, so keep count of how many need to be added during the resource acquisition.
-		if (shader->InstanceTextureCount + 1 > Config.max_instance_textures) {
-			LOG_ERROR("Shader instance texture count %i exceeds max of %i", shader->InstanceTextureCount, Config.max_instance_textures);
+		if (shader->InstanceTextureCount + 1 > ShaderSystemConfig.max_instance_textures) {
+			LOG_ERROR("Shader instance texture count %i exceeds max of %i", shader->InstanceTextureCount, ShaderSystemConfig.max_instance_textures);
 			return false;
 		}
 		Location = shader->InstanceTextureCount;
@@ -449,17 +437,17 @@ bool ShaderSystem::AddUniform(Shader* shader, ShaderUniformConfig& config) {
 
 uint32_t ShaderSystem::GetShaderID(const char* shader_name) {
 	uint32_t ShaderID = INVALID_ID;
-	if (!Lookup.Get(shader_name, &ShaderID)) {
-		LOG_ERROR("There is no shader registered named '%s'.", shader_name);
+	auto it = HashMap.find(shader_name);
+	if (it == HashMap.end()){
 		return INVALID_ID;
 	}
 
-	return ShaderID;
+	return it->second;
 }
 
 uint32_t ShaderSystem::NewShaderID() {
-	for (uint32_t i = 0; i < Config.max_shader_count; ++i) {
-		if (Shaders[i].ID == INVALID_ID) {
+	for (uint32_t i = 0; i < ShaderSystemConfig.max_shader_count; ++i) {
+		if (Shaders[i] == nullptr || Shaders[i]->ID == INVALID_ID) {
 			return i;
 		}
 	}
@@ -470,8 +458,8 @@ uint32_t ShaderSystem::NewShaderID() {
 bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t size,
 	ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler) {
 	unsigned short UniformCount = (unsigned short)shader->Uniforms.size();
-	if (UniformCount + 1 > Config.max_uniform_count) {
-		LOG_ERROR("A shader can only accept a combined maximum of %d uniforms and samplers at global, instance and local scopes.", Config.max_uniform_count);
+	if (UniformCount + 1 > ShaderSystemConfig.max_uniform_count) {
+		LOG_ERROR("A shader can only accept a combined maximum of %d uniforms and samplers at global, instance and local scopes.", ShaderSystemConfig.max_uniform_count);
 		return false; 
 	}
 	
@@ -508,11 +496,7 @@ bool ShaderSystem::AddUniform(Shader* shader, const char* uniform_name, uint32_t
 		shader->PushConstantsSize += r.size;
 	}
 
-	if (!shader->UniformLookup.Set(uniform_name, &Entry.index)) {
-		LOG_ERROR("Failed to add uniform.");
-		return false;
-	}
-
+	shader->HashMap[uniform_name] = Entry.index;
 	shader->Uniforms.push_back(Entry);
 
 	if (!is_sampler) {
@@ -533,16 +517,17 @@ bool ShaderSystem::IsUniformNameValid(Shader* shader, const char* uniform_name) 
 		return false;
 	}
 
-	unsigned short location;
-	if ( shader->UniformLookup.Get(uniform_name, &location) && location != INVALID_ID_U16) {
+	auto it = shader->HashMap.find(uniform_name);
+	if (it != shader->HashMap.end()){
 		LOG_ERROR("A uniform by the name '%s' already exists on shader '%s'.", uniform_name, shader->Name);
 		return false;
 	}
+
 	return true;
 }
 
 bool ShaderSystem::IsUniformAddStateValid(Shader* shader) {
-	if (shader->State != eShader_State_Uninitialized) {
+	if (shader->State != ShaderState::eShader_State_Uninitialized) {
 		LOG_ERROR("Uniforms may only be added to shaders before initialization.");
 		return false;
 	}

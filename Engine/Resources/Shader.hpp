@@ -1,22 +1,34 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
-#include "Containers/TArray.hpp"
-#include "Containers/THashTable.hpp"
+#define GlobalShaderType ShaderType::eGLSL
+
+#include "Resource.hpp"
 #include "Math/MathTypes.hpp"
+#include "Containers/THashTable.hpp"
+#include <unordered_map>
+
+// Shader compiler
+#include <shaderc/shaderc.hpp>
 
 struct TextureMap;
+
+enum class ShaderType {
+	eHLSL,
+	eGLSL
+};
 
 enum ShaderRenderMode {
 	eShader_Render_Mode_Default,
 	eShader_Render_Mode_Lighting,
-	eShader_Render_Mode_Normals
+	eShader_Render_Mode_Normals,
+	eShader_Render_Mode_Depth
 };
 
 enum ShaderState {
 	eShader_State_Not_Created,
 	eShader_State_Uninitialized,
 	eShader_State_Initialized,
+	eShader_State_Reloading
 };
 
 enum ShaderStage {
@@ -163,15 +175,9 @@ struct ShaderConfig {
 	FaceCullMode cull_mode;
 	PolygonMode polygon_mode;
 
-	unsigned short attribute_count;
 	std::vector<ShaderAttributeConfig> attributes;
-
-	unsigned short uniform_count;
 	std::vector<ShaderUniformConfig> uniforms;
-
-	unsigned short stage_cout;
 	std::vector<ShaderStage> stages;
-
 	std::vector<char*> stage_names;
 	std::vector<char*> stage_filenames;
 
@@ -179,11 +185,29 @@ struct ShaderConfig {
 	bool depthWrite;
 };
 
-class Shader {
+class Shader{
+public:
+	Shader() {
+		ID = INVALID_ID;
+		Name = nullptr;
+		RenderFrameNumber = INVALID_ID_U64;
+		PushConstantsRangeCount = 0;
+		BoundInstanceId = INVALID_ID;
+		AttributeStride = 0;
+		State = ShaderState::eShader_State_Uninitialized;
+		Type = GlobalShaderType;
+	}
+
+	virtual ~Shader() {}
+
+public:
+	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) = 0;
+
 public:
 	ShaderFlagBits Flags;
 	uint32_t ID;
-	char* Name = nullptr;
+	char* Name;
+	ShaderType Type;
 
 	size_t RenderFrameNumber;
 	size_t RequiredUboAlignment;
@@ -198,13 +222,11 @@ public:
 	ShaderScope BoundScope;
 	uint32_t BoundInstanceId;
 	uint32_t BoundUboOffset;
-	void* HashtableBlock = nullptr;
-	HashTable UniformLookup;
+	std::unordered_map<std::string, unsigned short> HashMap;
 	ShaderState State;
 	unsigned short PushConstantsRangeCount;
 	Range PushConstantsRanges[32];
 	unsigned short AttributeStride;
-	void* InternalData = nullptr;
 
 	std::vector<ShaderUniform> Uniforms;
 	std::vector<ShaderAttribute> Attributes;

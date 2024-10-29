@@ -2,25 +2,29 @@
 
 #include "Core/Application.hpp"
 
+struct SRenderPacket;
+
 static IRenderer* Renderer = nullptr;
 
-class GameFrameData {
+class IGame {
+private:
+	struct GameFrameData {
+	public:
+		std::vector<GeometryRenderData> WorldGeometries;
+	};
+
 public:
-	std::vector<GeometryRenderData> WorldGeometries;
-};
+    virtual ~IGame(){}
+	virtual bool Boot(IRenderer* renderer) = 0;
+	virtual void Shutdown() = 0;
 
-struct SGame {
-	SApplicationConfig app_config;
+	virtual bool Initialize() = 0;
+	virtual bool Update(float delta_time) = 0;
+	virtual bool Render(SRenderPacket* packet, float delta_time) = 0;
 
-	bool (*boot)(struct SGame* game_instance, IRenderer* renderer);
-	void (*shutdown)(struct SGame* game_instance);
+	virtual void OnResize(unsigned int width, unsigned int height) = 0;
 
-	bool (*initialize)(struct SGame* game_instance);
-	bool (*update)(struct SGame* game_instance, float delta_time);
-	bool (*render)(struct SGame* game_instance, struct SRenderPacket* packet, float delta_time);
-
-	void (*on_resize)(struct SGame* game_instance, unsigned int width, unsigned int height);
-
-	void* state = nullptr;
+public:
+	Application::SConfig AppConfig;
 	GameFrameData FrameData;
 };

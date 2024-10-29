@@ -9,7 +9,12 @@ struct BitmapFontLookup;
 struct SystemFontLookup;
 
 struct SystemFontConfig {
-	SystemFontConfig() {}
+	SystemFontConfig() {
+		name = nullptr;
+		resourceName = nullptr;
+		defaultSize = 0;;
+	}
+	
 	SystemFontConfig(const SystemFontConfig& s) {
 		name = s.name;
 		defaultSize = s.defaultSize;
@@ -22,7 +27,12 @@ struct SystemFontConfig {
 };
 
 struct BitmapFontConfig {
-	BitmapFontConfig() {}
+	BitmapFontConfig() {
+		name = nullptr;
+		resourceName = nullptr;
+		size = 0;
+	}
+	
 	BitmapFontConfig(const BitmapFontConfig& b) {
 		name = b.name;
 		size = b.size;
@@ -35,13 +45,13 @@ struct BitmapFontConfig {
 };
 
 struct FontSystemConfig {
-	unsigned char defaultSystemFontCount;
+	unsigned char defaultSystemFontCount = 0;
 	SystemFontConfig* systemFontConfigs = nullptr;
-	unsigned char defaultBitmapFontCount;
+	unsigned char defaultBitmapFontCount = 0;
 	BitmapFontConfig* bitmapFontConfigs = nullptr;
-	unsigned char maxSystemFontCount;
-	unsigned char maxBitmapFontCount;
-	bool autoRelease;
+	unsigned char maxSystemFontCount = 10;
+	unsigned char maxBitmapFontCount = 10;
+	bool autoRelease = false;
 };
 
 class FontSystem {
