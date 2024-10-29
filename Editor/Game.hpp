@@ -9,7 +9,7 @@ class Camera;
 
 class GameInstance : public IGame {
 public:
-	GameInstance() : WorldCamera(nullptr){}
+	GameInstance() : WorldCamera(nullptr), delta_time(0), Width(1920), Height(1080) {}
 	virtual ~GameInstance() {};
 
 public:

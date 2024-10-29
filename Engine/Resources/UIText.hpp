@@ -25,14 +25,14 @@ private:
 	void RegenerateGeometry();
 
 public:
-	uint32_t UniqueID;
+	uint32_t UniqueID = INVALID_ID;
 	IRenderer* Renderer = nullptr;
-	UITextType Type;
+	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
 	struct FontData* Data = nullptr;
 	IRenderbuffer* VertexBuffer = nullptr;
 	IRenderbuffer* IndexBuffer = nullptr;
 	char* Text = nullptr;
 	Transform Trans;
-	uint32_t InstanceID;
-	size_t RenderFrameNumber;
+	uint32_t InstanceID = INVALID_ID;
+	size_t RenderFrameNumber = 0;
 };

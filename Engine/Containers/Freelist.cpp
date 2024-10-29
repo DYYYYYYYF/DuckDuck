@@ -8,12 +8,6 @@ bool Freelist::Create(size_t total_size) {
 	// Enough space to hold state, plus array for all nodes.
 	MaxEntries = (total_size / sizeof(void*));	// NOTO: This might have a remainder, but ok.
 	TotalSize = total_size;
-	
-	if (MaxEntries == 0) {
-		LOG_WARN("Freelists are very inefficient with  amouts of memory less than %iB; it is recommended to not use freelist in this case.", 
-			total_size);
-		MaxEntries = 10;
-	}
 
 	size_t UesdSize = sizeof(FreelistNode) * MaxEntries;
 	ListMemory = Platform::PlatformAllocate(UesdSize, false);

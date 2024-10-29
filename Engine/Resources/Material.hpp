@@ -10,7 +10,7 @@ class Texture;
 
 struct SMaterialConfig {
 	std::string name;
-	const char* shader_name = nullptr;
+	std::string shader_name;
 	bool auto_release;
 	Vec4 diffuse_color;
 	float shininess;
@@ -25,7 +25,17 @@ struct SMaterialConfig {
 
 class Material {
 public:
-	Material() {}
+	Material() {
+		Id = INVALID_ID;
+		Generation = INVALID_ID;
+		InternalId = INVALID_ID;
+		DiffuseColor = Vec4(1.0f);
+		Shininess = 32.0f;
+		ShaderID = INVALID_ID;
+		RenderFrameNumer = 0;
+		Metallic = 1.0f;
+		Roughness = 32.0f;
+	}
 
 public:
 	uint32_t Id;

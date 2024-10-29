@@ -15,14 +15,24 @@ public:
 	size_t ElementSize;
 	unsigned int ElementCount;
 	bool IsPointerType;
-	void* Memory = nullptr;
+	void* Memory;
 
 #if defined(LEVEL_DEBUG)
 	size_t Count;
 #endif
 
 public:
-	HashTable() {}
+	HashTable() {
+		ElementSize = 0;
+		ElementCount = 0;
+		IsPointerType = false;
+		Memory = nullptr;
+
+#if defined(LEVEL_DEBUG)
+		Count = 0;;
+#endif
+
+	}
 
 	/*
 	* @breif Creates a hashtable and stores it.

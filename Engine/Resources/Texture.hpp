@@ -39,27 +39,27 @@ enum TextureType {
 
 struct TextureMap {
 	class Texture* texture = nullptr;
-	TextureUsage usage;
-	TextureFilter filter_minify;
-	TextureFilter filter_magnify;
-	TextureRepeat repeat_u;
-	TextureRepeat repeat_v;
-	TextureRepeat repeat_w;
+	TextureUsage usage = TextureUsage::eTexture_Usage_Unknown;
+	TextureFilter filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	TextureFilter filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	TextureRepeat repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
+	TextureRepeat repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
+	TextureRepeat repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
 	void* internal_data = nullptr;
 };
 
 class DAPI Texture {
 public:
-	uint32_t Id;
-	TextureType Type;
-	uint32_t Width;
-	uint32_t Height;
+	uint32_t Id = INVALID_ID;
+	TextureType Type = TextureType::eTexture_Type_2D;
+	uint32_t Width = 100;
+	uint32_t Height = 100;
 
-	int ChannelCount;
+	int ChannelCount = 4;
 	/** TextureFlag */
 	TextureFlag Flags = 0;
 
-	uint32_t Generation;
-	char Name[TEXTURE_NAME_MAX_LENGTH];
+	uint32_t Generation = INVALID_ID;
+	char Name[TEXTURE_NAME_MAX_LENGTH] = "";
 	void* InternalData = nullptr;
 };

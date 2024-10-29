@@ -24,7 +24,6 @@ bool Skybox::Create(const char* cubeName, IRenderer* renderer) {
 	SGeometryConfig SkyboxCubeConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, cubeName, nullptr);
 
 	// Clear out the material name.
-	SkyboxCubeConfig.material_name[0] = 0;
 	g = GeometrySystem::AcquireFromConfig(SkyboxCubeConfig, true);
 	RenderFrameNumber = INVALID_ID_U64;
 	Shader* SkyboxShader = ShaderSystem::Get("Shader.Builtin.Skybox");

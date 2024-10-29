@@ -34,7 +34,7 @@ struct MeshGroupData {
 
 class DAPI Mesh {
 public:
-	Mesh() : geometries(nullptr), geometry_count(0) {}
+	Mesh() : geometries(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
 	bool LoadFromResource(const char* resource_name);
 	void Unload();
 
@@ -47,7 +47,7 @@ public:
 	uint32_t UniqueID;
 	unsigned char Generation;
 	unsigned short geometry_count;
-	Geometry** geometries = nullptr;
+	Geometry** geometries;
 	Transform Transform;
 };
 

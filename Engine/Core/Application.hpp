@@ -14,10 +14,10 @@ class Controller;
 class Application {
 public:
 	struct SConfig {
-		short start_x;
-		short start_y;
-		short start_width;
-		short start_height;
+		short start_x = 0;
+		short start_y = 0;
+		short start_width = 1920;
+		short start_height = 1080;
 
 		const char* name = nullptr;
 
@@ -26,7 +26,8 @@ public:
 	};
 
 public:
-	DAPI Application() : GameInst(nullptr) {}
+	DAPI Application() : GameInst(nullptr), GameController(nullptr), is_running(false), is_suspended(false),
+		width(1920), height(1080), last_time(0.0), Initialized(false){}
 	DAPI Application(IGame* gameInstance) { GameInst = gameInstance; }
 	virtual ~Application() {};
 
@@ -41,9 +42,9 @@ public:
 
 public:
 	// Instance
-	IGame* GameInst = nullptr;
+	IGame* GameInst;
 	SPlatformState platform;
-	Controller* GameController = nullptr;
+	Controller* GameController;
 
 	// Run
 	bool is_running;
@@ -55,5 +56,5 @@ public:
 	Clock AppClock;
 	double last_time;
 
-	bool Initialized = false;
+	bool Initialized;
 };

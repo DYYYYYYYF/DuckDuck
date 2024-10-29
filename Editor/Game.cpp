@@ -728,7 +728,6 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	SkyboxTargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	SkyboxTargetAttachment.presentAfter = false;
 
-	SkyboxPasses[0].target.attachmentCount = 1;
 	SkyboxPasses[0].target.attachments.push_back(SkyboxTargetAttachment);
 	SkyboxPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
 
@@ -770,7 +769,6 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	WorldTargetDepthAttachments.presentAfter = false;
 	WorldPasses[0].target.attachments.push_back(WorldTargetDepthAttachments);
 
-	WorldPasses[0].target.attachmentCount = 2;
 	WorldPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
 
 	WorldViewConfig.passes = WorldPasses;
@@ -803,7 +801,6 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	UITargetAttachment.storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
 	UITargetAttachment.presentAfter = true;
 
-	UIPasses[0].target.attachmentCount = 1;
 	UIPasses[0].target.attachments.push_back(UITargetAttachment);
 	UIPasses[0].renderTargetCount = Renderer->GetWindowAttachmentCount();
 
@@ -846,7 +843,6 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	WorldPickTargetDepthAttachments.presentAfter = false;
 	PickPasses[0].target.attachments.push_back(WorldPickTargetDepthAttachments);
 
-	PickPasses[0].target.attachmentCount = 2;
 	PickPasses[0].renderTargetCount = 1;
 
 	// UI pick pass
@@ -865,7 +861,6 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	UIPickTargetColorAttachments.presentAfter = false;
 	PickPasses[1].target.attachments.push_back(UIPickTargetColorAttachments);
 
-	PickPasses[1].target.attachmentCount = 1;
 	PickPasses[1].renderTargetCount = 1;
 
 	PickViewConfig.passes = PickPasses;

@@ -190,7 +190,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 
 			bool IsNeedUpdate = Mat->RenderFrameNumer != frame_number;
 			if (!MaterialSystem::ApplyInstance(Mat, IsNeedUpdate)) {
-				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name);
+				LOG_WARN("Failed to apply material '%s'. Skipping draw.", Mat->Name.c_str());
 				continue;
 			}
 			else {

@@ -1867,6 +1867,7 @@ bool VulkanBackend::CreateRenderTarget(unsigned char attachment_count, std::vect
 		AttachmentViews[i] = ((VulkanImage*)attachments[i].texture->InternalData)->ImageView;
 	}
 
+	out_target->attachments.clear();
 	for (uint32_t i = 0; i < attachments.size(); ++i) {
 		out_target->attachments.push_back(attachments[i]);
 	}
@@ -1894,7 +1895,6 @@ void  VulkanBackend::DestroyRenderTarget(RenderTarget* target, bool free_interna
 		target->internal_framebuffer = nullptr;
 		if (free_internal_memory) {
 			target->attachments.clear();
-			target->attachment_count = 0;
 			Memory::Zero(target, sizeof(RenderTarget));
 		}
 	}
@@ -1938,11 +1938,10 @@ bool VulkanBackend::CreateRenderpass(IRenderpass* out_renderpass, const Renderpa
 	// Copy over config for each target.
 	for (uint32_t i = 0; i < out_renderpass->RenderTargetCount; ++i) {
 		RenderTarget* Target = &out_renderpass->Targets[i];
-		Target->attachment_count = config->target.attachmentCount;
-		Target->attachments.resize(Target->attachment_count);
+		Target->attachments.resize(config->target.attachments.size());
 
 		// Each attachment for the target.
-		for (uint32_t a = 0; a < Target->attachment_count; ++a) {
+		for (uint32_t a = 0; a < Target->attachments.size(); ++a) {
 			RenderTargetAttachment* Attachment = &Target->attachments[a];
 			const RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[a];
 

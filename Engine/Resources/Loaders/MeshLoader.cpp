@@ -401,7 +401,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	Vertex* UniqueVerts = nullptr;
 	for (size_t i = 0; i < Count; ++i) {
 		SGeometryConfig* g = &out_geometries[i];
-		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name);
+		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name.c_str());
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
 		// Destroy the old, large array.
@@ -701,7 +701,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				}
 
 				HitName = true;
-				CurrentConfig.name = MaterialName;
+				CurrentConfig.name = std::move(MaterialName);
 			}
 		}
 		}
@@ -735,7 +735,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	StringDirectoryFromPath(Directory, mtl_file_path);
 
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, Directory, config->name, ".dmt");
+	StringFormat(FullFilePath, 512, FormatStr, Directory, config->name.c_str(), ".dmt");
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Write, false, &f)) {
 		LOG_ERROR("Error opening material file for writing: '%s'.", FullFilePath);
 		return false;
@@ -746,7 +746,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, "#material file");
 	FileSystemWriteLine(&f, "");
 	FileSystemWriteLine(&f, "version=0.1");	// TODO: hardcoded version.
-	StringFormat(LineBuf, 512, "name=%s", config->name);
+	StringFormat(LineBuf, 512, "name=%s", config->name.c_str());
 	FileSystemWriteLine(&f, LineBuf);
 	StringFormat(LineBuf, 512, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
 	FileSystemWriteLine(&f, LineBuf);
@@ -764,7 +764,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 		StringFormat(LineBuf, 512, "normal_map_name=%s", config->normal_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
-	StringFormat(LineBuf, 512, "shader=%s", config->shader_name);
+	StringFormat(LineBuf, 512, "shader=%s", config->shader_name.c_str());
 	FileSystemWriteLine(&f, LineBuf);
 
 	FileSystemClose(&f);
@@ -815,7 +815,7 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		// Material name.
 		uint32_t MNameLength = 0;
 		FileSystemRead(dsm_file, sizeof(uint32_t), &MNameLength, &BytesRead);
-		char* mn = (char*)Memory::Allocate(sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);;
+		char* mn = (char*)Memory::Allocate(sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
 		FileSystemRead(dsm_file, sizeof(char) * MNameLength, mn, &BytesRead);
 		g.material_name = std::string(mn);
 		Memory::Free(mn, sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
@@ -875,12 +875,12 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, uint32_t geome
 		FileSystemWrite(&f, g->index_size * g->index_count, g->indices, &Written);
 
 		// Name
-		uint32_t GNameLength = (uint32_t)strlen(g->name.c_str()) + 1;
+		uint32_t GNameLength = (uint32_t)g->name.length() + 1;
 		FileSystemWrite(&f, sizeof(uint32_t), &GNameLength, &Written);
 		FileSystemWrite(&f, sizeof(char) * GNameLength, (void*)g->name.c_str(), &Written);
 
 		// Material Name
-		uint32_t MNameLength = (uint32_t)strlen(g->material_name.c_str()) + 1;
+		uint32_t MNameLength = (uint32_t)g->material_name.length() + 1;
 		FileSystemWrite(&f, sizeof(uint32_t), &MNameLength, &Written);
 		FileSystemWrite(&f, sizeof(char) * MNameLength, (void*)g->material_name.c_str(), &Written);
 
@@ -1019,7 +1019,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 
 	for (const auto& material : model.materials) {
 		SMaterialConfig CurrentConfig;
-		CurrentConfig.name = material.name;
+		CurrentConfig.name = std::move(material.name);
 
 		// 
 		if (material.values.find("baseColorFactor") != material.values.end()) {

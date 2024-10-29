@@ -31,8 +31,8 @@ public:
 	virtual bool IsHostCoherent() { return false; };
 
 public:
-	RenderbufferType Type;
-	size_t TotalSize;
+	RenderbufferType Type = RenderbufferType::eRenderbuffer_Type_Unknown;
+	size_t TotalSize = 0;;
 	Freelist BufferFreelist;
-	bool UseFreelist;
+	bool UseFreelist = false;
 };

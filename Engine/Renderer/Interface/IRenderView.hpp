@@ -30,12 +30,12 @@ enum RenderViewProjectionMatrixSource {
 struct RenderViewConfig {
 	const char* name = nullptr;
 	const char* custom_shader_name = nullptr;
-	unsigned short width;
-	unsigned short height;
-	RenderViewKnownType type;
-	RenderViewViewMatrixtSource view_matrix_source;
-	RenderViewProjectionMatrixSource projection_matrix_source;
-	unsigned char pass_count;
+	unsigned short width = 1920;
+	unsigned short height = 1080;
+	RenderViewKnownType type = RenderViewKnownType::eRender_View_Known_Type_World;
+	RenderViewViewMatrixtSource view_matrix_source = RenderViewViewMatrixtSource::eRender_View_View_Matrix_Source_Scene_Camera;
+	RenderViewProjectionMatrixSource projection_matrix_source = RenderViewProjectionMatrixSource::eRender_View_Projection_Matrix_Source_Default_Perspective;
+	unsigned char pass_count = 0;
 	std::vector<struct RenderpassConfig> passes;
 };
 

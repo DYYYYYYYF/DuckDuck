@@ -25,7 +25,7 @@ bool VulkanRenderPass::Create(VulkanContext* context, const RenderpassConfig* co
 	// Can always just look at the first target since they are all the same(one per frame).
 	// render target* taget = &Targets[0]
 	vk::AttachmentDescription AttachmentDesc;
-	for (uint32_t i = 0; i < config->target.attachmentCount; ++i) {
+	for (uint32_t i = 0; i < config->target.attachments.size(); ++i) {
 		const RenderTargetAttachmentConfig* AttachmentConfig = &config->target.attachments[i];
 		if (AttachmentConfig->type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color) {
 			// Color attachment
@@ -300,7 +300,8 @@ void VulkanRenderPass::Begin(RenderTarget* target) {
 		BeginInfo.clearValueCount++;
 	}
 	else {
-		for (uint32_t i = 0; i < target->attachment_count; ++i) {
+		uint32_t AttachCount = (uint32_t)target->attachments.size();
+		for (uint32_t i = 0; i < AttachCount; ++i) {
 			if (target->attachments[i].type == RenderTargetAttachmentType::eRender_Target_Attachment_Type_Depth) {
 				// If there is a depth attachment, make sure to add the clear count, but dont bother copying the data.
 				BeginInfo.clearValueCount++;

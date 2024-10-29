@@ -26,13 +26,13 @@ public:
 	std::string GetName() { return name; }
 
 	// Vertices
-	uint32_t vertex_size;
-	uint32_t vertex_count;
+	uint32_t vertex_size = 0;
+	uint32_t vertex_count = 0;
 	void* vertices = nullptr;
 
 	// Indices
-	uint32_t index_size;
-	uint32_t index_count;
+	uint32_t index_size = 0;
+	uint32_t index_count = 0;
 	void* indices = nullptr;
 
 	Vec3 center;
