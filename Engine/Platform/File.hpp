@@ -14,7 +14,7 @@ enum class eFileMode {
 
 class File {
 public:
-	File(){}
+	File() : IsValid(false){}
 	File(const std::string& filename);
 	virtual ~File() {}
 

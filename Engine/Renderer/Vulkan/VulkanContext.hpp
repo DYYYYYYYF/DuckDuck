@@ -15,7 +15,22 @@ class Texture;
 
 class VulkanContext {
 public:
-	VulkanContext(): Allocator(nullptr), Shaders(nullptr), GraphicsCommandBuffers(nullptr){}
+	VulkanContext(){
+		Allocator = nullptr;
+		Shaders = nullptr;
+		GraphicsCommandBuffers = nullptr;
+		FrameDeltaTime = 0.0;
+		FrameBufferWidth = 1920;
+		FrameBufferHeight = 1080;
+		FramebufferSizeGenerate = 0;
+		FramebufferSizeGenerateLast = 0;
+		ImageIndex = 0;
+		CurrentFrame = 0;
+		RecreatingSwapchain = false;
+		InFlightFenceCount = 0;
+		MaxShaderCount = 512;
+		EnableMultithreading = true;
+	}
 
 public:
 	virtual uint32_t FindMemoryIndex(uint32_t type_filter, vk::MemoryPropertyFlags property_flags) {

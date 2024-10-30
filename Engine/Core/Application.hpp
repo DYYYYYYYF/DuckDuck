@@ -28,7 +28,10 @@ public:
 public:
 	DAPI Application() : GameInst(nullptr), GameController(nullptr), is_running(false), is_suspended(false),
 		width(1920), height(1080), last_time(0.0), Initialized(false){}
-	DAPI Application(IGame* gameInstance) { GameInst = gameInstance; }
+	DAPI Application(IGame* gameInstance) : GameController(nullptr), is_running(false), is_suspended(false),
+		width(1920), height(1080), last_time(0.0), Initialized(false) {
+		GameInst = gameInstance;
+	}
 	virtual ~Application() {};
 
 public:

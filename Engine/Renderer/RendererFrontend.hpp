@@ -219,7 +219,7 @@ public:
 
 protected:
 	RendererBackendType BackendType;
-	class IRendererBackend* Backend = nullptr;
+	class IRendererBackend* Backend;
 
 	unsigned char WindowRenderTargetCount;
 	uint32_t FramebufferWidth;

@@ -191,11 +191,24 @@ public:
 		ID = INVALID_ID;
 		Name = nullptr;
 		RenderFrameNumber = INVALID_ID_U64;
-		PushConstantsRangeCount = 0;
 		BoundInstanceId = INVALID_ID;
-		AttributeStride = 0;
 		State = ShaderState::eShader_State_Uninitialized;
 		Type = GlobalShaderType;
+		Flags = 0;
+		AttributeStride = 0;
+		PushConstantsRangeCount = 0;
+		RenderFrameNumber = 0;
+		RequiredUboAlignment = 0;
+		GlobalUboSize = 0;
+		GlobalUboOffset = 0;
+		GlobalUboStride = 0;
+		UboSize = 0;
+		UboStride = 0;
+		PushConstantsSize = 0;
+		PushConstantsStride = 0;
+		InstanceTextureCount = 0;
+		BoundScope = ShaderScope::eShader_Scope_Instance;
+		BoundUboOffset = 0;
 	}
 
 	virtual ~Shader() {}

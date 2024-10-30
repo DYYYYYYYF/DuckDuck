@@ -39,7 +39,7 @@ public:
 	UIText TestText;
 	UIText TestSysText;
 
-	uint32_t HoveredObjectID;
+	uint32_t HoveredObjectID = INVALID_ID;
 	CPythonModule TestPython;
 	// TODO: end temp
 

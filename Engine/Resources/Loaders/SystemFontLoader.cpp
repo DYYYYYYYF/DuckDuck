@@ -18,6 +18,9 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 		return false;
 	}
 
+	resource->Data = NewObject<SystemFontResourceData>();
+	SystemFontResourceData* ResourceData = (SystemFontResourceData*)resource->Data;
+
 	const char* FormatStr = "%s/%s/%s%s";
 	FileHandle f;
 
@@ -49,7 +52,6 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 	resource->FullPath = StringCopy(FullFilePath);
 	resource->Name = StringCopy(name);
 
-	SystemFontResourceData ResourceData;
 	bool Result = false;
 	switch (Type)
 	{
@@ -58,13 +60,13 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 		Result = false;
 		break;
 	case eSystem_Font_File_Type_DSF:
-		Result = ReadDSFFile(&f, &ResourceData);
+		Result = ReadDSFFile(&f, ResourceData);
 		break;
 	case eSystem_Font_File_Type_Font_Config:
 		// Generate the dsf file.
 		char DSFFilename[512];
 		StringFormat(DSFFilename, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsf");
-		Result = ImportFontconfigFile(&f, TypePath, DSFFilename, &ResourceData);
+		Result = ImportFontconfigFile(&f, TypePath, DSFFilename, ResourceData);
 		break;
 	}
 
@@ -77,8 +79,6 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 		return false;
 	}
 
-	resource->Data = Memory::Allocate(sizeof(SystemFontResourceData), MemoryType::eMemory_Type_System_Font);
-	Memory::Copy(resource->Data, &ResourceData, sizeof(SystemFontResourceData));
 	resource->DataSize = sizeof(SystemFontResourceData);
 
 	return true;
@@ -101,8 +101,8 @@ void SystemFontLoader::Unload(Resource* resource) {
 
 	if (resource->Data) {
 		SystemFontResourceData* Data = (SystemFontResourceData*)resource->Data;
-		if (Data->fonts.Size() > 0) {
-			Data->fonts.Clear();
+		if (Data->fonts.size() > 0) {
+			Data->fonts.clear();
 		}
 
 		if (Data->fontBinary) {
@@ -202,8 +202,8 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 		else if (StringEquali(TrimmedVarName, "face")) {
 			// Read in the font face and store it for later.
 			SystemFontFace NewFace;
-			strncpy(NewFace.name, TrimmedValue, 255);
-			outResource->fonts.Push(NewFace);
+			NewFace.name = std::move(TrimmedValue);
+			outResource->fonts.push_back(NewFace);
 		}
 
 		// Clear the line buffer.
@@ -214,7 +214,7 @@ bool SystemFontLoader::ImportFontconfigFile(FileHandle* f, const char* typePath,
 	FileSystemClose(f);
 
 	// Check here to make sure a binary was loaded, and at least one font face was found.
-	if (!outResource->fontBinary || outResource->fonts.Size() < 1) {
+	if (!outResource->fontBinary || outResource->fonts.size() < 1) {
 		LOG_ERROR("Font configuration did not provide a binary and at least one font face. Load process failed.");
 		return false;
 	}
@@ -248,17 +248,20 @@ bool SystemFontLoader::ReadDSFFile(FileHandle* file, SystemFontResourceData* dat
 	CLOSE_IF_FAILED(FileSystemRead(file, data->binarySize, &data->fontBinary, &BytesRead), file);
 
 	// The number of fonts
-	uint32_t FontCount = (uint32_t)data->fonts.Size();
+	uint32_t FontCount = (uint32_t)data->fonts.size();
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FontCount, &BytesRead), file);
 
 	// Iterate faces metedata and output as well.
 	for (uint32_t i = 0; i < FontCount; ++i) {
 		// Length of face name string.
-		uint32_t FaceLength = (uint32_t)strlen(data->fonts[i].name);
+		uint32_t FaceLength = (uint32_t)data->fonts[i].name.length();
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FaceLength, &BytesRead), file);
 
 		// Face string.
-		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * FaceLength + 1, data->fonts[i].name, &BytesRead), file);
+		char* f = (char*)Memory::Allocate(sizeof(char) * FaceLength, MemoryType::eMemory_Type_String);
+		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char) * FaceLength, f, &BytesRead), file);
+		data->fonts[i].name = std::move(f);
+		Memory::Free(f, sizeof(char) * FaceLength, MemoryType::eMemory_Type_String);
 	}
 
 	return true;

@@ -10,16 +10,16 @@ class IREnderer;
 struct RenderviewPickShaderInfo {
 	Shader* UsedShader = nullptr;
 	VulkanRenderPass* Pass = nullptr;
-	float NearClip;
-	float FarClip;
-	float Fov;
+	float NearClip = 0.1f;
+	float FarClip = 10000.0f;
+	float Fov = Deg2Rad(60.0f);
 	Matrix4 ProjectionMatrix;
 	Matrix4 ViewMatrix;
 
-	unsigned short IDColorLocation;
-	unsigned short ViewLocation;
-	unsigned short ModelLocation;
-	unsigned short ProjectionLocation;
+	unsigned short IDColorLocation = 0;
+	unsigned short ViewLocation = 0;
+	unsigned short ModelLocation = 0;
+	unsigned short ProjectionLocation = 0;
 };
 
 class RenderViewPick : public IRenderView {
@@ -52,9 +52,9 @@ private:
 	Texture ColorTargetAttachment;
 	Texture DepthTargetAttachment;
 
-	int InstanceCount;
+	int InstanceCount = 0;
 	std::vector<bool> InstanceUpdated;
 
-	short MouseX, MouseY;
+	short MouseX = 0, MouseY = 0;
 
 };

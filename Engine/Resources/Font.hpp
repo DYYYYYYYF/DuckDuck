@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Resource.hpp"
-#include "Containers/TArray.hpp"
+#include <vector>
+#include <string>
 
 enum FontType {
 	eFont_Type_Bitmap,
@@ -27,40 +28,40 @@ struct FontKerning {
 };
 
 struct FontData {
-	FontType type;
-	char face[256];
-	unsigned int size;
-	int lineHeight;
-	int baseLine;
-	int atlasSizeX;
-	int atlasSizeY;
+	FontType type = FontType::eFont_Type_Bitmap;
+	std::string face;
+	unsigned int size = 0;
+	int lineHeight = -1;
+	int baseLine = -1;
+	int atlasSizeX = 1024;
+	int atlasSizeY = 1024;
 	struct TextureMap atlas;
-	unsigned int glyphCount;
+	unsigned int glyphCount = 0;
 	FontGlyph* glyphs = nullptr;
-	unsigned int kerningCount;
+	unsigned int kerningCount = 0;
 	FontKerning* kernings = nullptr;
-	float tabXAdvance;
-	unsigned int internalDataSize;
+	float tabXAdvance = 0.0f;
+	unsigned int internalDataSize = 0;
 	void* internalData = nullptr;
 };
 
 struct BitmapFontPage {
-	char id;
-	char file[256];
+	char id = INVALID_ID_U8;
+	std::string file;
 };
 
 struct BitmapFontResourceData {
 	FontData data;
-	unsigned int pageCount;
+	unsigned int pageCount = 0;
 	BitmapFontPage* Pages = nullptr;
 };
 
 struct SystemFontFace {
-	char name[256];
+	std::string name;
 };
 
 struct SystemFontResourceData {
-	TArray<SystemFontFace> fonts;
-	size_t binarySize;
+	std::vector<SystemFontFace> fonts;
+	size_t binarySize = 0;
 	void* fontBinary = nullptr;
 };

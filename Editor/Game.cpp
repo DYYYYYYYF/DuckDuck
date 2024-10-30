@@ -427,7 +427,7 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	if (Controller::IsKeyUp(eKeys::G) &&Controller::WasKeyDown(eKeys::G)) {
-		//TestPython.ExecuteFunc("CompileShaders", "glsl");
+		TestPython.ExecuteFunc("CompileShaders", "glsl");
 
 		// Reload
 		SEventContext Context = {};

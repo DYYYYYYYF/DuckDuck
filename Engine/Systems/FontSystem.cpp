@@ -2,7 +2,6 @@
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
-#include "Containers/TArray.hpp"
 #include "Containers/TString.hpp"
 #include "Containers/THashTable.hpp"
 #include "Resources/ResourceTypes.hpp"
@@ -24,7 +23,7 @@ struct BitmapFontInternalData {
 };
 
 struct SystemFontVariantData {
-	TArray<int> codepoints;
+	std::vector<int> codepoints;
 	float scale;
 };
 
@@ -37,7 +36,7 @@ struct BitmapFontLookup {
 struct SystemFontLookup {
 	unsigned short id;
 	unsigned short referenceCount;
-	TArray<FontData> sizeVariants;
+	std::vector<FontData> sizeVariants;
 	size_t binarySize;
 	char* face = nullptr;
 	void* fontBinary = nullptr;
@@ -132,7 +131,7 @@ void FontSystem::Shutdown() {
 		for (unsigned short i = 0; i < Config.maxSystemFontCount; ++i) {
 			if (SystemFonts[i].id != INVALID_ID_U16) {
 				// Clean up each variant.
-				uint32_t VariantCount = (uint32_t)SystemFonts[i].sizeVariants.Size();
+				uint32_t VariantCount = (uint32_t)SystemFonts[i].sizeVariants.size();
 				for (uint32_t j = 0; j < VariantCount; ++j) {
 					FontData* Data = &SystemFonts[i].sizeVariants[j];
 					CleanupFontData(Data);
@@ -140,7 +139,7 @@ void FontSystem::Shutdown() {
 				}
 
 				SystemFonts[i].id = INVALID_ID_U16;
-				SystemFonts[i].sizeVariants.Clear();
+				SystemFonts[i].sizeVariants.clear();
 			}
 		}
 	}
@@ -160,13 +159,13 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 	SystemFontResourceData* ResourceData = (SystemFontResourceData*)LoadedResource.Data;
 
 	// Loop through the faces and create one lookup for each, as well as a default size variant for each lookup.
-	uint32_t FontFaceCount = (uint32_t)ResourceData->fonts.Size();
+	uint32_t FontFaceCount = (uint32_t)ResourceData->fonts.size();
 	for (uint32_t i = 0; i < FontFaceCount; ++i) {
 		SystemFontFace* Face = &ResourceData->fonts[i];
 
 		// Make sure a font with this name doesn't already exist.
 		unsigned short ID = INVALID_ID_U16;
-		if (!SysFontLookup.Get(Face->name, &ID)) {
+		if (!SysFontLookup.Get(Face->name.c_str(), &ID)) {
 			LOG_ERROR("Hashtable lookup failed. font will not be loaded.");
 			return false;
 		}
@@ -193,9 +192,8 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		SystemFontLookup* Lookup = &SystemFonts[ID];
 		Lookup->binarySize = ResourceData->binarySize;
 		Lookup->fontBinary = ResourceData->fontBinary;
-		Lookup->face = StringCopy(Face->name);
+		Lookup->face = StringCopy(Face->name.c_str());
 		Lookup->index = i;
-		Lookup->sizeVariants = TArray<FontData>();
 
 		// The offset
 		Lookup->offset = stbtt_GetFontOffsetForIndex((unsigned char*)Lookup->fontBinary, i);
@@ -208,7 +206,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 
 		// Create a default size variant.
 		FontData Variant;
-		if (!CreateSystemFontVariant(Lookup, config->defaultSize, Face->name, &Variant)) {
+		if (!CreateSystemFontVariant(Lookup, config->defaultSize, Face->name.c_str(), &Variant)) {
 			LOG_ERROR("Failed to create variant: %s, index %i.", Face->name, i);
 			continue;
 		}
@@ -220,11 +218,11 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		}
 
 		// Add to lookup's size variant.
-		Lookup->sizeVariants.Push(Variant);
+		Lookup->sizeVariants.push_back(Variant);
 
 		// Set the entry id here last before updating the hashtable.
 		Lookup->id = ID;
-		if (!SysFontLookup.Set(Face->name, &ID)) {
+		if (!SysFontLookup.Set(Face->name.c_str(), &ID)) {
 			LOG_ERROR("Hashtable failed to set on font load.");
 			return false;
 		}
@@ -272,7 +270,7 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 
 	// Acquire the texture.
 	// TODO: only accounts for one page at the moment.
-	Lookup->font.resourceData->data.atlas.texture = TextureSystem::Acquire(Lookup->font.resourceData->Pages[0].file, true);
+	Lookup->font.resourceData->data.atlas.texture = TextureSystem::Acquire(Lookup->font.resourceData->Pages[0].file.c_str(), true);
 
 	bool Result = SetupFontData(&Lookup->font.resourceData->data);
 
@@ -324,7 +322,7 @@ bool FontSystem::Acquire(const char* fontName, unsigned short fontSize, class UI
 		SystemFontLookup* Lookup = &SystemFonts[ID];
 
 		// Search the size variants for the correct size.
-		uint32_t Count = (uint32_t)Lookup->sizeVariants.Size();
+		uint32_t Count = (uint32_t)Lookup->sizeVariants.size();
 		for (uint32_t i = 0; i < Count; ++i) {
 			if (Lookup->sizeVariants[i].size == fontSize) {
 				// Assign the data, increment the reference.
@@ -347,8 +345,8 @@ bool FontSystem::Acquire(const char* fontName, unsigned short fontSize, class UI
 		}
 
 		// Add to the lookup's size variant.
-		Lookup->sizeVariants.Push(Variant);
-		uint32_t Length = (uint32_t)Lookup->sizeVariants.Size();
+		Lookup->sizeVariants.push_back(Variant);
+		uint32_t Length = (uint32_t)Lookup->sizeVariants.size();
 		// Assign the data, increment the reference.
 		text->Data = &Lookup->sizeVariants[Length - 1];
 		Lookup->referenceCount++;
@@ -373,13 +371,13 @@ bool FontSystem::VerifyAtlas(struct FontData* font, const char* text) {
 	} 
 	else if (font->type == FontType::eFont_Type_System) {
 		unsigned short ID = INVALID_ID_U16;
-		if (!SysFontLookup.Get(font->face, &ID)) {
+		if (!SysFontLookup.Get(font->face.c_str(), &ID)) {
 			LOG_ERROR("System font lookup failed on acquire.");
 			return false;
 		}
 
 		if (ID == INVALID_ID_U16) {
-			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", font->face);
+			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", font->face.c_str());
 			return false;
 		}
 
@@ -445,22 +443,21 @@ void FontSystem::CleanupFontData(FontData* font) {
 }
 
 bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const char* fontName, FontData* outVariant) {
-	Memory::Zero(outVariant, sizeof(FontData));
 	outVariant->atlasSizeX = 1024;	// TODO: Configurable
 	outVariant->atlasSizeY = 1024;
 	outVariant->size = size;
 	outVariant->type = FontType::eFont_Type_System;
-	strncpy(outVariant->face, fontName, 255);
+	outVariant->face = std::move(fontName);
 	outVariant->internalDataSize = sizeof(SystemFontVariantData);
 	outVariant->internalData = Memory::Allocate(outVariant->internalDataSize, MemoryType::eMemory_Type_System_Font);
 
 	SystemFontVariantData* InternalData = (SystemFontVariantData*)outVariant->internalData;
 
 	// Push default codepoints (ascii 32-127) always, plus a -1 for unknown.
-	InternalData->codepoints = TArray<int>(96);
-	InternalData->codepoints.Push(-1);
+	InternalData->codepoints = std::vector<int>(96);
+	InternalData->codepoints.push_back(-1);
 	for (int i = 0; i < 95; ++i) {
-		InternalData->codepoints.Push(i + 32);
+		InternalData->codepoints.push_back(i + 32);
 	}
 
 	// Create textures.
@@ -482,7 +479,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 
 	uint32_t PackImageSize = variant->atlasSizeX * variant->atlasSizeY * sizeof(unsigned char);
 	unsigned char* Pixels = (unsigned char* )Memory::Allocate(PackImageSize, MemoryType::eMemory_Type_Array);
-	uint32_t CodepointCount = (uint32_t)InternalData->codepoints.Size();
+	uint32_t CodepointCount = (uint32_t)InternalData->codepoints.size();
 	stbtt_packedchar* PackedChars = (stbtt_packedchar*)Memory::Allocate(sizeof(stbtt_packedchar) * CodepointCount, MemoryType::eMemory_Type_Array);
 	
 	// Begin packing all known characters into the atlas. This creates a single-channel image
@@ -499,7 +496,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 	Range.font_size = (float)variant->size;
 	Range.num_chars = CodepointCount;
 	Range.chardata_for_range = PackedChars;
-	Range.array_of_unicode_codepoints = InternalData->codepoints.Data();
+	Range.array_of_unicode_codepoints = InternalData->codepoints.data();
 	if (!stbtt_PackFontRanges(&Context, (unsigned char*)lookip->fontBinary, lookip->index, &Range, 1)) {
 		LOG_ERROR("stbtt_PackFontRanges() Failed.");
 		return false;
@@ -593,7 +590,7 @@ bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData*
 				continue;
 			}
 
-			uint32_t CodepointCount = (uint32_t)InternalData->codepoints.Size();
+			uint32_t CodepointCount = (uint32_t)InternalData->codepoints.size();
 			bool Found = false;
 			for (uint32_t j = 95; j < CodepointCount; j++) {
 				if (InternalData->codepoints[j] == Codepoint) {
@@ -603,7 +600,7 @@ bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData*
 			}
 
 			if (!Found) {
-				InternalData->codepoints.Push(Codepoint);
+				InternalData->codepoints.push_back(Codepoint);
 				AddedCodepointCount++;
 			}
 		}

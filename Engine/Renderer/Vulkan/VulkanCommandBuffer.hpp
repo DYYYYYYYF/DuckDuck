@@ -36,6 +36,6 @@ public:
 
 public:
 	vk::CommandBuffer CommandBuffer;
-	VulkanCommandBufferState State;
+	VulkanCommandBufferState State = VulkanCommandBufferState::eCommand_Buffer_State_Not_Allocated;
 
 };

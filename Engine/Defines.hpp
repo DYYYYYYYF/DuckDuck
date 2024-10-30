@@ -82,8 +82,8 @@
 #define KIGABYTES(amount) (amount * 1000)
 
 struct Range {
-	size_t offset;
-	size_t size;
+	size_t offset = 0;
+	size_t size = 0;
 };
 
 

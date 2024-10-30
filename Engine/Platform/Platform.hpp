@@ -3,7 +3,7 @@
 #include "Defines.hpp"
 
 struct SPlatformState{
-	void* internalState;
+	void* internalState = nullptr;
 };
 
 class DAPI Platform {

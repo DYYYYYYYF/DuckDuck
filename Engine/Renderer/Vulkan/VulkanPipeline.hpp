@@ -11,21 +11,21 @@ struct Range;
 
 struct VulkanPipelineConfig {
 	VulkanRenderPass* renderpass = nullptr;
-	uint32_t stride;
-	uint32_t attribute_count;
+	uint32_t stride = 0;
+	uint32_t attribute_count = 0;
 	vk::VertexInputAttributeDescription* attributes = nullptr;
-	uint32_t descriptor_set_layout_count;
+	uint32_t descriptor_set_layout_count = 0;
 	vk::DescriptorSetLayout* descriptor_set_layout = nullptr;
-	uint32_t stage_count;
+	uint32_t stage_count = 0;
 	vk::PipelineShaderStageCreateInfo* stages = nullptr;
 	vk::Viewport viewport;
 	vk::Rect2D scissor;
-	FaceCullMode cull_mode;
-	bool is_wireframe;
-	bool depth_test_enabled;
-	uint32_t push_constant_range_count;
+	FaceCullMode cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
+	bool is_wireframe = false;
+	bool depth_test_enabled = true;
+	uint32_t push_constant_range_count = 0;
 	Range* push_constant_ranges = nullptr;
-	ShaderFlagBits shaderFlags;
+	ShaderFlagBits shaderFlags = 0;
 };
 
 class VulkanPipeline {

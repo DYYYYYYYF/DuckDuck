@@ -34,9 +34,9 @@ public:
 public:
 	vk::Buffer Buffer;
 	vk::BufferUsageFlags Usage;
-	bool IsLocked;
+	bool IsLocked = false;
 	vk::DeviceMemory Memory;
 	vk::MemoryRequirements MemoryRequirements;
-	int MemoryIndex;
+	int MemoryIndex = -1;
 	vk::MemoryPropertyFlags MemoryPropertyFlags;
 };

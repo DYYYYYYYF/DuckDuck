@@ -105,9 +105,9 @@ public:
 	void IncreaseFrameNum() { FrameNum++; }
 
 protected:
-	RendererBackendType BackendType;
+	RendererBackendType BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;
 	SPlatformState* PlatformState = nullptr;
-	size_t FrameNum;
+	size_t FrameNum = 0;
 
 };
 

@@ -11,13 +11,13 @@ struct GeometryData {
 	uint32_t id = INVALID_ID;
 	uint32_t generation = INVALID_ID;
 	// Vertices
-	uint32_t vertex_count;
-	uint32_t vertex_element_size;
-	size_t vertext_buffer_offset;
+	uint32_t vertex_count = 0;
+	uint32_t vertex_element_size = 0;
+	size_t vertext_buffer_offset = 0;
 	// Indices
-	uint32_t index_count;
-	uint32_t index_element_size;
-	size_t index_buffer_offset;
+	uint32_t index_count = 0;
+	uint32_t index_element_size = 0;
+	size_t index_buffer_offset = 0;
 };
 
 struct SGeometryConfig {
@@ -44,9 +44,9 @@ public:
 };
 
 struct SGeometryReference {
-	size_t reference_count;
+	size_t reference_count = 0;
+	bool auto_release = false;
 	Geometry geometry;
-	bool auto_release;
 };
 
 struct SGeometrySystemConfig {
@@ -54,7 +54,7 @@ struct SGeometrySystemConfig {
 	// NOTO: Should be significantly greater than the number of static meshes because
 	// the there can and will be more than one of ehese per mesh.
 	// Take other system into account as will.
-	uint32_t max_geometry_count;
+	uint32_t max_geometry_count = 65535;
 };
 
 class DAPI GeometrySystem {

@@ -27,7 +27,7 @@ DirectionalLight dir_light = DirectionalLight(
 );
 
 PointLight point_light_0 = PointLight(
-	vec3(-5.5f, 0.0f, -5.5f),
+	vec3(-8.0f, 10.0f, -8.0f),
 	vec4(0.0f, 1.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
 	0.35f,	// Linear
@@ -35,7 +35,7 @@ PointLight point_light_0 = PointLight(
 );
 
 PointLight point_light_1 = PointLight(
-	vec3(5.5f, 0.0f, -5.5f),
+	vec3(8.0f, 10.0f, -8.0f),
 	vec4(1.0f, 0.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
 	0.35f,	// Linear

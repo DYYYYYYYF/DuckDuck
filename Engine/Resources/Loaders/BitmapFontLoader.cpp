@@ -163,11 +163,13 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 			// Info line.
 
 			// NOTE: Only extract the face and size, ignore the rest.
+			char* TempFacePoint = (char*)Memory::Allocate(sizeof(char) * 512, MemoryType::eMemory_Type_String);
 			int ElementsRead = sscanf(
 				LineBuf, "info face=\"%[^\"]\" size=%u",
-				out_data->data.face,
+				TempFacePoint,
 				&out_data->data.size
 			);
+			out_data->data.face = std::string(TempFacePoint);
 			VERIFY_LINE("info", LineNum, 2, ElementsRead);
 			break;
 		}
@@ -239,13 +241,19 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 		case 'p': {
 			// Page line
 			BitmapFontPage* page = &out_data->Pages[PagesRead];
+			char* TempFilePoint = (char*)Memory::Allocate(sizeof(char) * 512, MemoryType::eMemory_Type_String);
 			int ElementsRead = sscanf(LineBuf,
 				"page id=%hhi file=\"%[^\"]\"",
 				&page->id,
-				page->file);
-			
+				TempFilePoint);
+			page->file = std::string(TempFilePoint);
+			Memory::Free(TempFilePoint, sizeof(char) * 512, MemoryType::eMemory_Type_String);
+
 			// Strip the extension.
-			StringFilenameNoExtensionFromPath(page->file, page->file);
+			char* f = (char*)Memory::Allocate(sizeof(char) * page->file.length() + 1, MemoryType::eMemory_Type_String);
+			StringFilenameNoExtensionFromPath(f, page->file.c_str());
+			page->file = std::string(f);
+			Memory::Free(f, sizeof(char)* page->file.length() + 1, MemoryType::eMemory_Type_String);
 
 			VERIFY_LINE("page", LineNum, 2, ElementsRead);
 		}break;	// case 'p'
@@ -311,9 +319,10 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 
 	// Face string.
 	ReadSize = sizeof(char) * FaceLength;
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.face, &BytesRead), file);
-	// Ensure zero-termination
-	data->data.face[FaceLength] = '\0';
+	char* f = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
+	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, f, &BytesRead), file);
+	data->data.face = std::string(f);
+	Memory::Free(f, sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
 
 	// Font size.
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data.size, &BytesRead), file);
@@ -342,14 +351,15 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(char), &data->Pages[i].id, &BytesRead), file);
 
 		// File name length
-		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file);
+		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file.c_str());
 		CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &FilenameLength, &BytesRead), file);
 
 		// The file name
 		ReadSize = sizeof(char) * FilenameLength;
-		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->Pages[i].file, &BytesRead), file);
-		// Ensure zero-termination.
-		data->Pages[i].file[FilenameLength] = '\0';
+		char* f = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
+		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, f, &BytesRead), file);
+		data->Pages[i].file = std::string(f);
+		Memory::Free(f, sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
 	}
 
 	// Glyph count
@@ -400,13 +410,13 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &Header, &BytesWritten), &file);
 
 	// Length of face string.
-	uint32_t FaceLength = (uint32_t)strlen(data->data.face);
+	uint32_t FaceLength = (uint32_t)data->data.face.length() + 1;
 	WriteSize = sizeof(uint32_t);
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FaceLength, &BytesWritten), &file);
 
 	// Face string
 	WriteSize = sizeof(char) * FaceLength;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->data.face, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data.face.c_str(), &BytesWritten), &file);
 
 	// Font size
 	WriteSize = sizeof(uint32_t);
@@ -439,13 +449,13 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->Pages[i].id, &BytesWritten), &file);
 
 		// File name length
-		uint32_t FilenameLength = (uint32_t)strlen(data->Pages[i].file);
+		uint32_t FilenameLength = (uint32_t)data->Pages[i].file.length() + 1;
 		WriteSize = sizeof(uint32_t);
 		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FilenameLength, &BytesWritten), &file);
 
 		// File name
 		WriteSize = sizeof(char) * FilenameLength;
-		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->Pages[i].file, &BytesWritten), &file);
+		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->Pages[i].file.c_str(), &BytesWritten), &file);
 	}
 
 	// Glyph count

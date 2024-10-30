@@ -57,12 +57,12 @@ public:
 	virtual std::vector<class VulkanRenderPass>& GetRenderpass() { return Passes; }
 
 public:
-	unsigned short ID;
+	unsigned short ID = INVALID_ID_U16;
 	const char* Name = nullptr;
-	unsigned short Width;
-	unsigned short Height;
-	RenderViewKnownType Type;
-	unsigned char RenderpassCount;
+	unsigned short Width = 1920;
+	unsigned short Height = 1080;
+	RenderViewKnownType Type = RenderViewKnownType::eRender_View_Known_Type_World;
+	unsigned char RenderpassCount = 0;
 	std::vector<class VulkanRenderPass> Passes;
 	const char* CustomShaderName = nullptr;
 	ShaderRenderMode render_mode = ShaderRenderMode::eShader_Render_Mode_Default;
@@ -75,7 +75,7 @@ struct RenderViewPacket {
 	Matrix4 projection_matrix;
 	Vec3 view_position;
 	Vec4 ambient_color;
-	uint32_t geometry_count;
+	uint32_t geometry_count = 0;
 	std::vector<struct GeometryRenderData> geometries;
 	const char* custom_shader_name = nullptr;
 	void* extended_data = nullptr;

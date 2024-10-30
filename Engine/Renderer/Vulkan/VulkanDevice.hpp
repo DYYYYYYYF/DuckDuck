@@ -6,28 +6,28 @@
 class VulkanContext;
 
 struct  SVulkanPhysicalDeviceRequirements {
-	bool graphics;
-	bool present;
-	bool compute;
-	bool transfer;
+	bool graphics = false;
+	bool present = false;
+	bool compute = false;
+	bool transfer = false;
+	bool sampler_anisotropy = false;
+	bool discrete_gpu = false;
 
 	std::vector<const char*> device_extensions_name;
-	bool sampler_anisotropy;
-	bool discrete_gpu;
 };
 
 struct SVulkanPhysicalDeviceQueueFamilyInfo {
-	uint32_t graphics_index;
-	uint32_t present_index;
-	uint32_t compute_index;
-	uint32_t transfer_index;
+	uint32_t graphics_index = INVALID_ID;
+	uint32_t present_index = INVALID_ID;
+	uint32_t compute_index = INVALID_ID;
+	uint32_t transfer_index = INVALID_ID;
 };
 
 struct SSwapchainSupportInfo {
 	vk::SurfaceCapabilitiesKHR capabilities;
-	unsigned int format_count;
+	unsigned int format_count = 0;
 	std::vector<vk::SurfaceFormatKHR> formats;
-	unsigned int present_mode_count;
+	unsigned int present_mode_count = 0;
 	std::vector<vk::PresentModeKHR> present_modes;
 };
 
@@ -78,7 +78,7 @@ private:
 
 
 private:
-	bool IsSupportDeviceLocalHostVisible;
+	bool IsSupportDeviceLocalHostVisible = false;
 	VulkanContext* Context = nullptr;
 
 	vk::PhysicalDevice PhysicalDevice;
@@ -94,5 +94,5 @@ private:
 	SSwapchainSupportInfo SwapchainSupport;
 
 	vk::Format DepthFormat;
-	unsigned char DepthChannelCount;
+	unsigned char DepthChannelCount = 0;
 };

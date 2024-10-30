@@ -42,11 +42,11 @@ enum RenderTargetAttachmentStoreOperation {
 };
 
 struct RenderTargetAttachmentConfig {
-	RenderTargetAttachmentType type;
-	RenderTargetAttachmentSource source;
-	RenderTargetAttachmentLoadOperation loadOperation;
-	RenderTargetAttachmentStoreOperation storeOperation;
-	bool presentAfter;
+	RenderTargetAttachmentType type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	RenderTargetAttachmentSource source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	RenderTargetAttachmentLoadOperation loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+	RenderTargetAttachmentStoreOperation storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	bool presentAfter = true;
 };
 
 struct RenderTargetConfig {
@@ -54,11 +54,11 @@ struct RenderTargetConfig {
 };
 
 struct RenderTargetAttachment {
-	RenderTargetAttachmentType type;
-	RenderTargetAttachmentSource source;
-	RenderTargetAttachmentLoadOperation loadOperation;
-	RenderTargetAttachmentStoreOperation storeOperation;
-	bool presentAfter;
+	RenderTargetAttachmentType type = RenderTargetAttachmentType::eRender_Target_Attachment_Type_Color;
+	RenderTargetAttachmentSource source = RenderTargetAttachmentSource::eRender_Target_Attachment_Source_Default;
+	RenderTargetAttachmentLoadOperation loadOperation = RenderTargetAttachmentLoadOperation::eRender_Target_Attachment_Load_Operation_Load;
+	RenderTargetAttachmentStoreOperation storeOperation = RenderTargetAttachmentStoreOperation::eRender_Target_Attachment_Store_Operation_Store;
+	bool presentAfter = true;
 	class Texture* texture = nullptr;
 };
 
@@ -85,23 +85,23 @@ struct RenderTarget {
 };
 
 struct MeshPacketData {
-	uint32_t mesh_count;
+	uint32_t mesh_count = 0;
 	Mesh** meshes = nullptr;
 };
 
 struct UIPacketData {
 	MeshPacketData meshData;
 	// TODO: temp
-	uint32_t textCount;
+	uint32_t textCount = 0;
 	class UIText** Textes = nullptr;
 };
 
 struct PickPacketData {
 	std::vector<GeometryRenderData> WorldMeshData;
 	MeshPacketData UIMeshData;
-	uint32_t UIGeometryCount;
+	uint32_t UIGeometryCount = 0;
 	// TODO: Temp.
-	uint32_t TextCount;
+	uint32_t TextCount = 0;
 	class UIText** Texts = nullptr;
 };
 

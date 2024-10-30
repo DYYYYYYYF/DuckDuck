@@ -552,10 +552,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 	}
 
 	SMaterialConfig CurrentConfig;
-	Memory::Zero(&CurrentConfig, sizeof(SMaterialConfig));
-
 	bool HitName = false;
-
 	char* Line = nullptr;
 	char LineBuf[512];
 	char* p = &LineBuf[0];
@@ -689,6 +686,7 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 				if (CurrentConfig.shininess == 0.0f) {
 					CurrentConfig.shininess = 8.0f;
 				}
+
 				if (HitName) {
 					// Write out a dmt file and move on.
 					if (!WriteDmtFile(mtl_file_path, &CurrentConfig)) {
@@ -700,8 +698,8 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 					Memory::Zero(&CurrentConfig, sizeof(SMaterialConfig));
 				}
 
+				CurrentConfig.name = std::string(MaterialName);
 				HitName = true;
-				CurrentConfig.name = std::move(MaterialName);
 			}
 		}
 		}

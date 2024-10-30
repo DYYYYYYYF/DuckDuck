@@ -18,27 +18,27 @@ class VulkanRenderPass;
 
 struct VulkanShaderStageConfig{
 	vk::ShaderStageFlagBits stage;
-	char filename[255];
+	char filename[255] = "";
 };
 
 struct VulkanDescriptorSetConfig {
 	unsigned short binding_count = 0;
 	vk::DescriptorSetLayoutBinding bindings[VULKAN_SHADER_MAX_BINDINGS];
-	unsigned char sampler_binding_index;
+	unsigned char sampler_binding_index = 0;
 };
 
 struct VulkanShaderConfig {
-	unsigned short stage_count;
+	unsigned short stage_count = 0;
 	VulkanShaderStageConfig stages[VULKAN_SHADER_MAX_STAGES];
 	vk::DescriptorPoolSize pool_sizes[2];
 
-	unsigned short max_descriptor_set_count;
-	unsigned short descriptor_set_count;
+	unsigned short max_descriptor_set_count = 0;
+	unsigned short descriptor_set_count = 0;
 	VulkanDescriptorSetConfig descriptor_sets[2];
 	vk::VertexInputAttributeDescription attributes[VULKAN_SHADER_MAX_ATTRIBUTES];
 
-	FaceCullMode cull_mode;
-	PolygonMode pology_mode;
+	FaceCullMode cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
+	PolygonMode pology_mode = PolygonMode::ePology_Mode_Fill;
 };
 
 struct VulkanDescriptorState {
@@ -59,25 +59,35 @@ struct VulkanShaderStage {
 };
 
 struct VulkanShaderInstanceState {
-	uint32_t id;
-	size_t offset;
+	uint32_t id = INVALID_ID;
+	size_t offset = 0;
 	VulkanShaderDescriptorSetState descriptor_set_state;
 	std::vector<TextureMap*> instance_texture_maps;
 };
 
 class VulkanShader : public Shader {
 public:
-	VulkanShader() {}
+	VulkanShader() {
+		ID = INVALID_ID;
+		MappedUniformBufferBlock = nullptr;
+		Renderpass = nullptr;
+		InstanceCount = 0;
+		GlobalUniformCount = 0;
+		GlobalUniformSamplerCount = 0;
+		InstanceUniformCount = 0;
+		InstanceUniformSamplerCount = 0;
+		LocalUniformCount = 0;
+	}
 	virtual ~VulkanShader() {}
 
 public:
 	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) override;
 
 public:
-	void* MappedUniformBufferBlock = nullptr;
+	void* MappedUniformBufferBlock;
 	uint32_t ID;
 	VulkanShaderConfig Config;
-	VulkanRenderPass* Renderpass = nullptr;
+	VulkanRenderPass* Renderpass;
 	VulkanShaderStage Stages[VULKAN_SHADER_MAX_STAGES];
 
 	vk::DescriptorPool DescriptorPool;

@@ -26,21 +26,21 @@ struct ResourceHeader {
 
 class Resource {
 public:
-	uint32_t LoaderID;
+	uint32_t LoaderID = INVALID_ID;
 	char* Name = nullptr;
 	char* FullPath = nullptr;
-	size_t DataSize;
-	size_t DataCount;
+	size_t DataSize = 0;
+	size_t DataCount = 0;
 	void* Data = nullptr;
 };
 
 struct ImageResourceData {
-	unsigned char channel_count;
-	uint32_t width;
-	uint32_t height;
+	unsigned char channel_count = 4;
+	uint32_t width = 1920;
+	uint32_t height = 1080;
 	unsigned char* pixels = nullptr;
 };
 
 struct ImageResourceParams {
-	bool flip_y;
+	bool flip_y = false;
 };

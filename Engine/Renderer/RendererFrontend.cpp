@@ -18,10 +18,23 @@
 #include "Core/Event.hpp"
 // TODO: temp
 
-IRenderer::IRenderer() : Backend(nullptr){}
+IRenderer::IRenderer() {
+	Backend = nullptr;
+	BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;
+	WindowRenderTargetCount = 0;
+	FramebufferWidth = 1920;
+	FramebufferHeight = 1080;
+	Resizing = false;
+	FrameSinceResize = 0;
+}
 
 IRenderer::IRenderer(RendererBackendType type, struct SPlatformState* plat_state) : Backend(nullptr){
-	IRenderer();
+	BackendType = RendererBackendType::eRenderer_Backend_Type_Vulkan;
+	WindowRenderTargetCount = 0;
+	FramebufferWidth = 1920;
+	FramebufferHeight = 1080;
+	Resizing = false;
+	FrameSinceResize = 0;
 
 	if (plat_state == nullptr) {
 		return ;

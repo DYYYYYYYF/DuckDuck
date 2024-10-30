@@ -25,15 +25,15 @@ enum RenderpassClearFlags {
 struct RenderpassConfig {
 	const char* name = nullptr;
 
-	float depth;
-	uint32_t stencil;
+	float depth = 1.0f;
+	uint32_t stencil = 1;
 
 	Vec4 render_area;
 	Vec4 clear_color;
 
-	unsigned char clear_flags;
+	unsigned char clear_flags = 0;
 
-	unsigned char renderTargetCount;
+	unsigned char renderTargetCount = 0;
 	struct RenderTargetConfig target;
 };
 
@@ -64,9 +64,9 @@ public:
 	void* Renderpass = nullptr;
 
 protected:
-	unsigned short ID;
+	unsigned short ID = INVALID_ID_U16;
 	Vec4 RenderArea;
 	Vec4 ClearColor;
-	unsigned char ClearFlags;
+	unsigned char ClearFlags = 0;
 
 };
