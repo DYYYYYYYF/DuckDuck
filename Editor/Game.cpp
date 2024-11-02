@@ -75,7 +75,7 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading dragon...");
 
-			if (!GameInst->DragonMesh->LoadFromResource("dragon")) {
+			if (!GameInst->DragonMesh->LoadFromResource("Cube")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
@@ -231,7 +231,7 @@ bool GameInstance::Initialize() {
 	SponzaMesh->UniqueID = Identifier::AcquireNewID(SponzaMesh);
 
 	BunnyMesh = &Meshes[5];
-	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(10.0f));
+	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
 	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
 
 	DragonMesh = &Meshes[6];

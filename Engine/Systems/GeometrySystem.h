@@ -22,8 +22,10 @@ struct GeometryData {
 
 struct SGeometryConfig {
 public:
-	std::string GetMaterialName() { return material_name; }
-	std::string GetName() { return name; }
+	void SetMaterialName(const std::string& mn) { material_name = mn; }
+	const std::string& GetMaterialName() const { return material_name; }
+	void SetName(const std::string& n) { name = n; }
+	const std::string& GetName() const { return name; }
 
 	// Vertices
 	uint32_t vertex_size = 0;

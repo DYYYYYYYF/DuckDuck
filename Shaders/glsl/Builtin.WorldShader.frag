@@ -6,6 +6,9 @@ layout (location = 0) out vec4 FragColor;
 layout (set = 1, binding = 0) uniform LocalUniformObject{
 	vec4 diffuse_color;
 	float shininess;
+	float metallic;
+	float roughness;
+	float ambient_occlusion;
 }ObjectUbo;
 
  struct DirectionalLight{
@@ -27,7 +30,7 @@ DirectionalLight dir_light = DirectionalLight(
 );
 
 PointLight point_light_0 = PointLight(
-	vec3(-8.0f, 10.0f, -8.0f),
+	vec3(-5.5f, 10.0f, -5.5f),
 	vec4(0.0f, 1.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
 	0.35f,	// Linear
@@ -35,7 +38,7 @@ PointLight point_light_0 = PointLight(
 );
 
 PointLight point_light_1 = PointLight(
-	vec3(8.0f, 10.0f, -8.0f),
+	vec3(5.5f, 10.0f, -5.5f),
 	vec4(1.0f, 0.0f, 0.0f, 1.0f),
 	1.0f,	// Constant
 	0.35f,	// Linear
@@ -86,7 +89,7 @@ void main(){
 		FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
 	}
 	else if (in_mode == 2){
-		FragColor = PBR(point_light_0, Normal, in_dto.vAmbientColor.xyz, in_dto.vViewPosition, in_dto.vFragPosition, 0.5f, 0.5f, 1.0f);
+		FragColor = PBR(point_light_0, Normal, in_dto.vAmbientColor.xyz, in_dto.vViewPosition, in_dto.vFragPosition, ObjectUbo.metallic, ObjectUbo.roughness, ObjectUbo.ambient_occlusion);
 	} 
 	else if (in_mode == 3){
 		FragColor = vec4(in_dto.vVertPosition.z, in_dto.vVertPosition.z, in_dto.vVertPosition.z, 1.0f);
@@ -188,6 +191,9 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 }
 
 vec4 PBR(PointLight light, vec3 norm, vec3 albedo, vec3 camPos, vec3 fragPos, float metallic, float roughness, float ao){
+	vec4 DiffSamp = texture(Samplers[SAMP_DIFFUSE], in_dto.vTexcoord);
+	albedo = DiffSamp.xyz;
+
 	// 视线方向和法线
     vec3 N = normalize(norm);
     vec3 V = normalize(camPos - fragPos);
@@ -215,7 +221,7 @@ vec4 PBR(PointLight light, vec3 norm, vec3 albedo, vec3 camPos, vec3 fragPos, fl
     kD *= 1.0 - metallic;
 
     float NdotL = max(dot(N, L), 0.0);
-    vec3 Lo = (kD * albedo / PI + specular) * vec3(1, 1, 1) * NdotL;
+    vec3 Lo = (kD * albedo / PI + specular) * ObjectUbo.diffuse_color.xyz * NdotL;
 
     // 环境光（近似处理）
     vec3 ambient = vec3(0.03) * albedo * ao;

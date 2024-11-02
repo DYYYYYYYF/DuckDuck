@@ -92,11 +92,10 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 		return false;
 	}
 
-	std::vector<SGeometryConfig> Temp = ResourceDatas;
-
 	resource->Data = Memory::Allocate(sizeof(SGeometryConfig) * ResourceDatas.size(), MemoryType::eMemory_Type_Array);
-	Memory::Zero(resource->Data, sizeof(SGeometryConfig) * ResourceDatas.size());
-	Memory::Copy(resource->Data, ResourceDatas.data(), sizeof(SGeometryConfig) * ResourceDatas.size());
+	for (size_t i = 0; i < ResourceDatas.size(); ++i) {
+		new (static_cast<SGeometryConfig*>(resource->Data) + i) SGeometryConfig(ResourceDatas[i]); // 使用 placement new
+	}
 	resource->DataSize = sizeof(SGeometryConfig);
 	resource->DataCount = ResourceDatas.size();
 	ResourceDatas.clear();
@@ -108,6 +107,7 @@ void MeshLoader::Unload(Resource* resource) {
 	for (uint32_t i = 0; i < resource->DataCount; ++i) {
 		SGeometryConfig* Config = &((SGeometryConfig*)resource->Data)[i];
 		GeometrySystem::ConfigDispose(Config);
+		//static_cast<SGeometryConfig*>(resource->Data)[i].~SGeometryConfig();
 	}
 
 	if (resource->Name) {
@@ -282,6 +282,17 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				}
 			}
 
+			// 0 - max_position_count
+			Face.vertices[0].position_index -= 1;
+			Face.vertices[0].texcoord_index -= 1;
+			Face.vertices[0].normal_index -= 1;
+			Face.vertices[1].position_index -= 1;
+			Face.vertices[1].texcoord_index -= 1;
+			Face.vertices[1].normal_index -= 1;
+			Face.vertices[2].position_index -= 1;
+			Face.vertices[2].texcoord_index -= 1;
+			Face.vertices[2].normal_index -= 1;
+
 			size_t GroupSize = Groups.size();
 			if (GroupSize == 0) {
 				Groups.resize(1);
@@ -454,7 +465,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 		SkipTexcoord = true;
 	}
 
-	for (size_t f = 0; f < FaceCount; ++f) {
+	for (size_t f = 0; f < FaceCount; f++) {
 		// 确保法线存在
 		Vec3 DefaultNormal = Vec3(0, 0, 1);
 		if (SkipNormal) {
@@ -462,9 +473,9 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 			MeshVertexIndexData IndexData2 = faces[f].vertices[1];
 			MeshVertexIndexData IndexData3 = faces[f].vertices[2];
 
-			Vec3 Pos1 = positions[IndexData1.position_index - 1];
-			Vec3 Pos2 = positions[IndexData2.position_index - 1];
-			Vec3 Pos3 = positions[IndexData3.position_index - 1];
+			Vec3 Pos1 = positions[IndexData1.position_index];
+			Vec3 Pos2 = positions[IndexData2.position_index];
+			Vec3 Pos3 = positions[IndexData3.position_index];
 
 			Vec3 Edge1 = Pos2 - Pos1;
 			Vec3 Edge2 = Pos3 - Pos2;
@@ -478,7 +489,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 			Indices.push_back((uint32_t)(i + (f * 3)));
 
 			Vertex Vert;
-			Vec3 Pos = positions[IndexData.position_index - 1];
+			Vec3 Pos = positions[IndexData.position_index];
 			Vert.position = Pos;
 
 			// Check extents - min
@@ -509,14 +520,14 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 				Vert.normal = DefaultNormal;
 			}
 			else {
-				Vert.normal = normals[IndexData.normal_index - 1];
+				Vert.normal = normals[IndexData.normal_index];
 			}
 
 			if (SkipTexcoord) {
 				Vert.texcoord = Vec2(0, 0);
 			}
 			else {
-				Vert.texcoord = texcoords[IndexData.texcoord_index - 1];
+				Vert.texcoord = texcoords[IndexData.texcoord_index];
 			}
 
 			// TODO: Color
@@ -745,11 +756,22 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 	FileSystemWriteLine(&f, "");
 	FileSystemWriteLine(&f, "version=0.1");	// TODO: hardcoded version.
 	StringFormat(LineBuf, 512, "name=%s", config->name.c_str());
+	// BlinnPhong
 	FileSystemWriteLine(&f, LineBuf);
 	StringFormat(LineBuf, 512, "diffuse_color=%.6f %.6f %.6f %.6f", config->diffuse_color.r, config->diffuse_color.g, config->diffuse_color.b, config->diffuse_color.a);
 	FileSystemWriteLine(&f, LineBuf);
 	StringFormat(LineBuf, 512, "shininess=%.6f", config->shininess);
+
+	// PBR
 	FileSystemWriteLine(&f, LineBuf);
+	StringFormat(LineBuf, 512, "metallic=%.6f", config->Metallic);
+	FileSystemWriteLine(&f, LineBuf);
+	StringFormat(LineBuf, 512, "roughness=%.6f", config->Roughness);
+	FileSystemWriteLine(&f, LineBuf);
+	StringFormat(LineBuf, 512, "ambient_occlusion=%.6f", config->AmbientOcclusion);
+	FileSystemWriteLine(&f, LineBuf);
+
+	// Textures
 	if (config->diffuse_map_name[0]) {
 		StringFormat(LineBuf, 512, "diffuse_map_name=%s", config->diffuse_map_name);
 		FileSystemWriteLine(&f, LineBuf);
@@ -762,6 +784,7 @@ bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config
 		StringFormat(LineBuf, 512, "normal_map_name=%s", config->normal_map_name);
 		FileSystemWriteLine(&f, LineBuf);
 	}
+
 	StringFormat(LineBuf, 512, "shader=%s", config->shader_name.c_str());
 	FileSystemWriteLine(&f, LineBuf);
 
@@ -907,7 +930,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	std::string warn;
 
 	// 加载 GLTF 文件
-	bool success = loader.LoadASCIIFromFile(&model, &err, &warn, obj_file.c_str());
+	bool success = loader.LoadASCIIFromFile(&model, &err, &warn, obj_file);
 	if (!success) {
 		std::cerr << "Failed to load GLTF model: " << err << std::endl;
 		return false;
@@ -933,19 +956,161 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	// Default name is filename.
 	std::string name = obj_file;
 	// Materials
-	std::vector<SMaterialConfig> MaterialNames;
+	std::vector<SMaterialConfig> MaterialConfigs;
 
+	for (const auto& material : model.materials) {
+		SMaterialConfig CurrentConfig;
+		CurrentConfig.name = material.name;
+
+		// 基础颜色
+		if (material.values.find("baseColorFactor") != material.values.end()) {
+			const auto& baseColorFactor = material.values.at("baseColorFactor").number_array;
+			CurrentConfig.diffuse_color = Vec4((float)baseColorFactor[0], (float)baseColorFactor[1], (float)baseColorFactor[2], (float)baseColorFactor[3]);
+		}
+
+		// 金属度
+		if (material.values.find("metallicFactor") != material.values.end()) {
+			CurrentConfig.Metallic = (float)material.values.at("metallicFactor").Factor();
+		}
+		else {
+			CurrentConfig.Metallic = 0.1f;
+		}
+
+		// 粗糙度
+		if (material.values.find("roughnessFactor") != material.values.end()) {
+			CurrentConfig.Roughness = (float)material.values.at("roughnessFactor").Factor();
+		}
+		else {
+			CurrentConfig.Roughness = 0.7f;
+		}
+
+		// 基本颜色纹理贴图
+		if (material.values.find("baseColorTexture") != material.values.end()) {
+			int textureIndex = material.values.at("baseColorTexture").TextureIndex();
+			const tinygltf::Texture& texture = model.textures[textureIndex];
+			if (texture.source != -1) {
+				Memory::Copy(CurrentConfig.diffuse_map_name, texture.name.data(), TEXTURE_NAME_MAX_LENGTH);
+			}
+		}
+
+		CurrentConfig.shader_name = "Shader.Builtin.World";
+
+		MaterialConfigs.push_back(CurrentConfig);
+		WriteDmtFile(out_dsm_filename, &CurrentConfig);
+	}
+	
+	int PrimCount = 0;
 	for (const auto& mesh : model.meshes) {
+
 		MeshGroupData GroupData;
 		for (const auto& primitive : mesh.primitives) {
+			switch (primitive.mode)
+			{
+			case TINYGLTF_MODE_TRIANGLE_STRIP:
+			{
+				return false;
+			}
+			case TINYGLTF_MODE_TRIANGLES:
+			{
+			
+			} break;
+			default:
+				return false;
+			}
+
+			// 顶点索引
+			const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+			const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
+			const tinygltf::Buffer& indexBuffer = model.buffers[indexBufferView.buffer];
+			if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+				if (indexBuffer.data.empty() ||
+					indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint8_t) > indexBuffer.data.size()) {
+					LOG_FATAL("Index buffer is invalid or out of bounds!");
+					return false;
+				}
+
+				const uint8_t* buf = reinterpret_cast<const uint8_t*>(&(indexBuffer.data[indexAccessor.byteOffset + indexBufferView.byteOffset]));
+				for (size_t index = 0; index < indexAccessor.count; index += 3)
+				{
+					MeshFaceData MeshFace;
+					for (size_t f = 0; f < 3; f++) {
+						uint32_t DataIndex = static_cast<uint32_t>(buf[index + f]);
+						MeshFace.vertices[f].position_index = DataIndex;
+						MeshFace.vertices[f].texcoord_index = DataIndex;
+						MeshFace.vertices[f].normal_index = DataIndex;
+					}
+
+					GroupData.Faces.push_back(MeshFace);
+				}
+			}
+			else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+				if (indexBuffer.data.empty() ||
+					indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint16_t) > indexBuffer.data.size()) {
+					LOG_FATAL("Index buffer is invalid or out of bounds!");
+					return false;
+				}
+
+				const uint16_t* buf = reinterpret_cast<const uint16_t*>(&(indexBuffer.data[indexAccessor.byteOffset + indexBufferView.byteOffset]));
+				for (size_t index = 0; index < indexAccessor.count / 3; index++)
+				{
+					MeshFaceData MeshFace;
+					for (size_t f = 0; f < 3; f++) {
+						uint32_t DataIndex = static_cast<uint32_t>(buf[index * 3 + f]);
+						MeshFace.vertices[f].position_index = DataIndex / 3;
+						MeshFace.vertices[f].texcoord_index = DataIndex / 3;
+						MeshFace.vertices[f].normal_index = DataIndex / 3;
+					}
+
+					GroupData.Faces.push_back(MeshFace);
+				}
+			}
+			else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+				if (indexBuffer.data.empty() ||
+					indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint32_t) > indexBuffer.data.size()) {
+					LOG_FATAL("Index buffer is invalid or out of bounds!");
+					return false;
+				}
+
+				const uint32_t* buf = reinterpret_cast<const uint32_t*>(&(indexBuffer.data[indexAccessor.byteOffset + indexBufferView.byteOffset]));
+				for (size_t index = 0; index < indexAccessor.count; index += 3)
+				{
+					MeshFaceData MeshFace;
+					for (size_t f = 0; f < 3; f++) {
+						uint32_t DataIndex = static_cast<uint32_t>(buf[index + f]);
+						MeshFace.vertices[f].position_index = DataIndex;
+						MeshFace.vertices[f].texcoord_index = DataIndex;
+						MeshFace.vertices[f].normal_index = DataIndex;
+					}
+
+					GroupData.Faces.push_back(MeshFace);
+				}
+			}
+
 			// 位置
 			if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
 				const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
 				const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
-				const float* positions = reinterpret_cast<const float*>(&model.buffers[positionView.buffer].data[positionView.byteOffset]);
-				for (size_t i = 0; i < positionAccessor.count; i++) {
-					Positions.push_back(Vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]));
+
+				switch (positionAccessor.componentType)
+				{
+				case TINYGLTF_COMPONENT_TYPE_FLOAT:
+				{
+					const float* positions = reinterpret_cast<const float*>(&model.buffers[positionView.buffer].data[positionView.byteOffset]);
+					for (size_t i = 0; i < positionAccessor.count / 3; i++) {
+						Positions.push_back(Vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]));
+					}
+				} break;
+				case TINYGLTF_COMPONENT_TYPE_DOUBLE: 
+				{
+					const double* positions = reinterpret_cast<const double*>(&model.buffers[positionView.buffer].data[positionView.byteOffset]);
+					for (size_t i = 0; i < positionAccessor.count / 3; i++) {
+						Positions.push_back(Vec3((float)positions[i * 3], (float)positions[i * 3 + 1], (float)positions[i * 3 + 2]));
+					}
+				} break;
+				default:
+					return false;
 				}
+
 			}
 
 			 // 法线
@@ -955,7 +1120,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				const tinygltf::BufferView& normalView = model.bufferViews[normalAccessor.bufferView];
 				const float* normalData = reinterpret_cast<const float*>(&model.buffers[normalView.buffer].data[normalView.byteOffset]);
 
-				for (size_t i = 0; i < normalAccessor.count; i++) {
+				for (size_t i = 0; i < normalAccessor.count / 3; i++) {
 					Normals.push_back(Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]));
 				}
 			}
@@ -967,7 +1132,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				const tinygltf::BufferView& texCoordView = model.bufferViews[texCoordAccessor.bufferView];
 				const float* texCoordData = reinterpret_cast<const float*>(&model.buffers[texCoordView.buffer].data[texCoordView.byteOffset]);
 
-				for (size_t i = 0; i < texCoordAccessor.count; i++) {
+				for (size_t i = 0; i < texCoordAccessor.count / 2; i++) {
 					Texcoords.push_back(Vec2(texCoordData[i * 2], texCoordData[i * 2 + 1]));
 				}
 			}
@@ -979,110 +1144,34 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				const tinygltf::BufferView& tangentView = model.bufferViews[tangentAccessor.bufferView];
 				const float* tangentData = reinterpret_cast<const float*>(&model.buffers[tangentView.buffer].data[tangentView.byteOffset]);
 
-				for (size_t i = 0; i < tangentAccessor.count; i++) {
+				for (size_t i = 0; i < tangentAccessor.count/ 3; i++) {
 					// TODO: 使用切线数据
 					Tangents.push_back(Vec3(tangentData[i * 2], tangentData[i * 2 + 1], tangentData[i * 2 + 2]));
 				}
 			}
 
-			// 顶点索引
-			const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
-			const tinygltf::BufferView& indexView = model.bufferViews[indexAccessor.bufferView];
-			int byte_stride = indexAccessor.ByteStride(indexView);
-			
-			size_t indexCount = indexAccessor.count;
-			for (size_t i = 0; i < indexCount; i+=3) {
-				MeshFaceData MeshFace;
-
-				for (size_t f = 0; f < 3; f++) {
-					if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
-						const uint32_t* indexData = reinterpret_cast<const uint32_t*>(&model.buffers[indexView.buffer].data[indexView.byteOffset]);
-						MeshFace.vertices[f].position_index = static_cast<uint32_t>(indexData[i] + 1);
-						MeshFace.vertices[f].texcoord_index = static_cast<uint32_t>(indexData[i] + 1);
-						MeshFace.vertices[f].normal_index = static_cast<uint32_t>(indexData[i] + 1);
-					}
-					else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-						const uint16_t* indexData = reinterpret_cast<const uint16_t*>(&model.buffers[indexView.buffer].data[indexView.byteOffset]);
-						MeshFace.vertices[f].position_index = static_cast<uint32_t>(indexData[i] + 1);
-						MeshFace.vertices[f].texcoord_index = static_cast<uint32_t>(indexData[i] + 1);
-						MeshFace.vertices[f].normal_index = static_cast<uint32_t>(indexData[i] + 1);
-					}
-				}
-				GroupData.Faces.push_back(MeshFace);
+			SGeometryConfig NewData;
+			NewData.material_name = MaterialConfigs[primitive.material].name;
+			NewData.name = mesh.name;
+			if (PrimCount > 0) {
+				NewData.name += std::to_string(PrimCount++);
 			}
+
+			ProcessSubobject(Positions, Normals, Texcoords, GroupData.Faces, &NewData);
+			out_geometries.push_back(NewData);
+
+			Positions.clear();
+			Normals.clear();
+			Texcoords.clear();
+			GroupData.Faces.clear();
 		}
 
 		Groups.push_back(GroupData);
 	}
 
-	for (const auto& material : model.materials) {
-		SMaterialConfig CurrentConfig;
-		CurrentConfig.name = std::move(material.name);
-
-		// 
-		if (material.values.find("baseColorFactor") != material.values.end()) {
-			const auto& baseColorFactor = material.values.at("baseColorFactor").number_array;
-			CurrentConfig.diffuse_color = Vec4((float)baseColorFactor[0], (float)baseColorFactor[1], (float)baseColorFactor[2], (float)baseColorFactor[3]);
-		}
-
-		// 
-		if (material.values.find("metallicFactor") != material.values.end()) {
-			CurrentConfig.Metallic = (float)material.values.at("metallicFactor").Factor();
-		}
-		else {
-			CurrentConfig.Metallic = 0.0f;
-		}
-
-		if (material.values.find("roughnessFactor") != material.values.end()) {
-			CurrentConfig.Roughness = (float)material.values.at("roughnessFactor").Factor();
-		}
-		else {
-			CurrentConfig.Roughness = 1.0f;
-		}
-
-		// 
-		//if (material.values.find("baseColorTexture") != material.values.end()) {
-		//	const auto& textureInfo = material.values.at("baseColorTexture").TextureIndex();
-		//	const tinygltf::Texture& texture = model.textures[textureInfo.index];
-		//	mat.baseColorTexture = texture.source; // 
-		//	// 加载纹理图像数据
-		//}
-
-		MaterialNames.push_back(CurrentConfig);
-	}
-
-	SGeometryConfig NewData;
-	size_t GroupCount = Groups.size();
-	for (size_t i = 0; i < GroupCount; ++i) {
-		NewData.name = name;
-
-		if (i > 0) {
-			NewData.name += (int)i;
-		}
-		NewData.material_name = MaterialNames[i].name;
-
-		ProcessSubobject(Positions, Normals, Texcoords, Groups[i].Faces, &NewData);
-		out_geometries.push_back(NewData);
-
-		// Increment the number of objects.
-		Groups[i].Faces.clear();
-	}
-
+	PrimCount = 0;
 	Groups.clear();
-	Positions.clear();
-	Normals.clear();
-	Texcoords.clear();
-
-	//if (strlen(MaterialFileName) > 0) {
-	//	// Load up the material file.
-	//	char FullMtlPath[512];
-	//	Memory::Zero(FullMtlPath, sizeof(char) * 512);
-	//	StringDirectoryFromPath(FullMtlPath, out_dsm_filename);
-	//	String::Append(FullMtlPath, 512, FullMtlPath, MaterialFileName);
-
-	//	// Process material library file.
-	//	SMaterialConfig CurrentConfig;
-	//}
+	MaterialConfigs.clear();
 
 	// De-duplicate geometry.
 	size_t Count = out_geometries.size();
@@ -1090,7 +1179,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	Vertex* UniqueVerts = nullptr;
 	for (size_t i = 0; i < Count; ++i) {
 		SGeometryConfig* g = &out_geometries[i];
-		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name);
+		LOG_DEBUG("Geometry de-duplication process starting on geometry object named '%s'.", g->name.c_str());
 		GeometryUtils::DeduplicateVertices(g->vertex_count, (Vertex*)g->vertices, g->index_count, (uint32_t*)g->indices, &NewVertCount, &UniqueVerts);
 
 		// Destroy the old, large array.
@@ -1109,5 +1198,5 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	}
 
 	// Output a .dsm file, which will be loaded in the future.
-	return WriteDsmFile(out_dsm_filename, name.c_str(), (uint32_t)Count, out_geometries);
+	return WriteDsmFile(out_dsm_filename, name.c_str(), (uint32_t)out_geometries.size(), out_geometries);
 }

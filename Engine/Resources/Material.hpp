@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Resources/Texture.hpp"
@@ -12,15 +12,16 @@ struct SMaterialConfig {
 	std::string name;
 	std::string shader_name;
 	bool auto_release;
-	Vec4 diffuse_color;
-	float shininess;
+	Vec4 diffuse_color = Vec4(1.0f);
+	float shininess = 16.0f;
 	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH] = "";
 	char specular_map_name[TEXTURE_NAME_MAX_LENGTH] = "";
 	char normal_map_name[TEXTURE_NAME_MAX_LENGTH] = "";
 
 	// PBR
-	float Metallic;
-	float Roughness;
+	float Metallic = 0.1f;					// 金属度
+	float Roughness = 0.5f;					// 粗糙度
+	float AmbientOcclusion = 1.0f;			// 环境光遮蔽
 };
 
 class Material {
@@ -54,4 +55,5 @@ public:
 	// PBR
 	float Metallic;
 	float Roughness;
+	float AmbientOcclusion;
 };

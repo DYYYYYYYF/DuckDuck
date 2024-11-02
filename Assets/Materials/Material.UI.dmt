@@ -3,5 +3,9 @@
 version=0.1
 name=TestUIMaterial
 diffuse_color=1.0 1.0 1.0 1.0
+
+# Textures
 diffuse_map_name=DimensionEngine
+
+# Shader
 shader=Shader.Builtin.UI

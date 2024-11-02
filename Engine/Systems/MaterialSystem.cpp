@@ -17,9 +17,9 @@ HashTable MaterialSystem::RegisteredMaterialTable;
 bool MaterialSystem::Initilized = false;
 IRenderer* MaterialSystem::Renderer = nullptr;
 MaterialShaderUniformLocations MaterialSystem::MaterialLocations;
-uint32_t MaterialSystem::MaterialShaderID;
+uint32_t MaterialSystem::MaterialShaderID = INVALID_ID;
 UIShaderUniformLocations MaterialSystem::UILocations;
-uint32_t MaterialSystem::UIShaderID;
+uint32_t MaterialSystem::UIShaderID = INVALID_ID;
 
 bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig config) {
 	if (config.max_material_count == 0) {
@@ -38,26 +38,6 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 
 	MaterialSystemConfig = config;
 	Renderer = renderer;
-
-	MaterialShaderID = INVALID_ID;
-	MaterialLocations.projection = INVALID_ID_U16;
-	MaterialLocations.view = INVALID_ID_U16;
-	MaterialLocations.ambient_color= INVALID_ID_U16;
-	MaterialLocations.diffuse_color= INVALID_ID_U16;
-	MaterialLocations.diffuse_texture = INVALID_ID_U16;
-	MaterialLocations.normal_texture = INVALID_ID_U16;
-	MaterialLocations.specular_texture = INVALID_ID_U16;
-	MaterialLocations.shininess = INVALID_ID_U16;
-	MaterialLocations.view_position = INVALID_ID_U16;
-	MaterialLocations.model = INVALID_ID_U16;
-	MaterialLocations.render_mode = INVALID_ID_U16;
-
-	UIShaderID = INVALID_ID;
-	UILocations.projection = INVALID_ID_U16;
-	UILocations.view = INVALID_ID_U16;
-	UILocations.diffuse_color = INVALID_ID_U16;
-	UILocations.diffuse_texture = INVALID_ID_U16;
-	UILocations.model = INVALID_ID_U16;
 
 	// Block of memory will block for array, then block for hashtable.
 	size_t ArraryRequirement = sizeof(Material) * MaterialSystemConfig.max_material_count;
@@ -191,6 +171,9 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 				MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 				MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
 				MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+				MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
+				MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
+				MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");
 			}
 			else if (UIShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.UI") == 0) {
 				UIShaderID = s->ID;
@@ -285,6 +268,9 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	// Diffuse color
 	mat->DiffuseColor = config.diffuse_color;
 	mat->Shininess = config.shininess;
+	mat->Metallic = config.Metallic;
+	mat->Roughness = config.Roughness;
+	mat->AmbientOcclusion = config.AmbientOcclusion;
 
 	// Diffuse map
 	// TODO: Make configurable.
@@ -536,6 +522,9 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, &mat->SpecularMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_occlusion, &mat->AmbientOcclusion));
 		}
 		else if (mat->ShaderID == UIShaderID) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.diffuse_color, &mat->DiffuseColor));

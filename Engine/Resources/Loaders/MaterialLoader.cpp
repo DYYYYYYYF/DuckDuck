@@ -35,10 +35,13 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 	SMaterialConfig* ResourceData = (SMaterialConfig*)Memory::Allocate(sizeof(SMaterialConfig), MemoryType::eMemory_Type_Material_Instance);
 	// Set defaults.
 	ResourceData->auto_release = true;
-	ResourceData->shader_name = "Builtin.World";
+	ResourceData->shader_name = "Shader.Builtin.World";
 	ResourceData->diffuse_color = Vec4(1.0f);	// White
 	ResourceData->diffuse_map_name[0] = '\0';
 	ResourceData->shininess = 32.0f;
+	ResourceData->Metallic = 1.0f;
+	ResourceData->Roughness = 0.0f;
+	ResourceData->AmbientOcclusion = 0.7f;
 	ResourceData->name = std::move(name);
 
 	char LineBuffer[512] = "";
@@ -108,6 +111,24 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 			if (!StringToFloat(TrimmedValue, &ResourceData->shininess)) {
 				LOG_WARN("Error parsing shininess in file '%s'. Using default of 32.0f instead.", FullFilePath);
 				ResourceData->shininess = 32.0f;
+			}
+		}
+		else if (strcmp(TrimmedVarName, "metallic") == 0) {
+			if (!StringToFloat(TrimmedValue, &ResourceData->Metallic)) {
+				LOG_WARN("Error parsing metallic in file '%s'. Using default of 0.1f instead.", FullFilePath);
+				ResourceData->Metallic = 0.1f;
+			}
+		}
+		else if (strcmp(TrimmedVarName, "roughness") == 0) {
+			if (!StringToFloat(TrimmedValue, &ResourceData->Roughness)) {
+				LOG_WARN("Error parsing Roughness in file '%s'. Using default of 0.5f instead.", FullFilePath);
+				ResourceData->Roughness = 0.5f;
+			}
+		}
+		else if (strcmp(TrimmedVarName, "ambient_occlusion") == 0) {
+			if (!StringToFloat(TrimmedValue, &ResourceData->AmbientOcclusion)) {
+				LOG_WARN("Error parsing AmbientOcclusion in file '%s'. Using default of 0.7f instead.", FullFilePath);
+				ResourceData->AmbientOcclusion = 0.7f;
 			}
 		}
 		// TODO: more fields.

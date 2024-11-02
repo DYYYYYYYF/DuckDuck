@@ -89,30 +89,33 @@ enum ShaderFlags {
 typedef unsigned int ShaderFlagBits;
 
 struct MaterialShaderUniformLocations {
-	unsigned short projection;
-	unsigned short view;
-	unsigned short ambient_color;
-	unsigned short diffuse_color;
-	unsigned short diffuse_texture;
-	unsigned short normal_texture;
-	unsigned short specular_texture;
-	unsigned short shininess;
-	unsigned short view_position;
-	unsigned short model;
-	unsigned short render_mode;
+	unsigned short projection = INVALID_ID_U16;
+	unsigned short view = INVALID_ID_U16;
+	unsigned short ambient_color = INVALID_ID_U16;
+	unsigned short diffuse_color = INVALID_ID_U16;
+	unsigned short diffuse_texture = INVALID_ID_U16;
+	unsigned short normal_texture = INVALID_ID_U16;
+	unsigned short specular_texture = INVALID_ID_U16;
+	unsigned short shininess = INVALID_ID_U16;
+	unsigned short view_position = INVALID_ID_U16;
+	unsigned short model = INVALID_ID_U16;
+	unsigned short render_mode = INVALID_ID_U16;
+	unsigned short metallic = INVALID_ID_U16;
+	unsigned short roughness = INVALID_ID_U16;
+	unsigned short ambient_occlusion = INVALID_ID_U16;
 };
 
 struct UIShaderUniformLocations {
-	unsigned short projection;
-	unsigned short view;
-	unsigned short diffuse_color;
-	unsigned short diffuse_texture;
-	unsigned short model;
+	unsigned short projection = INVALID_ID_U16;
+	unsigned short view = INVALID_ID_U16;
+	unsigned short diffuse_color = INVALID_ID_U16;
+	unsigned short diffuse_texture = INVALID_ID_U16;
+	unsigned short model = INVALID_ID_U16;
 };
 
 /**
  * @brief Defines shader scope, which indicates how
- * often it gets updated.
+ * often it gets updated
  */
 enum ShaderScope {
 	eShader_Scope_Global = 0,
