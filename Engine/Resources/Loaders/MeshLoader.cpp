@@ -1,4 +1,4 @@
-#include "MeshLoader.h"
+﻿#include "MeshLoader.h"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -958,6 +958,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	// Materials
 	std::vector<SMaterialConfig> MaterialConfigs;
 
+	// Materials
 	for (const auto& material : model.materials) {
 		SMaterialConfig CurrentConfig;
 		CurrentConfig.name = material.name;
@@ -972,24 +973,75 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 		if (material.values.find("metallicFactor") != material.values.end()) {
 			CurrentConfig.Metallic = (float)material.values.at("metallicFactor").Factor();
 		}
-		else {
-			CurrentConfig.Metallic = 0.1f;
-		}
 
 		// 粗糙度
 		if (material.values.find("roughnessFactor") != material.values.end()) {
 			CurrentConfig.Roughness = (float)material.values.at("roughnessFactor").Factor();
 		}
-		else {
-			CurrentConfig.Roughness = 0.7f;
+
+		// 粗糙度
+		if (material.values.find("emissiveFactor") != material.values.end()) {
+			const auto& emissiveColorFactor = material.values.at("baseColorFactor").number_array;
+			CurrentConfig.EmissiveColor = Vec4((float)emissiveColorFactor[0], (float)emissiveColorFactor[1], (float)emissiveColorFactor[2], 1.0f);
 		}
 
 		// 基本颜色纹理贴图
 		if (material.values.find("baseColorTexture") != material.values.end()) {
 			int textureIndex = material.values.at("baseColorTexture").TextureIndex();
 			const tinygltf::Texture& texture = model.textures[textureIndex];
+			// 获取图像索引
+			if (texture.source < 0 || texture.source >= model.images.size()) {
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				continue;
+			}
+
 			if (texture.source != -1) {
-				Memory::Copy(CurrentConfig.diffuse_map_name, texture.name.data(), TEXTURE_NAME_MAX_LENGTH);
+				StringFilenameNoExtensionFromPath(CurrentConfig.diffuse_map_name, model.images[texture.source].uri.data());
+			}
+		}
+
+		// 法线贴图
+		if (material.values.find("normalTexture") != material.values.end()) {
+			int textureIndex = material.values.at("normalTexture").TextureIndex();
+			const tinygltf::Texture& texture = model.textures[textureIndex];
+			// 获取图像索引
+			if (texture.source < 0 || texture.source >= model.images.size()) {
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				continue;
+			}
+
+			if (texture.source != -1) {
+				StringFilenameNoExtensionFromPath(CurrentConfig.normal_map_name, model.images[texture.source].uri.data());
+			}
+		}
+
+		// 金属度/粗糙度贴图
+		if (material.values.find("metallicRoughnessTexture") != material.values.end()) {
+			int textureIndex = material.values.at("metallicRoughnessTexture").TextureIndex();
+			const tinygltf::Texture& texture = model.textures[textureIndex];
+			// 获取图像索引
+			if (texture.source < 0 || texture.source >= model.images.size()) {
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				continue;
+			}
+
+			if (texture.source != -1) {
+				CurrentConfig.EmissiveFactorTexName = model.images[texture.source].uri;
+			}
+		}
+
+		// 自发光贴图
+		if (material.values.find("emissiveFactor") != material.values.end()) {
+			int textureIndex = material.values.at("emissiveFactor").TextureIndex();
+			const tinygltf::Texture& texture = model.textures[textureIndex];
+			// 获取图像索引
+			if (texture.source < 0 || texture.source >= model.images.size()) {
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				continue;
+			}
+
+			if (texture.source != -1) {
+				CurrentConfig.EmissiveFactorTexName = model.images[texture.source].uri;
 			}
 		}
 
@@ -999,42 +1051,50 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 		WriteDmtFile(out_dsm_filename, &CurrentConfig);
 	}
 	
+	// Meshes
 	int PrimCount = 0;
+	Transform DefaultLocalTransform = Transform();
 	for (const auto& mesh : model.meshes) {
 
 		MeshGroupData GroupData;
+		// 实际上是一个Geometry，看如何理解Geo和Pri
 		for (const auto& primitive : mesh.primitives) {
 			switch (primitive.mode)
 			{
 			case TINYGLTF_MODE_TRIANGLE_STRIP:
 			{
-				return false;
+				continue;
 			}
 			case TINYGLTF_MODE_TRIANGLES:
 			{
 			
 			} break;
 			default:
-				return false;
+				continue;
 			}
 
 			// 顶点索引
 			const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
 			const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
 			const tinygltf::Buffer& indexBuffer = model.buffers[indexBufferView.buffer];
+			int ByteStride = indexAccessor.ByteStride(indexBufferView);
+
+			ASSERT(indexAccessor.count % 3 == 0);
 			if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+				ASSERT(ByteStride == 1);
 				if (indexBuffer.data.empty() ||
 					indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint8_t) > indexBuffer.data.size()) {
 					LOG_FATAL("Index buffer is invalid or out of bounds!");
 					return false;
 				}
 
-				const uint8_t* buf = reinterpret_cast<const uint8_t*>(&(indexBuffer.data[indexAccessor.byteOffset + indexBufferView.byteOffset]));
-				for (size_t index = 0; index < indexAccessor.count; index += 3)
+				const uint8_t* buf = reinterpret_cast<const uint8_t*>(&(indexBuffer
+					.data[indexAccessor.byteOffset + indexBufferView.byteOffset]));
+				for (size_t index = 0; index < indexAccessor.count / 3; index++)
 				{
 					MeshFaceData MeshFace;
 					for (size_t f = 0; f < 3; f++) {
-						uint32_t DataIndex = static_cast<uint32_t>(buf[index + f]);
+						uint32_t DataIndex = static_cast<uint32_t>(buf[index * 3 + f]);
 						MeshFace.vertices[f].position_index = DataIndex;
 						MeshFace.vertices[f].texcoord_index = DataIndex;
 						MeshFace.vertices[f].normal_index = DataIndex;
@@ -1044,6 +1104,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				}
 			}
 			else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+				ASSERT(ByteStride == 2);
 				if (indexBuffer.data.empty() ||
 					indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint16_t) > indexBuffer.data.size()) {
 					LOG_FATAL("Index buffer is invalid or out of bounds!");
@@ -1056,15 +1117,16 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 					MeshFaceData MeshFace;
 					for (size_t f = 0; f < 3; f++) {
 						uint32_t DataIndex = static_cast<uint32_t>(buf[index * 3 + f]);
-						MeshFace.vertices[f].position_index = DataIndex / 3;
-						MeshFace.vertices[f].texcoord_index = DataIndex / 3;
-						MeshFace.vertices[f].normal_index = DataIndex / 3;
+						MeshFace.vertices[f].position_index = DataIndex;
+						MeshFace.vertices[f].texcoord_index = DataIndex;
+						MeshFace.vertices[f].normal_index = DataIndex;
 					}
 
 					GroupData.Faces.push_back(MeshFace);
 				}
 			}
 			else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+				ASSERT(ByteStride == 4);
 				if (indexBuffer.data.empty() ||
 					indexAccessor.byteOffset + indexBufferView.byteOffset + indexAccessor.count * sizeof(uint32_t) > indexBuffer.data.size()) {
 					LOG_FATAL("Index buffer is invalid or out of bounds!");
@@ -1072,11 +1134,11 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				}
 
 				const uint32_t* buf = reinterpret_cast<const uint32_t*>(&(indexBuffer.data[indexAccessor.byteOffset + indexBufferView.byteOffset]));
-				for (size_t index = 0; index < indexAccessor.count; index += 3)
+				for (size_t index = 0; index < indexAccessor.count / 3; index++)
 				{
 					MeshFaceData MeshFace;
 					for (size_t f = 0; f < 3; f++) {
-						uint32_t DataIndex = static_cast<uint32_t>(buf[index + f]);
+						uint32_t DataIndex = static_cast<uint32_t>(buf[index * 3 + f]);
 						MeshFace.vertices[f].position_index = DataIndex;
 						MeshFace.vertices[f].texcoord_index = DataIndex;
 						MeshFace.vertices[f].normal_index = DataIndex;
@@ -1090,20 +1152,22 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 			if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
 				const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
 				const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
-
+				positionAccessor.byteOffset;
 				switch (positionAccessor.componentType)
 				{
 				case TINYGLTF_COMPONENT_TYPE_FLOAT:
 				{
-					const float* positions = reinterpret_cast<const float*>(&model.buffers[positionView.buffer].data[positionView.byteOffset]);
-					for (size_t i = 0; i < positionAccessor.count / 3; i++) {
+					const float* positions = reinterpret_cast<const float*>(&model.buffers[positionView.buffer]
+						.data[positionAccessor.byteOffset + positionView.byteOffset]);
+					for (size_t i = 0; i < positionAccessor.count; i++) {
 						Positions.push_back(Vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]));
 					}
 				} break;
 				case TINYGLTF_COMPONENT_TYPE_DOUBLE: 
 				{
-					const double* positions = reinterpret_cast<const double*>(&model.buffers[positionView.buffer].data[positionView.byteOffset]);
-					for (size_t i = 0; i < positionAccessor.count / 3; i++) {
+					const double* positions = reinterpret_cast<const double*>(&model.buffers[positionView.buffer]
+						.data[positionAccessor.byteOffset + positionView.byteOffset]);
+					for (size_t i = 0; i < positionAccessor.count; i++) {
 						Positions.push_back(Vec3((float)positions[i * 3], (float)positions[i * 3 + 1], (float)positions[i * 3 + 2]));
 					}
 				} break;
@@ -1118,9 +1182,10 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				int normalAccessorIndex = primitive.attributes.at("NORMAL");
 				const tinygltf::Accessor& normalAccessor = model.accessors[normalAccessorIndex];
 				const tinygltf::BufferView& normalView = model.bufferViews[normalAccessor.bufferView];
-				const float* normalData = reinterpret_cast<const float*>(&model.buffers[normalView.buffer].data[normalView.byteOffset]);
+				const float* normalData = reinterpret_cast<const float*>(&model.buffers[normalView.buffer]
+					.data[normalAccessor.byteOffset + normalView.byteOffset]);
 
-				for (size_t i = 0; i < normalAccessor.count / 3; i++) {
+				for (size_t i = 0; i < normalAccessor.count; i++) {
 					Normals.push_back(Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]));
 				}
 			}
@@ -1130,9 +1195,10 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				int texCoordAccessorIndex = primitive.attributes.at("TEXCOORD_0");
 				const tinygltf::Accessor& texCoordAccessor = model.accessors[texCoordAccessorIndex];
 				const tinygltf::BufferView& texCoordView = model.bufferViews[texCoordAccessor.bufferView];
-				const float* texCoordData = reinterpret_cast<const float*>(&model.buffers[texCoordView.buffer].data[texCoordView.byteOffset]);
+				const float* texCoordData = reinterpret_cast<const float*>(&model.buffers[texCoordView.buffer]
+					.data[texCoordAccessor.byteOffset + texCoordView.byteOffset]);
 
-				for (size_t i = 0; i < texCoordAccessor.count / 2; i++) {
+				for (size_t i = 0; i < texCoordAccessor.count; i++) {
 					Texcoords.push_back(Vec2(texCoordData[i * 2], texCoordData[i * 2 + 1]));
 				}
 			}
@@ -1142,9 +1208,10 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				int tangentAccessorIndex = primitive.attributes.at("TANGENT");
 				const tinygltf::Accessor& tangentAccessor = model.accessors[tangentAccessorIndex];
 				const tinygltf::BufferView& tangentView = model.bufferViews[tangentAccessor.bufferView];
-				const float* tangentData = reinterpret_cast<const float*>(&model.buffers[tangentView.buffer].data[tangentView.byteOffset]);
+				const float* tangentData = reinterpret_cast<const float*>(&model.buffers[tangentView.buffer]
+					.data[tangentAccessor.byteOffset + tangentView.byteOffset]);
 
-				for (size_t i = 0; i < tangentAccessor.count/ 3; i++) {
+				for (size_t i = 0; i < tangentAccessor.count; i++) {
 					// TODO: 使用切线数据
 					Tangents.push_back(Vec3(tangentData[i * 2], tangentData[i * 2 + 1], tangentData[i * 2 + 2]));
 				}
