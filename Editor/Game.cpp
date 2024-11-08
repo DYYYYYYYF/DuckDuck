@@ -75,7 +75,7 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading dragon...");
 
-			if (!GameInst->DragonMesh->LoadFromResource("Duck")) {
+			if (!GameInst->DragonMesh->LoadFromResource("Buggy")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}

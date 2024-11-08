@@ -264,8 +264,13 @@ unsigned short ShaderSystem::GetUniformIndex(Shader* shader, const char* uniform
 }
 
 bool ShaderSystem::SetUniform(const char* uniform_name, const void* value) {
+	if (uniform_name == nullptr || value == nullptr) {
+		LOG_ERROR("ShaderSystem::SetUniform called without a invalid uniform_name or value.");
+		return false;
+	}
+
 	if (CurrentShaderID == INVALID_ID) {
-		LOG_ERROR("shader_system_uniform_set called without a shader in use.");
+		LOG_ERROR("ShaderSystem::SetUniform called without a shader in use.");
 		return false;
 	}
 	Shader* s = Shaders[CurrentShaderID];
@@ -278,6 +283,11 @@ bool ShaderSystem::SetSampler(const char* sampler_name, const Texture* tex) {
 }
 
 bool ShaderSystem::SetUniformByIndex(unsigned short index, const void* value) {
+	if (index == INVALID_ID_U16 || value == nullptr) {
+		LOG_WARN("ShaderSystem::SetUniformByIndex failed! It looks like out of boundings or invalid value. index: %d value: %#x", index, value);
+		return false;
+	}
+
 	Shader* Shader = Shaders[CurrentShaderID];
 	ShaderUniform* uniform = &Shader->Uniforms[index];
 	if (Shader->BoundScope != uniform->scope) {
