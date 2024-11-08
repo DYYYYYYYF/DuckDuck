@@ -34,4 +34,5 @@ uniform=float,1,ambient_occlusion
 uniform=samp,1,diffuse_texture
 uniform=samp,1,specular_texture
 uniform=samp,1,normal_texture
+uniform=samp,1,roughness_metallic_texture
 uniform=mat4,2,model
