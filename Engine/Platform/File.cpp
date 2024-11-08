@@ -1,4 +1,4 @@
-#include "File.hpp"
+ï»¿#include "File.hpp"
 #include "FileSystem.hpp"
 #include "Core/EngineLogger.hpp"
 
@@ -10,10 +10,10 @@ File::File(const std::string& fn) {
 
 std::string File::ReadBytes() {
 	std::stringstream buffer;
-	std::ifstream inFile(Name); // ´ò¿ªÎÄ¼þ
+	std::ifstream inFile(Name); // æ‰“å¼€æ–‡ä»¶
 
-	if (!inFile) { // ¼ì²éÎÄ¼þÊÇ·ñ³É¹¦´ò¿ª
-		std::cerr << "ÎÞ·¨´ò¿ªÎÄ¼þ!" << std::endl;
+	if (!inFile) { // æ£€æŸ¥æ–‡ä»¶æ˜¯å¦æˆåŠŸæ‰“å¼€
+		std::cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶!" << std::endl;
 		return "";
 	}
 
@@ -31,13 +31,13 @@ bool File::WriteBytes(const char* source, size_t size, std::ios::openmode mode) 
 	std::ofstream outFile(Name, mode);
 
 	if (!outFile) { 
-		std::cerr << "ÎÞ·¨´ò¿ªÎÄ¼þ!" << std::endl;
+		std::cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶!" << std::endl;
 		return false; 
 	}
 
-	// ÏòÎÄ¼þÐ´ÈëÄÚÈÝ
+	// å‘æ–‡ä»¶å†™å…¥å†…å®¹
 	outFile.write(source, size);
-	outFile.close(); // ¹Ø±ÕÎÄ¼þ
+	outFile.close(); // å…³é—­æ–‡ä»¶
 
 	return true;
 }
