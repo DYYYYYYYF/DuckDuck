@@ -49,7 +49,8 @@ PointLight point_light_1 = PointLight(
 const int SAMP_DIFFUSE = 0;
 const int SAMP_SPECULAR = 1;
 const int SAMP_NORMAL = 2;
-layout (set = 1, binding = 1) uniform sampler2D Samplers[3];
+const int SAMP_ROUGHNESS_METALLIC = 3;
+layout (set = 1, binding = 1) uniform sampler2D Samplers[4];
 
 layout (location = 0) flat in int in_mode;
 
@@ -81,15 +82,17 @@ void main(){
 	vec3 LocalNormal = 2.0 * texture(Samplers[SAMP_NORMAL], in_dto.vTexcoord).rgb - 1.0f;
 	// Normal = normalize(TBN * in_dto.vNormal);
 
-	if (in_mode == 0 || in_mode == 1){
+	if (in_mode == 0){
+		// Roughness / Metallic / AO
+		vec3 RMA = texture(Samplers[SAMP_ROUGHNESS_METALLIC], in_dto.vTexcoord).rgb;
+		FragColor = PBR(point_light_0, Normal, in_dto.vAmbientColor.xyz, in_dto.vViewPosition, in_dto.vFragPosition, RMA.r, RMA.g, RMA.b);
+	}
+	else if (in_mode == 1 || in_mode == 2){
 		vec3 vViewDirection = normalize(in_dto.vViewPosition - in_dto.vFragPosition);
 		FragColor = CalculateDirectionalLight(dir_light, Normal, vViewDirection);
 
 		FragColor += CalculatePointLight(point_light_0, Normal, in_dto.vFragPosition, vViewDirection);
 		FragColor += CalculatePointLight(point_light_1, Normal, in_dto.vFragPosition, vViewDirection);
-	}
-	else if (in_mode == 2){
-		FragColor = PBR(point_light_0, Normal, in_dto.vAmbientColor.xyz, in_dto.vViewPosition, in_dto.vFragPosition, ObjectUbo.metallic, ObjectUbo.roughness, ObjectUbo.ambient_occlusion);
 	} 
 	else if (in_mode == 3){
 		FragColor = vec4(in_dto.vVertPosition.z, in_dto.vVertPosition.z, in_dto.vVertPosition.z, 1.0f);
@@ -110,7 +113,7 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
 	vec4 Diffuse = vec4(vec3(light.color * fDiffuseFactor), DiffSamp.a);
 	vec4 Specular = vec4(vec3(light.color * SpecularFactor), DiffSamp.a);
 
-	if (in_mode == 0){
+	if (in_mode == 1){
 		Ambient *= DiffSamp;
 		Diffuse *= DiffSamp;
 		Specular *= vec4(texture(Samplers[SAMP_SPECULAR], in_dto.vTexcoord).rgb, Diffuse.a);
@@ -153,18 +156,18 @@ vec4 CalculatePointLight(PointLight light, vec3 normal, vec3 frag_position, vec3
 const float PI = 3.14159265359;
 // Fresnel-Schlick 近似
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
 }
 
 // GGX 分布函数
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
+    float NdotH = max(dot(N, H), 0.0f);
     float NdotH2 = NdotH * NdotH;
 
     float nom = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    float denom = (NdotH2 * (a2 - 1.0f) + 1.0f);
     denom = PI * denom * denom;
 
     return nom / denom;
@@ -172,18 +175,18 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
 
 // Smith 几何遮蔽函数
 float GeometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
+    float r = (roughness + 1.0f);
+    float k = (r * r) / 8.0f;
 
     float nom = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
+    float denom = NdotV * (1.0f - k) + k;
 
     return nom / denom;
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
+    float NdotV = max(dot(N, V), 0.0f);
+    float NdotL = max(dot(N, L), 0.0f);
     float ggx2 = GeometrySchlickGGX(NdotV, roughness);
     float ggx1 = GeometrySchlickGGX(NdotL, roughness);
 
@@ -192,44 +195,49 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
 vec4 PBR(PointLight light, vec3 norm, vec3 albedo, vec3 camPos, vec3 fragPos, float metallic, float roughness, float ao){
 	vec4 DiffSamp = texture(Samplers[SAMP_DIFFUSE], in_dto.vTexcoord);
-	albedo = DiffSamp.xyz;
+	albedo = vec3(1.0f, 1.0f, 1.0f);
 
 	// 视线方向和法线
     vec3 N = normalize(norm);
     vec3 V = normalize(camPos - fragPos);
 
 	// 环境光的基本反射率
-    vec3 F0 = vec3(0.04); // 非金属表面的 F0 反射率
+    vec3 F0 = vec3(0.04f); // 非金属表面的 F0 反射率
     F0 = mix(F0, albedo, metallic);
 
     // 计算光线方向和半程向量
+	// -dir_light.direction
+	// light.position - fragPos
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(V + L);
 
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(N, H, roughness); // 法线分布
     float G = GeometrySmith(N, V, L, roughness);  // 几何遮蔽
-    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0); // 菲涅耳
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0f), F0); // 菲涅耳
 
     vec3 nominator = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+    float denominator = 4.0 * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f) + 0.001f;
     vec3 specular = nominator / denominator;
 
     // 漫反射
     vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
+    vec3 kD = vec3(1.0f) - kS;
+    kD *= 1.0f - metallic;
 
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 Lo = (kD * albedo / PI + specular) * ObjectUbo.diffuse_color.xyz * NdotL;
+    float NdotL = max(dot(N, L), 0.0f);
+    vec3 Lo = (kD * albedo / PI + specular) * DiffSamp.xyz * NdotL;
 
     // 环境光（近似处理）
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 ambient = vec3(0.03f) * albedo * ao;
     vec3 color = ambient + Lo;
 
-    // HDR 映射和 gamma 校正
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
+    // HDR 映射 
+	vec3 HDR_Map_Param = vec3(1.0f);		// 减小分母的值使得更多高亮区域不被压缩，从而让图像整体更亮。不过要适度调整，以免高光区域过曝，导致细节丢失。	通常为1.0f。
+    color = color / (color + HDR_Map_Param);
+	// gamma 校正
+	float gamma_correct_param = 2.0f;
+    color = pow(color, vec3(1.0f / gamma_correct_param));	// 通过减小 gamma 值，可以让图像显示器渲染出更亮的效果。不过 gamma 校正应保持在 1.8 到 2.2 之间，以便显示器正确显示细节。
 
-    return vec4(color, 1.0);
+    return vec4(color, 1.0f);
 }
