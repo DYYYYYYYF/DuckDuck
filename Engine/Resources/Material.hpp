@@ -22,6 +22,9 @@ struct SMaterialConfig {
 	float Metallic = 0.1f;					// 金属度
 	float Roughness = 0.5f;					// 粗糙度
 	float AmbientOcclusion = 1.0f;			// 环境光遮蔽
+	Vec4 EmissiveColor;						// 自发光
+	std::string MetallicRoughnessTexName;	// 金属度/粗糙度Texture
+	std::string EmissiveFactorTexName;		// 自发光Texture
 };
 
 class Material {
@@ -47,6 +50,7 @@ public:
 	TextureMap DiffuseMap;
 	TextureMap SpecularMap;
 	TextureMap NormalMap;
+	TextureMap RoughnessMetallicMap;
 	float Shininess;
 
 	uint32_t ShaderID;

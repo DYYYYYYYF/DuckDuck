@@ -11,20 +11,24 @@ enum UITextType {
 	eUI_Text_Type_system
 };
 
-class DAPI UIText {
+class UIText {
 public:
-	bool Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent);
-	void Destroy();
+	DAPI bool Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent);
+	DAPI void Destroy();
 
-	void SetPosition(Vec3 position);
-	void SetText(const char* text);
+	DAPI void SetPosition(Vec3 position);
+	DAPI void SetText(const char* text);
 
 	void Draw();
+
+	DAPI std::string GetName() const { return Name; }
+	DAPI void SetName(const std::string& n) { Name = n; }
 
 private:
 	void RegenerateGeometry();
 
 public:
+	std::string Name;
 	uint32_t UniqueID = INVALID_ID;
 	IRenderer* Renderer = nullptr;
 	UITextType Type = UITextType::eUI_Text_Type_Bitmap;

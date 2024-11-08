@@ -15,7 +15,7 @@ void Mesh::LoadJobSuccess(void* params) {
 	MeshParams->out_mesh->geometry_count = (unsigned short)MeshParams->mesh_resource.DataCount;
 	MeshParams->out_mesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * MeshParams->out_mesh->geometry_count, MemoryType::eMemory_Type_Array);
 	for (uint32_t i = 0; i < MeshParams->out_mesh->geometry_count; ++i) {
-		SGeometryConfig Config = Configs[i];
+		SGeometryConfig& Config = Configs[i];
 		MeshParams->out_mesh->geometries[i] = GeometrySystem::AcquireFromConfig(Config, true);
 	}
 	MeshParams->out_mesh->Generation++;
@@ -46,6 +46,7 @@ bool Mesh::LoadFromResource(const char* resource_name) {
 	Params.resource_name = resource_name;
 	Params.out_mesh = this;
 	Params.mesh_resource = {};
+	Name = resource_name;
 
 	JobInfo Job = JobSystem::CreateJob(
 		std::bind(&Mesh::LoadJobStart, this, std::placeholders::_1, std::placeholders::_2),

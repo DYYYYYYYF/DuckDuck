@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Math/MathTypes.hpp"
 #include "MaterialSystem.h"
 #include "Resources/Geometry.hpp"
 
 #define GEOMETRY_MAX_COUNT 4096
-#define DEFAULT_GEOMETRY_NAME "default"
+#define DEFAULT_GEOMETRY_PLANE_NAME "DefaultGeometryPlane"
+#define DEFAULT_GEOMETRY_CUBE_NAME "DefaultGeometryCube"
 
 struct GeometryData {
 	uint32_t id = INVALID_ID;
@@ -18,31 +18,6 @@ struct GeometryData {
 	uint32_t index_count = 0;
 	uint32_t index_element_size = 0;
 	size_t index_buffer_offset = 0;
-};
-
-struct SGeometryConfig {
-public:
-	void SetMaterialName(const std::string& mn) { material_name = mn; }
-	const std::string& GetMaterialName() const { return material_name; }
-	void SetName(const std::string& n) { name = n; }
-	const std::string& GetName() const { return name; }
-
-	// Vertices
-	uint32_t vertex_size = 0;
-	uint32_t vertex_count = 0;
-	void* vertices = nullptr;
-
-	// Indices
-	uint32_t index_size = 0;
-	uint32_t index_count = 0;
-	void* indices = nullptr;
-
-	Vec3 center;
-	Vec3 min_extents;
-	Vec3 max_extents;
-
-	std::string name;
-	std::string material_name;
 };
 
 struct SGeometryReference {

@@ -1,4 +1,4 @@
-#include "Game.hpp"
+﻿#include "Game.hpp"
 
 #include <Core/EngineLogger.hpp>
 #include <Core/Input.hpp>
@@ -149,7 +149,8 @@ bool GameInstance::Initialize() {
 	TestPython.SetPythonFile("recompile_shader");
 
 	WorldCamera = CameraSystem::GetDefault();
-	WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 40.0f));
+	WorldCamera->SetPosition(Vec3(-60.0f, 43.0f, -19.0f));
+	WorldCamera->SetEulerAngles(Vec3(-19.0f, -100.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -157,22 +158,24 @@ bool GameInstance::Initialize() {
 		return false;
 	}
 	TestText.SetPosition(Vec3(150, 450, 0));
+	TestText.SetName("Render information window.");
 
 	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
 		"Noto Sans CJK JP", 26, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: sponza P: car\
-		\n\tK: dragon L: bunny\
+		\n\tK: duck   L: bunny\
 		\nM: Watch memory usage.\
-		\nF1: Default view.\
-		\nF2: Lighting view.\
-		\nF3: Normals view.\
+		\nF1: Physics Based Render Render.\
+		\nF2: Blinn-Phong.\
+		\nF3: Light view.\
 		\nF4: Depth view."))
 	{
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
 	TestSysText.SetPosition(Vec3(100, 200, 0));
+	TestSysText.SetName("Keyboard map texts.");
 
 	// Skybox
 	if (!SB.Create("SkyboxCube", Renderer)) {
@@ -189,6 +192,7 @@ bool GameInstance::Initialize() {
 	}
 
 	Mesh* CubeMesh = &Meshes[0];
+	CubeMesh->Name = "TestCube";
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig = GeometrySystem::GenerateCubeConfig(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "TestCube", "Material.World");
@@ -198,6 +202,7 @@ bool GameInstance::Initialize() {
 	CubeMesh->Transform = Transform();
 
 	Mesh* CubeMesh2 = &Meshes[1];
+	CubeMesh2->Name = "TestCube2";
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
@@ -208,6 +213,7 @@ bool GameInstance::Initialize() {
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
 
 	Mesh* CubeMesh3 = &Meshes[2];
+	CubeMesh3->Name = "TestCube3";
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
@@ -223,19 +229,19 @@ bool GameInstance::Initialize() {
 	GeometrySystem::ConfigDispose(&GeoConfig3);
 
 	CarMesh = &Meshes[3];
-	CarMesh->Transform = Transform(Vec3(15.0f, 0.0f, -15.0f));
+	CarMesh->Transform = Transform(Vec3(0.0f, 15.0f, 0.0f));
 	CarMesh->UniqueID = Identifier::AcquireNewID(CarMesh);
 
 	SponzaMesh = &Meshes[4];
-	SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
+	SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
 	SponzaMesh->UniqueID = Identifier::AcquireNewID(SponzaMesh);
 
 	BunnyMesh = &Meshes[5];
-	BunnyMesh->Transform = Transform(Vec3(30.0f, 0.0f, -30.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	BunnyMesh->Transform = Transform(Vec3(0.0f, 30.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
 	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
 
 	DragonMesh = &Meshes[6];
-	DragonMesh->Transform = Transform(Vec3(45.0f, 0.0f, -45.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
+	DragonMesh->Transform = Transform(Vec3(0.0f, 45.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
 	DragonMesh->UniqueID = Identifier::AcquireNewID(DragonMesh);
 
 	// Load up some test UI geometry.
@@ -286,7 +292,6 @@ bool GameInstance::Initialize() {
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 	UIMesh->Generation = 0;
 	UIMesh->UniqueID = Identifier::AcquireNewID(UIMesh);
-	UIMesh->Transform = Transform();
 
 	// TODO: TEMP
 	EngineEvent::Register(eEventCode::Debug_0, this, GameOnDebugEvent);
@@ -434,7 +439,7 @@ bool GameInstance::Update(float delta_time) {
 		EngineEvent::Fire(eEventCode::Reload_Shader_Module, this, Context);
 	}
 	if (Controller::IsKeyUp(eKeys::H) &&Controller::WasKeyDown(eKeys::H)) {
-		//TestPython.ExecuteFunc("CompileShaders", "hlsl");
+		TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
 		SEventContext Context = {};
@@ -455,7 +460,7 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	Quaternion Rotation = QuaternionFromAxisAngle(Vec3(0.0f, 1.0f, 0.0f), 0.5f * (float)delta_time, false);
+	Quaternion Rotation = QuaternionFromAxisAngle(Axis::Y, 0.5f * (float)delta_time, false);
 	Meshes[0].Transform.Rotate(Rotation);
 	Meshes[1].Transform.Rotate(Rotation);
 	Meshes[2].Transform.Rotate(Rotation);

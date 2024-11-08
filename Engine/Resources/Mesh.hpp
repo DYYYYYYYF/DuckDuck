@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Resource.hpp"
 #include "Geometry.hpp"
@@ -32,10 +32,10 @@ struct MeshGroupData {
 	std::vector<MeshFaceData> Faces;
 };
 
-class DAPI Mesh {
+class Mesh {
 public:
 	Mesh() : geometries(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
-	bool LoadFromResource(const char* resource_name);
+	DAPI bool LoadFromResource(const char* resource_name);
 	void Unload();
 
 private:
@@ -44,6 +44,7 @@ private:
 	bool LoadJobStart(void* params, void* result_data);
 
 public:
+	std::string Name;
 	uint32_t UniqueID;
 	unsigned char Generation;
 	unsigned short geometry_count;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
@@ -46,7 +46,7 @@ public:
 private:
 	IRenderer* Renderer = nullptr;
 	RenderviewPickShaderInfo UIShaderInfo;
-	RenderviewPickShaderInfo WorlShaderInfo;
+	RenderviewPickShaderInfo WorldShaderInfo;
 
 	// Used as the color attachment for both renderpass.
 	Texture ColorTargetAttachment;

@@ -12,13 +12,37 @@ public:
 
 	Transform(const Transform& trans);
 
+	template<typename T>
+	Transform(const std::vector<T>& dat) {
+		SetPosition(Vec3((float)dat[12], (float)dat[13], (float)dat[14]));
+
+		float ScaleX = Vec3((float)dat[0], (float)dat[1], (float)dat[2]).Length();
+		float ScaleY = Vec3((float)dat[4], (float)dat[5], (float)dat[6]).Length();
+		float ScaleZ = Vec3((float)dat[8], (float)dat[9], (float)dat[10]).Length();
+		SetScale(Vec3(ScaleX, ScaleY, ScaleZ));
+
+		Matrix4 Rotation = Matrix4::Identity();
+		Rotation[0] = (float)dat[0] / ScaleX;
+		Rotation[1] = (float)dat[1] / ScaleX;
+		Rotation[2] = (float)dat[2] / ScaleX;
+		Rotation[4] = (float)dat[4] / ScaleY;
+		Rotation[5] = (float)dat[5] / ScaleY;
+		Rotation[6] = (float)dat[6] / ScaleY;
+		Rotation[8] = (float)dat[8] / ScaleZ;
+		Rotation[9] = (float)dat[9] / ScaleZ;
+		Rotation[10] = (float)dat[10] / ScaleZ;
+
+		Quaternion Quat = MatrixToQuat(Rotation);
+		SetRotation(Quat);
+	}
+
 	/**
 	 * @brief Creates a transform from the given position.
 	 * Uses a zero rotation and a one scale.
 	 * 
 	 * @param position The position to be used.
 	 */
-	Transform(Vec3 position);
+	Transform(const Vec3& position);
 
 	/**
 	 * @brief Creates a transform from the given rotation.
@@ -26,7 +50,7 @@ public:
 	 *
 	 * @param rotation The rotation to be used.
 	 */
-	Transform(Quaternion rotation);
+	Transform(const Quaternion& rotation);
 
 	/**
 	 * @brief Creates a transform from the given rotation and position.
@@ -35,7 +59,7 @@ public:
 	 * @param position The position to be used.
 	 * @param rotation The rotation to be used.
 	 */
-	Transform(Vec3 position, Quaternion rotation);
+	Transform(const Vec3& position, const Quaternion& rotation);
 
 	/**
 	 * @brief Creates a transform.
@@ -44,7 +68,7 @@ public:
 	 * @param rotation The rotation to be used.
 	 * @param scale The scale to be used.
 	 */
-	Transform(Vec3 position, Quaternion rotation, Vec3 scale);
+	Transform(const Vec3& position, const Quaternion& rotation, const Vec3& scale);
 
 public:
 	void SetParentTransform(Transform* t) { Parent = t; IsDirty = true; }
@@ -70,6 +94,9 @@ public:
 
 	Matrix4 GetLocal();
 	Matrix4 GetWorldTransform();
+
+private:
+	void UpdateLocal();
 
 private:
 	Vec3 vPosition;

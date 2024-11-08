@@ -98,7 +98,7 @@ public:
 	VulkanBuffer ObjectIndexBuffer;
 
 	// Framebuffers used for world rendering, one per frame.
-	RenderTarget WorldRenderTargets[3];
+	//RenderTarget WorldRenderTargets[3];
 
 	bool EnableMultithreading;
 

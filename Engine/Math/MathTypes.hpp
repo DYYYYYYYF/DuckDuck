@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "DMath.hpp"
@@ -63,9 +63,11 @@ public:
 	/*
 	* @brief Normalizes vector
 	*/
-	void Normalize() { 
+	Vec2 Normalize() { 
 		x /= Length();
 		y /= Length();
+
+		return *this;
 	}
 
 	/*
@@ -75,7 +77,7 @@ public:
 	* @param tolerance The difference tolerance. Typically K_FLOAT_EPSILON or similar.
 	* @return True if within tolerance, otherwise false.
 	*/
-	bool Compare(const Vec2& vec, float tolerance = 0.000001f) {
+	bool Compare(const Vec2& vec, float tolerance = 0.000001f) const {
 		if (Dabs(x - vec.x) > tolerance) {
 			return false;
 		}
@@ -93,7 +95,7 @@ public:
 	* @param vec Another vector.
 	* @return The distance between this vector and the other.
 	*/
-	float Distance(const Vec2& vec) {
+	float Distance(const Vec2& vec) const {
 		Vec2 d{ x - vec.x, y - vec.y };
 		return d.Length();
 	}
@@ -222,7 +224,7 @@ public:
 	* @param tolerance The difference tolerance. Typically K_FLOAT_EPSILON or similar.
 	* @return True if within tolerance, otherwise false.
 	*/
-	bool Compare(const Vec3& vec, float tolerance = 0.000001f) {
+	bool Compare(const Vec3& vec, float tolerance = 0.000001f) const {
 		if (Dabs(x - vec.x) > tolerance) {
 			return false;
 		}
@@ -320,7 +322,7 @@ public:
 		return Vec3{ x - v.x, y - v.y, z - v.z };
 	}
 
-	friend Vec3  operator-(const Vec3& v1, const Vec3& v2) {
+	friend Vec3 operator-(const Vec3& v1, const Vec3& v2) {
 		return Vec3{ v1.x - v2.x, v1.y - v2.y, v1.z - v2.z };
 	}
 
@@ -366,16 +368,22 @@ public:
 	}
 };
 
+struct DAPI Axis {
+	inline static Vec3 X = Vec3{ 1.0f, 0.0f, 0.0f };
+	inline static Vec3 Y = Vec3{ 0.0f, 1.0f, 0.0f };
+	inline static Vec3 Z = Vec3{ 0.0f, 0.0f, 1.0f };
+};
+
 struct DAPI Vec4 {
 public:
 	union
 	{
 #if defined(DUSE_SIMD)
 		// Used for SIMD operations
-		alignas(16) __m128 data;
+		/*alignas(16) */__m128 data;
 #endif
 		// An array of x, y, z, w
-		alignas(16) float elements[4] = { 0.0f };
+		/*alignas(16) */float elements[4] = { 0.0f };
 		struct
 		{
 			union
@@ -481,7 +489,7 @@ public:
 	* @param tolerance The difference tolerance. Typically K_FLOAT_EPSILON or similar.
 	* @return True if within tolerance, otherwise false.
 	*/
-	bool Compare(const Vec4& vec, float tolerance = 0.000001f) {
+	bool Compare(const Vec4& vec, float tolerance = 0.000001f) const {
 		if (Dabs(x - vec.x) > tolerance) {
 			return false;
 		}
@@ -507,7 +515,7 @@ public:
 	* @param vec Another vector.
 	* @return The distance between this vector and the other.
 	*/
-	float Dot(const Vec4& vec) {
+	float Dot(const Vec4& vec) const {
 		return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
 	}
 
@@ -647,14 +655,38 @@ inline Vec4 ToVec4(const Vec3& vec, float w) {
 	return Vec4{ vec, w };
 }
 
+/**
+ * Matrix 4x4
+ * 0, 4, 8, 12,
+ * 1, 5, 9, 13,
+ * 2, 6,10, 14,
+ * 3, 7,11, 15
+ *
+ * M00 M10 M20 M30
+ * M01 M11 M21 M31
+ * M02 M12 M22 M32
+ * M03 M13 M23 M33
+ *
+ */
 struct DAPI Matrix4 {
 public:
 	union {
-		alignas(16) float data[16];
+		float data[16] = {0.0f};
 	};
 
 	Matrix4() {
 		Memory::Zero(data, sizeof(float) * 16);
+	}
+
+	template<typename T>
+	Matrix4(std::vector<T> d) {
+		if (d.size() == 16) {
+			for (size_t i = 0; i < d.size(); ++i) {
+				data[i] = static_cast<float>(d[i]);
+			}
+		}
+
+		ASSERT(d.size() == 16);
 	}
 
 	/*
@@ -672,13 +704,12 @@ public:
 
 		for (int i = 0; i < 4; ++i) {
 			for (int j = 0; j < 4; j++) {
-				*DstPtr = MatPtr1[0] * MatPtr2[0 + j] +
-					MatPtr1[1] * MatPtr2[4 + j] +
-					MatPtr1[2] * MatPtr2[8 + j] +
-					MatPtr1[3] * MatPtr2[12 + j];
+				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
+					MatPtr1[i * 4 + 1] * MatPtr2[4 + j] +
+					MatPtr1[i * 4 + 2] * MatPtr2[8 + j] +
+					MatPtr1[i * 4 + 3] * MatPtr2[12 + j];
 				DstPtr++;
 			}
-			MatPtr1+=4;
 		}
 
 		return NewMat;
@@ -1133,24 +1164,86 @@ public:
 		);
 	}
 
+	Vec4 GetColoumn(int i) const { 
+		if (i < 1 || i > 4) {
+			LOG_WARN("Invalid matrix boundings. Return Vec4().")
+				return Vec4();
+		}
+
+		int Col = i - 1;
+		return Vec4(data[Col], data[Col + 4], data[Col + 8], data[Col + 12]);
+	}
+
+	Vec4 GetRow(int i) const { 
+		if (i < 1 || i > 4) {
+			LOG_WARN("Invalid matrix boundings. Return Vec4().")
+				return Vec4();
+		}
+
+		int Row = i - 1;
+		return Vec4(data[Row * 4], data[Row * 4 + 1], data[Row * 4 + 2], data[Row * 4 + 3]);
+	}
+
 };
+
+inline Quaternion MatrixToQuat(const Matrix4& M) {
+	float trace = M[0] + M[5] + M[10];
+	Quaternion q;
+
+	if (trace > 0) {
+		float S = std::sqrt(trace + 1.0f) * 2;
+		q.w = 0.25f * S;
+		q.x = (M[9] - M[6]) / S;
+		q.y = (M[2] - M[8]) / S;
+		q.z = (M[4] - M[1]) / S;
+	}
+	else {
+		if (M[0] > M[5] && M[0] > M[10]) {
+			float S = std::sqrt(1.0f + M[0] - M[5] - M[10]) * 2;
+			q.w = (M[9] - M[6]) / S;
+			q.x = 0.25f * S;
+			q.y = (M[1] + M[4]) / S;
+			q.z = (M[2] + M[8]) / S;
+		}
+		else if (M[5] > M[10]) {
+			float S = std::sqrt(1.0f + M[5] - M[0] - M[10]) * 2;
+			q.w = (M[2] - M[8]) / S;
+			q.x = (M[1] + M[4]) / S;
+			q.y = 0.25f * S;
+			q.z = (M[6] + M[9]) / S;
+		}
+		else {
+			float S = std::sqrt(1.0f + M[10] - M[0] - M[5]) * 2;
+			q.w = (M[4] - M[1]) / S;
+			q.x = (M[2] + M[8]) / S;
+			q.y = (M[6] + M[9]) / S;
+			q.z = 0.25f * S;
+		}
+	}
+
+	if (q.Length() != 1.0f) {
+		q = q.QuaternionIdentity();
+	}
+
+	return q;
+}
 
 inline Matrix4 QuatToMatrix(const Quaternion& q) {
 	Matrix4 Matrix = Matrix4::Identity();
 	Quaternion n =  q;
 	n.Normalize();
 
-	Matrix.data[0] = 1.0f - 2.0f * n.y * n.y - 2.0f * n.z * n.z;
-	Matrix.data[1] = 2.0f * n.x * n.y - 2.0f * n.z * n.w;
-	Matrix.data[2] = 2.0f * n.x * n.z + 2.0f * n.y * n.w;
+	Matrix.data[0] = 1.0f - 2.0f * (n.y * n.y - n.z * n.z);
+	Matrix.data[1] = 2.0f * (n.x * n.y - n.z * n.w);
+	Matrix.data[2] = 2.0f * (n.x * n.z + n.y * n.w);
 
-	Matrix.data[4] = 2.0f * n.x * n.y + 2.0f * n.z * n.w;
-	Matrix.data[5] = 1.0f - 2.0f * n.x * n.x - 2.0f * n.z * n.z;
-	Matrix.data[6] = 2.0f * n.y * n.z - 2.0f * n.x * n.w;
+	Matrix.data[4] = 2.0f * (n.x * n.y + n.z * n.w);
+	Matrix.data[5] = 1.0f - 2.0f * (n.x * n.x + n.z * n.z);
+	Matrix.data[6] = 2.0f * (n.y * n.z - n.x * n.w);
 
-	Matrix.data[8] = 2.0f * n.x * n.z - 2.0f * n.y * n.w;
-	Matrix.data[9] = 2.0f * n.y * n.z + 2.0f * n.x * n.w;
-	Matrix.data[10] = 1.0f - 2.0f * n.x * n.x - 2.0f * n.y * n.y;
+	Matrix.data[8] = 2.0f * (n.x * n.z - n.y * n.w);
+	Matrix.data[9] = 2.0f * (n.y * n.z + n.x * n.w);
+	Matrix.data[10] = 1.0f - 2.0f * (n.x * n.x + n.y * n.y);
 
 	return Matrix;
 }
@@ -1183,7 +1276,7 @@ inline Matrix4 QuatToRotationMatrix(const Quaternion& q, const Vec3& center) {
 	return Matrix;
 }
 
-inline Quaternion QuaternionFromAxisAngle(const Vec3& axis, float angle, bool normalize) {
+inline Quaternion QuaternionFromAxisAngle(const Vec3& axis, float angle, bool normalize = true) {
 	const float HalfAngle = 0.5f * angle;
 	float s = DSin(HalfAngle);
 	float c = DCos(HalfAngle);

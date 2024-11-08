@@ -13,6 +13,7 @@ STextureSystemConfig TextureSystem::TextureSystemConfig;
 Texture TextureSystem::DefaultDiffuseTexture;
 Texture TextureSystem::DefaultSpecularTexture;
 Texture TextureSystem::DefaultNormalTexture;
+Texture TextureSystem::DefaultRoughnessMetallicTexture;
 Texture* TextureSystem::RegisteredTextures = nullptr;
 STextureReference* TextureSystem::TableMemory = nullptr;
 HashTable TextureSystem::RegisteredTextureTable;
@@ -101,6 +102,11 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_SPECULAR_TEXTURE_NAME'");
 		return &DefaultSpecularTexture;
 	}
+	
+	if (StringEquali(name, DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME)) {
+		LOG_WARN("Texture acquire return default texture. Use GetDefaultTexture() for texture 'DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME'");
+		return &DefaultRoughnessMetallicTexture;
+	}
 
 	uint32_t ID = INVALID_ID;
 	// NOTE: Increments reference_cout, or creates new entry.
@@ -109,6 +115,7 @@ Texture* TextureSystem::Acquire(const char* name, bool auto_release) {
 		return nullptr;
 	}
 
+	Memory::Copy(RegisteredTextures[ID].Name, name, TEXTURE_NAME_MAX_LENGTH);
 	return &RegisteredTextures[ID];
 }
 
@@ -156,9 +163,11 @@ Texture* TextureSystem::AcquireWriteable(const char* name, uint32_t width, uint3
 
 void TextureSystem::Release(const char* name) {
 	// Ignore release requests for the default texture.
-	if (strcmp(name, DEFAULT_DIFFUSE_TEXTURE_NAME) == 0 ||
-		strcmp(name, DEFAULT_SPECULAR_TEXTURE_NAME) == 0 ||
-		strcmp(name, DEFAULT_NORMAL_TEXTURE_NAME) == 0 ) {
+	if (strcmp(name, DEFAULT_DIFFUSE_TEXTURE_NAME)				== 0 ||
+		strcmp(name, DEFAULT_SPECULAR_TEXTURE_NAME)				== 0 ||
+		strcmp(name, DEFAULT_NORMAL_TEXTURE_NAME)				== 0 ||
+		strcmp(name, DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME)	== 0
+	){
 		return;
 	}
 
@@ -285,6 +294,14 @@ Texture* TextureSystem::GetDefaultNormalTexture() {
 	return nullptr;
 }
 
+Texture* TextureSystem::GetDefaultRoughnessMetallicTexture() {
+	if (Initilized) {
+		return &DefaultRoughnessMetallicTexture;
+	}
+
+	return nullptr;
+}
+
 bool TextureSystem::CreateDefaultTexture() {
 
 	// NOTE: create default texture, a 256x256 blue/white checkerboard pattern.
@@ -377,6 +394,37 @@ bool TextureSystem::CreateDefaultTexture() {
 	// Manually set the texture generation to invalid since this is a default texture.
 	DefaultNormalTexture.Generation = INVALID_ID;
 
+	// Roughness metallic texture.
+	LOG_INFO("Creating default roughness metallic texture...");
+	unsigned char RoughnessMetallicPixels[16 * 16 * 4];
+	// Default spec map is black (no specular).
+	Memory::Set(RoughnessMetallicPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
+
+	// Each pixel.
+	for (size_t row = 0; row < 16; row++) {
+		for (size_t col = 0; col < 16; col++) {
+			uint32_t Index = (uint32_t)((row * 16) + col);
+			uint32_t IndexBpp = Index * bpp;
+			// Set blue, z-axis by default and alpha.
+			RoughnessMetallicPixels[IndexBpp + 0] = (char)0.1;
+			RoughnessMetallicPixels[IndexBpp + 1] = (char)0.7;
+			RoughnessMetallicPixels[IndexBpp + 2] = (char)0.7;
+			RoughnessMetallicPixels[IndexBpp + 3] = (char)1.0;
+		}
+	}
+
+	strncpy(DefaultRoughnessMetallicTexture.Name, DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME, TEXTURE_NAME_MAX_LENGTH);
+	DefaultRoughnessMetallicTexture.Width = 16;
+	DefaultRoughnessMetallicTexture.Height = 16;
+	DefaultRoughnessMetallicTexture.ChannelCount = 4;
+	DefaultRoughnessMetallicTexture.Generation = INVALID_ID;
+	DefaultRoughnessMetallicTexture.Flags = 0;
+	DefaultRoughnessMetallicTexture.Type = TextureType::eTexture_Type_2D;
+	Renderer->CreateTexture(RoughnessMetallicPixels, &DefaultRoughnessMetallicTexture);
+	LOG_INFO("Default roughness metallic texture created.");
+	// Manually set the texture generation to invalid since this is a default texture.
+	DefaultRoughnessMetallicTexture.Generation = INVALID_ID;
+
 	return true;
 }
 
@@ -384,6 +432,7 @@ void TextureSystem::DestroyDefaultTexture() {
 	DestroyTexture(&DefaultDiffuseTexture);
 	DestroyTexture(&DefaultSpecularTexture);
 	DestroyTexture(&DefaultNormalTexture);
+	DestroyTexture(&DefaultRoughnessMetallicTexture);
 }
 
 bool TextureSystem::LoadCubeTexture(const char* name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t) {

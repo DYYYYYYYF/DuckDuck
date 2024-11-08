@@ -1,4 +1,4 @@
-#include "GeometrySystem.h"
+﻿#include "GeometrySystem.h"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Core/EngineLogger.hpp"
@@ -228,7 +228,7 @@ bool GeometrySystem::CreateGeometry(SGeometryConfig config, Geometry* geometry) 
 	geometry->Center = config.center;
 	geometry->Extents.min = config.min_extents;
 	geometry->Extents.max = config.max_extents;
-	geometry->name = config.name;
+	geometry->name = std::move(config.name);
 
 	// Acquire the material.
 	if (config.material_name.length() > 0) {
@@ -368,7 +368,7 @@ SGeometryConfig GeometrySystem::GeneratePlaneConfig(float width, float height, u
 		Config.name = name;
 	}
 	else {
-		Config.name = DEFAULT_GEOMETRY_NAME;
+		Config.name = DEFAULT_GEOMETRY_PLANE_NAME;
 	}
 
 	if (material_name && strlen(material_name) > 0) {
@@ -538,7 +538,7 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 			Config.name = name;
 		}
 		else {
-			Config.name = DEFAULT_GEOMETRY_NAME;
+			Config.name = DEFAULT_GEOMETRY_CUBE_NAME;
 		}
 
 		if (material_name && strlen(material_name) > 0) {

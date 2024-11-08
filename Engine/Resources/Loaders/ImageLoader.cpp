@@ -1,4 +1,4 @@
-#include "ImageLoader.hpp"
+﻿#include "ImageLoader.hpp"
 #include "Systems/ResourceSystem.h"
 
 #include "Platform/FileSystem.hpp"
@@ -6,10 +6,13 @@
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
 
-// TODO: resource loader.
+#ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
+#endif
+
 // Use our own filesystem
 #define STBI_NO_STDIO
+
 #include "stb_image.h"
 
 ImageLoader::ImageLoader() {

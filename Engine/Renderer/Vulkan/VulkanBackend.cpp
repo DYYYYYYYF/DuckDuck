@@ -1,4 +1,4 @@
-#include "VulkanBackend.hpp"
+﻿#include "VulkanBackend.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanImage.hpp"
@@ -1484,8 +1484,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 	vk::DescriptorSet ObjectDescriptorSet = ObjectState->descriptor_set_state.descriptorSets[ImageIndex];
 
 	if (need_update){
-		vk::WriteDescriptorSet DescriptorWrites[2];
-		Memory::Zero(DescriptorWrites, sizeof(vk::WriteDescriptorSet) * 2);
+		std::array<vk::WriteDescriptorSet, 2> DescriptorWrites;
 
 		uint32_t DescriptorCount = 0;
 		uint32_t DescriptorIndex = 0;
@@ -1550,6 +1549,9 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 					case TextureUsage::eTexture_Usage_Map_Specular:
 						t = TextureSystem::GetDefaultSpecularTexture();
 						break;
+					case TextureUsage::eTexture_Usage_Map_RoughnessMetallic:
+						t = TextureSystem::GetDefaultRoughnessMetallicTexture();
+						break;
 					default:
 						LOG_WARN("Undefined texture use %d.", map->usage);
 						t = TextureSystem::GetDefaultDiffuseTexture();
@@ -1586,7 +1588,7 @@ bool VulkanBackend::ApplyInstanceShader(Shader* shader, bool need_update) {
 		}
 
 		if (DescriptorCount > 0) {
-			Context.Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites, 0, nullptr);
+			Context.Device.GetLogicalDevice().updateDescriptorSets(DescriptorCount, DescriptorWrites.data(), 0, nullptr);
 		}
 	}
 
@@ -1719,16 +1721,16 @@ uint32_t VulkanBackend::AcquireInstanceResource(Shader* shader, std::vector<Text
 	}
 
 	// Allocate 3 descriptor sets (one per frame).
-	vk::DescriptorSetLayout Layouts[3] = {
+	std::array<vk::DescriptorSetLayout, 3> Layouts = {
 		VkShader->DescriptorSetLayouts[DESC_SET_INDEX_INSTANCE],
 		VkShader->DescriptorSetLayouts[DESC_SET_INDEX_INSTANCE],
-		VkShader->DescriptorSetLayouts[DESC_SET_INDEX_INSTANCE]
+		VkShader->DescriptorSetLayouts[DESC_SET_INDEX_INSTANCE],
 	};
 
 	vk::DescriptorSetAllocateInfo AllocInfo;
 	AllocInfo.setDescriptorPool(VkShader->DescriptorPool)
-		.setDescriptorSetCount(3)
-		.setPSetLayouts(Layouts);
+		.setDescriptorSetCount((uint32_t)Layouts.size())
+		.setPSetLayouts(Layouts.data());
 	if(Context.Device.GetLogicalDevice().allocateDescriptorSets(&AllocInfo, InstanceState->descriptor_set_state.descriptorSets.data())
 		!= vk::Result::eSuccess) {
 			LOG_ERROR("Allocate descriptor sets failed.");

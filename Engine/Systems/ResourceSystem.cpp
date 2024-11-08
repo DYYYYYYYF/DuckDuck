@@ -23,13 +23,6 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 
 	Config = config;
 
-	// Invalidate all loaders.
-	RegisteredLoaders.resize(config.max_loader_count);
-	for (uint32_t i = 0; i < config.max_loader_count; ++i) {
-		RegisteredLoaders[i] = (IResourceLoader*)Memory::Allocate(sizeof(IResourceLoader), MemoryType::eMemory_Type_Array);
-		RegisteredLoaders[i]->Id = INVALID_ID;
-	}
-
 	// NOTE: Auto-register known loader types here.
 	IResourceLoader* BinLoader = NewObject<BinaryLoader>();
 	RegisterLoader(BinLoader);
@@ -64,10 +57,15 @@ void ResourceSystem::Shutdown() {
 }
 
 bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
-	uint32_t Count = Config.max_loader_count;
+	uint32_t Count = (uint32_t)RegisteredLoaders.size();
+	if (Count > Config.max_loader_count) {
+		LOG_ERROR("Can not register more loader, max loader count is %d.", Config.max_loader_count);
+		return false;
+	}
 
 	// Ensure no loaders for the given type already exist.
 	for (uint32_t i = 0; i < Count; ++i) {
+		if (RegisteredLoaders[i] == nullptr) continue;
 		if (RegisteredLoaders[i]->Id != INVALID_ID) {
 			if (RegisteredLoaders[i]->Type == loader->Type) {
 				LOG_ERROR("Resource system register loader error. Loader of type %d already exists and will ot be registered.", loader->Type);
@@ -80,17 +78,10 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 		}
 	}
 
-	for (uint32_t i = 0; i < Count; ++i) {
-		if (RegisteredLoaders[i]->Id == INVALID_ID) {
-			RegisteredLoaders[i] = loader;
-			RegisteredLoaders[i]->Id = i;
+	loader->Id = Count;
+	RegisteredLoaders.push_back(loader);
 
-			LOG_INFO("Loader registered.");
-			return true;
-		}
-	}
-
-	return false;
+	return true;
 }
 
 bool ResourceSystem::Load(const char* name, ResourceType type, void* params, Resource* resource) {

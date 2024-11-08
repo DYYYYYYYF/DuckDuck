@@ -5,9 +5,10 @@
 #include "Resources/Resource.hpp"
 #include "Containers/THashTable.hpp"
 
-#define DEFAULT_DIFFUSE_TEXTURE_NAME "default_diffuse"
-#define DEFAULT_SPECULAR_TEXTURE_NAME "default_specular"
-#define DEFAULT_NORMAL_TEXTURE_NAME "default_normal"
+#define DEFAULT_DIFFUSE_TEXTURE_NAME "DefaultBaseColorTexture"
+#define DEFAULT_SPECULAR_TEXTURE_NAME "DefaultSpecularTexture"
+#define DEFAULT_NORMAL_TEXTURE_NAME "DefaultNormalTexture"
+#define DEFAULT_ROUGHNESS_METALLIC_TEXTURE_NAME "DefaulRougnessMetallicTexture"
 
 class IRenderer;
 
@@ -48,6 +49,7 @@ public:
 	static Texture* GetDefaultDiffuseTexture();
 	static Texture* GetDefaultSpecularTexture();
 	static Texture* GetDefaultNormalTexture();
+	static Texture* GetDefaultRoughnessMetallicTexture();
 
 private:
 	static bool LoadTexture(const char* name, Texture* texture);
@@ -67,6 +69,7 @@ private:
 	static Texture DefaultDiffuseTexture;
 	static Texture DefaultSpecularTexture;
 	static Texture DefaultNormalTexture;
+	static Texture DefaultRoughnessMetallicTexture;
 
 	// Array of registered textures.
 	static Texture* RegisteredTextures;

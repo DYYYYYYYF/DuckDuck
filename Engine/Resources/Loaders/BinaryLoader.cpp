@@ -73,7 +73,7 @@ void BinaryLoader::Unload(Resource* resource) {
 	}
 
 	if (resource->Data) {
-		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Texture);
+		Memory::Free(resource->Data, resource->DataSize, MemoryType::eMemory_Type_Array);
 		resource->Data = nullptr;
 		resource->DataSize = 0;
 		resource->LoaderID = INVALID_ID;

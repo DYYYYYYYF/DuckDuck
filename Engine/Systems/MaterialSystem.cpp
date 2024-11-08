@@ -1,4 +1,4 @@
-#include "MaterialSystem.h"
+﻿#include "MaterialSystem.h"
 
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
@@ -167,6 +167,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 				MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
 				MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
 				MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+				MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
 				MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
 				MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 				MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
@@ -186,7 +187,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 
 
 			if (m->Generation == INVALID_ID) {
-				m->Generation = 0;
+				m->Generation = 1;
 			}
 			else {
 				m->Generation++;
@@ -259,8 +260,6 @@ Material* MaterialSystem::GetDefaultMaterial() {
 }
 
 bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
-	Memory::Zero(mat, sizeof(Material));
-
 	// name
 	mat->Name = std::move(config.name);
 	mat->ShaderID = ShaderSystem::GetID(config.shader_name.c_str());
@@ -347,6 +346,33 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 		mat->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
 		mat->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
 	}
+
+	// Roughness metallic map
+	mat->RoughnessMetallicMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->RoughnessMetallicMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	mat->RoughnessMetallicMap.repeat_u = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->RoughnessMetallicMap.repeat_v = TextureRepeat::eTexture_Repeat_Repeat;
+	mat->RoughnessMetallicMap.repeat_w = TextureRepeat::eTexture_Repeat_Repeat;
+	if (!Renderer->AcquireTextureMap(&mat->RoughnessMetallicMap)) {
+		LOG_ERROR("Unable to acquire resources for normal texture map.");
+		return false;
+	}
+
+	if (!config.MetallicRoughnessTexName.empty()) {
+		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
+		mat->RoughnessMetallicMap.texture = TextureSystem::Acquire(config.MetallicRoughnessTexName.c_str(), true);
+		if (mat->RoughnessMetallicMap.texture == nullptr) {
+			LOG_WARN("Unable to load texture '%s' for material '%s', using default.", config.MetallicRoughnessTexName.c_str(), mat->Name.c_str());
+
+			// TODO: 如果没有RM贴图，可以根据具体的 Roughness/Metallic 参数创建新的贴图。
+			mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
+		}
+	}
+	else {
+		// NOTE: Only set for clarity, as call to Memory::Zero above does this already.
+		mat->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_RoughnessMetallic;
+		mat->RoughnessMetallicMap.texture = TextureSystem::GetDefaultRoughnessMetallicTexture();
+	}
 	// TODO: other maps.
 
 	// Send it off to the renderer to acquire resources.
@@ -357,7 +383,7 @@ bool MaterialSystem::LoadMaterial(SMaterialConfig config, Material* mat) {
 	}
 
 	// Gather a list of pointers to texture maps.
-	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap };
+	std::vector<TextureMap*> Maps = { &mat->DiffuseMap, &mat->SpecularMap, &mat->NormalMap, &mat->RoughnessMetallicMap };
 	mat->InternalId = Renderer->AcquireInstanceResource(s, Maps);
 	if (mat->InternalId == INVALID_ID) {
 		LOG_ERROR("Failed to acquire renderer resources for material '%s'.", mat->Name.c_str());
@@ -374,21 +400,21 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	if (mat->DiffuseMap.texture != nullptr) {
 		TextureSystem::Release(mat->DiffuseMap.texture->Name);
 	}
-
-	// Release texture references.
 	if (mat->SpecularMap.texture != nullptr) {
 		TextureSystem::Release(mat->SpecularMap.texture->Name);
 	}
-
-	// Release texture references.
 	if (mat->NormalMap.texture != nullptr) {
 		TextureSystem::Release(mat->NormalMap.texture->Name);
+	}
+	if (mat->RoughnessMetallicMap.texture != nullptr) {
+		TextureSystem::Release(mat->RoughnessMetallicMap.texture->Name);
 	}
 
 	// Release texture map resources.
 	Renderer->ReleaseTextureMap(&mat->DiffuseMap);
 	Renderer->ReleaseTextureMap(&mat->SpecularMap);
 	Renderer->ReleaseTextureMap(&mat->NormalMap);
+	Renderer->ReleaseTextureMap(&mat->RoughnessMetallicMap);
 
 	//Release renderer resources.
 	if (mat->ShaderID != INVALID_ID && mat->InternalId != INVALID_ID) {
@@ -447,7 +473,19 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return false;
 	}
 
-	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap };
+	DefaultMaterial.RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+	DefaultMaterial.RoughnessMetallicMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.RoughnessMetallicMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial.RoughnessMetallicMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial.RoughnessMetallicMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial.RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
+	DefaultMaterial.RoughnessMetallicMap.texture = TextureSystem::GetDefaultNormalTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial.RoughnessMetallicMap)) {
+		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
+		return false;
+	}
+
+	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap, &DefaultMaterial.RoughnessMetallicMap };
 
 	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
 	if (s == nullptr) {
@@ -521,6 +559,7 @@ bool MaterialSystem::ApplyInstance(Material* mat, bool need_update) {
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.diffuse_texture, &mat->DiffuseMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.specular_texture, &mat->SpecularMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.normal_texture, &mat->NormalMap));
+			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness_metallic_texture, &mat->RoughnessMetallicMap));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.shininess, &mat->Shininess));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.metallic, &mat->Metallic));
 			MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.roughness, &mat->Roughness));

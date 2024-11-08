@@ -100,6 +100,12 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 			// Parse the color
 			strncpy(ResourceData->normal_map_name, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
 		}
+		else if (strcmp(TrimmedVarName, "roughness_metallic_map_name") == 0) {
+			// Parse the color
+			char TexName[TEXTURE_NAME_MAX_LENGTH] = "";
+			strncpy(TexName, TrimmedValue, TEXTURE_NAME_MAX_LENGTH);
+			ResourceData->MetallicRoughnessTexName = std::string(TexName);
+		}
 		else if (strcmp(TrimmedVarName, "diffuse_color") == 0) {
 			// Parse the color
 			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);
