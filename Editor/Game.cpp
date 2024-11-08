@@ -565,19 +565,43 @@ bool GameInstance::Update(float delta_time) {
 
 
 	// TODO: Temp
+	std::string HoverdObjectName = "None";
+	if (HoveredObjectID != INVALID_ID) {
+		if (HoveredObjectID == TestText.UniqueID) {
+			HoverdObjectName = TestText.Name;
+		}
+		if (HoveredObjectID == TestSysText.UniqueID) {
+			HoverdObjectName = TestSysText.Name;
+		}
+
+		for (const auto& Mesh : Meshes) {
+			if (Mesh.UniqueID == HoveredObjectID)
+			{
+				HoverdObjectName = Mesh.Name;
+				break;
+			}
+		}
+		for (const auto& UI : UIMeshes) {
+			if (UI.UniqueID == HoveredObjectID)
+			{
+				HoverdObjectName = UI.Name;
+				break;
+			}
+		}
+	}
+
 	char FPSText[512];
 	StringFormat(FPSText, 512,
 		"\
 	Camera Pos: [%.3f %.3f %.3f]\tCamera Rot: [%.3f %.3f %.3f]\n\
-	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered: %s%u\n\
+	L=%s R=%s\tNDC: x=%.2f, y=%.2f\tHovered Object: %s\n\
 	FPS: %d\tDelta time: %.2f\n\
 	Drawn Count: %-5u",
 		Pos.x, Pos.y, Pos.z,
 		Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
 		LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
 		MouseX_NDC, MouseY_NDC,
-		HoveredObjectID == INVALID_ID ? "None" : "",
-		HoveredObjectID == INVALID_ID ? 0 : HoveredObjectID,
+		HoverdObjectName.c_str(),
 		(int)FPS,
 		(float)FrameTime,
 		DrawCount
