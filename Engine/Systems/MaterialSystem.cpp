@@ -513,7 +513,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
         return false;                                 \
     }
 #else
-#define MATERIAL_APPLY_OR_FAIL(expr) 
+#define MATERIAL_APPLY_OR_FAIL(expr) expr
 #endif
 
 bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position, uint32_t render_mode) {
