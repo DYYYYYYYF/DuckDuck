@@ -53,17 +53,16 @@ elseif(${WIN32})
     message("-- Current environment: Windows")
 
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-
-    set(Vulkan_DIR "D:/C_Library/VulkanSDK")
-
-    if(${Vulkan_DIR} STREQUAL " ")
-        message("-- Please set Vulkan direction!!!!")
-        return()
-    endif()
+	
+if(DEFINED ENV{VULKAN_SDK})
+    set(Vulkan_DIR $ENV{VULKAN_SDK})
+else()
+    message(FATAL_ERROR "VULKAN_SDK environment variable is not set.")
+endif()
 
     set(Vulkan_LIBRARY_DIRS "${Vulkan_DIR}/Lib")
     set(Vulkan_INCLUDE_DIRS "${Vulkan_DIR}/Include")
-
+	
     include_directories(${Vulkan_INCLUDE_DIRS})
     link_directories(${Vulkan_LIBRARY_DIRS} ${UD_LOGGER_DIR}/lib/Windows/${CMAKE_BUILD_TYPE})
 endif()
