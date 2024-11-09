@@ -9,10 +9,11 @@ struct BitmapFontLookup;
 struct SystemFontLookup;
 
 struct SystemFontConfig {
+public:
 	SystemFontConfig() {
 		name = nullptr;
 		resourceName = nullptr;
-		defaultSize = 0;;
+		defaultSize = 0;
 	}
 	
 	SystemFontConfig(const SystemFontConfig& s) {
@@ -27,6 +28,7 @@ struct SystemFontConfig {
 };
 
 struct BitmapFontConfig {
+public:
 	BitmapFontConfig() {
 		name = nullptr;
 		resourceName = nullptr;

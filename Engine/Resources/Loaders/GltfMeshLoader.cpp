@@ -1,4 +1,4 @@
-﻿#include "MeshLoader.h"
+#include "MeshLoader.h"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
@@ -138,7 +138,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -153,7 +153,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -168,7 +168,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -185,7 +185,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 			const tinygltf::Texture& texture = model.textures[textureIndex];
 			// 获取图像索引
 			if (texture.source < 0 || texture.source >= model.images.size()) {
-				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name);
+				LOG_WARN("GLTF laod warning.Invalid image index %i in material %s.", texture.source, CurrentConfig.name.c_str());
 				continue;
 			}
 
@@ -319,7 +319,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 		if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
 			const tinygltf::Accessor& positionAccessor = model.accessors[primitive.attributes.at("POSITION")];
 			const tinygltf::BufferView& positionView = model.bufferViews[positionAccessor.bufferView];
-			positionAccessor.byteOffset;
+			// positionAccessor.byteOffset;
 			switch (positionAccessor.componentType)
 			{
 			case TINYGLTF_COMPONENT_TYPE_FLOAT:

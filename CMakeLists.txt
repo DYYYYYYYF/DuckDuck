@@ -42,14 +42,12 @@ endif()
 if(${APPLE})
     message("-- Current environment: MacOS")
 
+    set(SYSTEM_LIBRARY_DIR "/usr/local/lib")
     find_package(Vulkan QUIET)
     find_package(PkgConfig REQUIRED)
 
-    pkg_search_module(GLFW REQUIRED GLFW3)
-    pkg_search_module(GLM REQUIRED GLM)
-    
     include_directories(${Vulkan_INCLUDE_DIRS})
-    link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE})
+  link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE} ${SYSTEM_LIBRARY_DIR})
 
 elseif(${WIN32})
     message("-- Current environment: Windows")

@@ -1,4 +1,4 @@
-﻿#include "TextureSystem.h"
+#include "TextureSystem.h"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/Application.hpp"
@@ -527,7 +527,7 @@ void TextureSystem::LoadJobFail(void* params) {
 	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name);
 	ResourceSystem::Unload(&TextureParams->ImageResource);
 }
-
+                                            
 bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	TextureLoadParams* LoadParams = (TextureLoadParams*)params;
 

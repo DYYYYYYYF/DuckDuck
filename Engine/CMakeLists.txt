@@ -36,6 +36,7 @@ target_include_directories(
 
 if(${APPLE})
     target_link_libraries(engine PUBLIC libLogger.a)
+    target_link_libraries(engine PUBLIC libshaderc_combined.a)
     target_link_libraries(engine PUBLIC Vulkan::Vulkan)
 
     # MacOS screen

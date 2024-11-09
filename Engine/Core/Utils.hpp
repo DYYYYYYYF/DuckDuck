@@ -5,6 +5,7 @@
 
 // Shader compiler
 #include <shaderc/shaderc.hpp>
+#include "Resources/Shader.hpp"
 
 class Utils {
 public:

@@ -5,7 +5,7 @@
 class IResourceLoader {
 public:
 	IResourceLoader() : Id(INVALID_ID), CustomType(nullptr), TypePath(nullptr) {}
-	~IResourceLoader() {
+	virtual ~IResourceLoader() {
 		Id = INVALID_ID;
 		CustomType = nullptr;
 		TypePath = nullptr;

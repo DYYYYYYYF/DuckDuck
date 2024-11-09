@@ -1,4 +1,4 @@
-﻿#include "GeometrySystem.h"
+#include "GeometrySystem.h"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Core/EngineLogger.hpp"
@@ -77,7 +77,7 @@ Geometry* GeometrySystem::AcquireFromConfig(SGeometryConfig config, bool auto_re
 	}
 
 	if (!CreateGeometry(config, geometry)) {
-		LOG_ERROR("Failed to create geometry '%s'. Returning nullptr.", config.name);
+		LOG_ERROR("Failed to create geometry '%s'. Returning nullptr.", config.name.c_str());
 		return nullptr;
 	}
 

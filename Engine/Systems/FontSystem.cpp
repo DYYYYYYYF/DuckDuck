@@ -207,7 +207,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		// Create a default size variant.
 		FontData Variant;
 		if (!CreateSystemFontVariant(Lookup, config->defaultSize, Face->name.c_str(), &Variant)) {
-			LOG_ERROR("Failed to create variant: %s, index %i.", Face->name, i);
+			LOG_ERROR("Failed to create variant: %s, index %i.", Face->name.c_str(), i);
 			continue;
 		}
 

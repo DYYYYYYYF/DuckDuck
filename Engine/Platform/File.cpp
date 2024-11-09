@@ -1,8 +1,11 @@
-﻿#include "File.hpp"
+#include "File.hpp"
 #include "FileSystem.hpp"
 #include "Core/EngineLogger.hpp"
 
 #include <string>
+#ifdef DPLATFORM_MACOS
+#include <sys/stat.h>
+#endif
 
 File::File(const std::string& fn) {
 	Name = fn;

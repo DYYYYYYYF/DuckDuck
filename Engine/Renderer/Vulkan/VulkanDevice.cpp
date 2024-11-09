@@ -260,8 +260,8 @@ bool VulkanDevice::MeetsRequirements(vk::PhysicalDevice device, vk::SurfaceKHR s
 	QueueFamilyInfo.present_index = -1;
 	QueueFamilyInfo.transfer_index = -1;
 
-	// Is discrete GPU
-#if defined(DPLATFORM_MACOS)
+	// If not MacOS, discrete GPU is not allowed.
+#if !defined(DPLATFORM_MACOS)
 	if (DeviceRequirements.discrete_gpu) {
 		LOG_WARN("MacOS device may be a Discrete Gpu. Allow selected.");
 		if (properties->deviceType != vk::PhysicalDeviceType::eDiscreteGpu) {

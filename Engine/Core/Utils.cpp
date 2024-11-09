@@ -1,6 +1,5 @@
 #include "Utils.hpp"
 #include "Platform/File.hpp"
-
 #include "Resources/Shader.hpp"
 
 std::vector<uint32_t> Utils::CompileShader(const std::string& file, enum ShaderStage shaderStage, bool writeToDisk/* = true*/) {
@@ -13,6 +12,10 @@ std::vector<uint32_t> Utils::CompileShader(const std::string& file, enum ShaderS
 	case ShaderStage::eShader_Stage_Fragment:
 		scShadercStage = shaderc_shader_kind::shaderc_fragment_shader;
 		break;
+    case ShaderStage::eShader_Stage_Geometry:
+        break;
+    case ShaderStage::eShader_Stage_Compute:
+        break;
 	}
 
 	File ShaderSource(file);

@@ -1,4 +1,4 @@
-﻿#include "ImageLoader.hpp"
+#include "ImageLoader.hpp"
 #include "Systems/ResourceSystem.h"
 
 #include "Platform/FileSystem.hpp"
