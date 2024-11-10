@@ -1,4 +1,4 @@
-#include "File.hpp"
+﻿#include "File.hpp"
 #include "FileSystem.hpp"
 #include "Core/EngineLogger.hpp"
 
