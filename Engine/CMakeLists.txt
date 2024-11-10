@@ -56,9 +56,11 @@ elseif(${WIN32})
    set(GLSLANGL_IBS 
     "$<$<CONFIG:Debug>:shaderc_combinedd.lib>"
     "$<$<CONFIG:Release>:shaderc_combined.lib>"
+    "$<$<CONFIG:RelWithDebInfo>:shaderc_combined.lib>"
 	)
 
 # 链接库
+message("-- Shaderc: ${GLSLANGL_IBS}")
     target_link_libraries(engine PUBLIC ${GLSLANGL_IBS})
     target_link_libraries(engine PUBLIC "Logger.lib")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
