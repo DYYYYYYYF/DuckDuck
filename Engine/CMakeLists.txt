@@ -52,17 +52,14 @@ if(${APPLE})
 
     set_target_properties(engine PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
 elseif(${WIN32})
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(GLSLANGL_IBS
-            shaderc_combinedd
-        )
-    else()
-        set(GLSLANGL_IBS
-            shaderc_combined
-        )
-    endif()
+# 设置库名称基于配置
+   set(GLSLANGL_IBS 
+    "$<$<CONFIG:Debug>:shaderc_combinedd.lib>"
+    "$<$<CONFIG:Release>:shaderc_combined.lib>"
+	)
 
-    target_link_libraries(engine PUBLIC "${GLSLANGL_IBS}")
+# 链接库
+    target_link_libraries(engine PUBLIC ${GLSLANGL_IBS})
     target_link_libraries(engine PUBLIC "Logger.lib")
     target_link_libraries(engine PUBLIC "vulkan-1.lib")
 endif()
