@@ -7,12 +7,6 @@ include_directories(${Python3_INCLUDE_DIRS})
 message("-- Python3 include path: ${Python3_INCLUDE_DIRS}")
 message("-- Python3 libraries: ${Python3_LIBRARIES}")
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${UD_LOGGER_DIR}/include
-    ${STB_DIR}
-)
-
 file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.mm)
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
@@ -52,8 +46,8 @@ if(${APPLE})
 
     set_target_properties(engine PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
 elseif(${WIN32})
-# 设置库名称基于配置
-   set(GLSLANGL_IBS 
+    # 设置库名称基于配置
+    set(GLSLANGL_IBS 
     "$<$<CONFIG:Debug>:shaderc_combinedd.lib>"
     "$<$<CONFIG:Release>:shaderc_combined.lib>"
     "$<$<CONFIG:RelWithDebInfo>:shaderc_combined.lib>"
@@ -67,5 +61,7 @@ message("-- Shaderc: ${GLSLANGL_IBS}")
 endif()
 
 target_link_libraries(engine PUBLIC ${Python3_LIBRARIES})
+target_link_libraries(engine PUBLIC OpenAL)
+target_link_libraries(engine PUBLIC sndfile)
 
 message("-- Generated Engine Library\n")

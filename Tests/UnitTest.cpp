@@ -1,6 +1,7 @@
 #include "HashTable/TestHashtable.cpp"
 #include "Freelist/TestFreelist.cpp"
 #include "String/TestString.cpp"
+#include "Audio/TestAudio.cpp"
 
 int main() {
 
@@ -9,6 +10,7 @@ int main() {
 	TestHashTable();
 	TestFreelist();
 	TestString();
+	UnitTestAudio();
 
 	return 0;
 }
