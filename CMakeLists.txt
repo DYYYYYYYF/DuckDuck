@@ -4,8 +4,8 @@ project(DuckDuck VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(LIBRARY_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/Library)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/Bin)
-set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Library)
 
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
@@ -48,7 +48,7 @@ if(${APPLE})
     find_package(PkgConfig REQUIRED)
 
     include_directories(${Vulkan_INCLUDE_DIRS})
-  link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE} ${SYSTEM_LIBRARY_DIR})
+    link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE} ${SYSTEM_LIBRARY_DIR} ${LIBRARY_OUTPUT_PATH})
 
 elseif(${WIN32})
     message("-- Current environment: Windows")
