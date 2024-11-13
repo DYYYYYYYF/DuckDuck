@@ -7,7 +7,13 @@ include_directories(${Python3_INCLUDE_DIRS})
 message("-- Python3 include path: ${Python3_INCLUDE_DIRS}")
 message("-- Python3 libraries: ${Python3_LIBRARIES}")
 
-file(GLOB ENGINE_SOURCE_FILES *.cpp */*.cpp */*/*.cpp */*/*/*.cpp Platform/PlatformMacOS.mm)
+file(GLOB ENGINE_SOURCE_FILES 
+    *.cpp 
+    */*.cpp 
+    */*/*.cpp 
+    */*/*/*.cpp 
+    Platform/PlatformMacOS.mm
+)
 add_library(engine SHARED ${ENGINE_SOURCE_FILES})
 
 # Output .dll to bin directly.
