@@ -21,6 +21,13 @@ foreach(example_file IN LISTS example_files)
 	target_link_libraries(${mainname} PUBLIC engine)
 	target_include_directories(${mainname} PUBLIC engine)
 
+	if (ENABLE_PLUGINS_AUDIO)
+		target_compile_definitions(${mainname} -DENABLE_AUDIO)
+		target_link_libraries(${mainname} PUBLIC plugin_audio)
+		target_include_directories(${mainname} PUBLIC plugin_audio)
+	endif()
+
+
 	message("-- Generate ${mainname} to ${CMAKE_CURRENT_SOURCE_DIR}/bin successful")
 
 endforeach()

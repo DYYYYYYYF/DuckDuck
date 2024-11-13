@@ -67,7 +67,5 @@ message("-- Shaderc: ${GLSLANGL_IBS}")
 endif()
 
 target_link_libraries(engine PUBLIC ${Python3_LIBRARIES})
-target_link_libraries(engine PUBLIC OpenAL)
-target_link_libraries(engine PUBLIC sndfile)
 
 message("-- Generated Engine Library\n")

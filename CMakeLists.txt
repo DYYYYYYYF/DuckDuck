@@ -11,6 +11,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Library)
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
 
+# Plugins
+option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
+
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -72,6 +75,7 @@ source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})
 
 add_subdirectory(3rd)
 add_subdirectory(engine)
+add_subdirectory(Plugins)
 add_subdirectory(Editor)
 
 # Unit test
