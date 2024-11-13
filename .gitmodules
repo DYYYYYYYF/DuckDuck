@@ -4,3 +4,9 @@
 [submodule "3rd/stb"]
 	path = 3rd/stb
 	url = git@github.com:nothings/stb.git
+[submodule "3rd/openal-soft"]
+	path = 3rd/openal-soft
+	url = https://github.com/kcat/openal-soft.git
+[submodule "3rd/sndfile-audio-loader"]
+	path = 3rd/sndfile-audio-loader
+	url = https://github.com/libsndfile/libsndfile.git

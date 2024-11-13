@@ -26,5 +26,3 @@ Assets/Materials/*.dmt
 # python midden files
 Scripts/__pycache__
 
-# Test directory
-Tests/
