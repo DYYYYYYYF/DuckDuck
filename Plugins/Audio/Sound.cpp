@@ -1,4 +1,4 @@
-﻿#include "Sound.hpp"
+#include "Sound.hpp"
 #include "sndfile.h"
 #include "Core/EngineLogger.hpp"
 
@@ -19,7 +19,7 @@ bool Sound::Load(const std::string& filename) {
 	SF_INFO sfInfo;
 	file = sf_open(filename.c_str(), SFM_READ, &sfInfo);
 	if (!file) {
-		LOG_ERROR("Failed to load sound file: ", filename);
+		LOG_ERROR("Failed to load sound file: ", filename.c_str());
 		return false;
 	}
 
@@ -30,7 +30,7 @@ bool Sound::Load(const std::string& filename) {
 
 	// 创建 OpenAL 音频缓冲区
 	alGenBuffers(1, &Buffer);
-	alBufferData(Buffer, AL_FORMAT_MONO16, Samples, sfInfo.frames * sfInfo.channels * sizeof(short), sfInfo.samplerate);
+	alBufferData(Buffer, AL_FORMAT_MONO16, Samples, ALsizei(sfInfo.frames * sfInfo.channels * sizeof(short)), sfInfo.samplerate);
 	delete[] Samples;
 
 	// 创建音频源
