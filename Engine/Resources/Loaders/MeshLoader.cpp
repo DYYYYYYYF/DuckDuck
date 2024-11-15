@@ -18,8 +18,8 @@ MeshLoader::MeshLoader() {
 	TypePath = "Models";
 }
 
-bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
-	if (name == nullptr || resource == nullptr) {
+bool MeshLoader::Load(const std::string& name, void* params, Resource* resource) {
+	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -36,7 +36,7 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	MeshFileType Type = MeshFileType::eMesh_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, SupportedFileTypes[i].extension);
+		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFileTypes[i].extension);
 		// If the file exists, open it and stop finding.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFileTypes[i].is_binary, &f)) {
@@ -47,12 +47,12 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	}
 
 	if (Type == MeshFileType::eMesh_File_Type_Not_Found) {
-		LOG_ERROR("Unable to find mesh of supported type called '%s'.", name);
+		LOG_ERROR("Unable to find mesh of supported type called '%s'.", name.c_str());
 		return false;
 	}
 
-	resource->FullPath = StringCopy(FullFilePath);
-	resource->Name = StringCopy(name);
+	resource->FullPath = std::string(FullFilePath);
+	resource->Name = std::move(name);
 
 	// The resource data is just an array of configs.
 	std::vector<SGeometryConfig> ResourceDatas;
@@ -63,21 +63,21 @@ bool MeshLoader::Load(const char* name, void* params, Resource* resource) {
 	{
 		// Generate the dsm filename.
 		char DsmFileName[512];
-		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsm");
+		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
 		Result = ImportGltfFile(FullFilePath, DsmFileName, ResourceDatas);
 	}break;
 	case MeshFileType::eMesh_File_Type_OBJ:
 	{
 		// Generate the dsm filename.
 		char DsmFileName[512];
-		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsm");
+		StringFormat(DsmFileName, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsm");
 		Result = ImportObjFile(&f, DsmFileName, ResourceDatas);
 	}break;
 	case MeshFileType::eMesh_File_Type_DSM:
 		Result = LoadDsmFile(&f, ResourceDatas);
 		break;
 	case MeshFileType::eMesh_File_Type_Not_Found:
-		LOG_ERROR("Unable to find mesh of supported type called '%s'.", name);
+		LOG_ERROR("Unable to find mesh of supported type called '%s'.", name.c_str());
 		Result = false;
 		break;
 	}
@@ -108,16 +108,6 @@ void MeshLoader::Unload(Resource* resource) {
 		SGeometryConfig* Config = &((SGeometryConfig*)resource->Data)[i];
 		GeometrySystem::ConfigDispose(Config);
 		//static_cast<SGeometryConfig*>(resource->Data)[i].~SGeometryConfig();
-	}
-
-	if (resource->Name) {
-		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
-		resource->Name = nullptr;
-	}
-
-	if (resource->FullPath) {
-		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
-		resource->FullPath = nullptr;
 	}
 
 	if (resource->Data) {

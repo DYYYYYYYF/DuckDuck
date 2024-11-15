@@ -1,4 +1,4 @@
-#include "FontSystem.hpp"
+﻿#include "FontSystem.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -437,7 +437,7 @@ void FontSystem::CleanupFontData(FontData* font) {
 
 	// If a bitmap font, release the reference to the texture.
 	if (font->type == FontType::eFont_Type_Bitmap && font->atlas.texture) {
-		TextureSystem::Release(font->atlas.texture->Name);
+		TextureSystem::Release(font->atlas.texture->GetName());
 	}
 	font->atlas.texture = nullptr;
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
 
@@ -26,9 +26,24 @@ struct ResourceHeader {
 
 class Resource {
 public:
+	Resource() {
+		LoaderID = INVALID_ID;
+		DataSize = 0;
+		DataCount = 0;
+		Data = nullptr;
+	}
+
+	virtual ~Resource() {
+		LoaderID = INVALID_ID;
+		DataSize = 0;
+		DataCount = 0;
+		Data = nullptr;
+	}
+
+public:
 	uint32_t LoaderID = INVALID_ID;
-	char* Name = nullptr;
-	char* FullPath = nullptr;
+	std::string Name;
+	std::string FullPath;
 	size_t DataSize = 0;
 	size_t DataCount = 0;
 	void* Data = nullptr;

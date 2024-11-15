@@ -1,4 +1,4 @@
-#include "ShaderSystem.h"
+﻿#include "ShaderSystem.h"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
@@ -10,7 +10,7 @@
 
 IRenderer* ShaderSystem::Renderer = nullptr;
 ShaderSystem::Config ShaderSystem::ShaderSystemConfig;
-std::unordered_map<std::string, uint32_t> ShaderSystem::HashMap;
+std::unordered_map<std::string, uint32_t> ShaderSystem::ShaderMap;
 
 uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
@@ -53,10 +53,11 @@ void ShaderSystem::Shutdown() {
 				}
 
 				DeleteObject(s);
+				s = nullptr;
 			}
 		}
 
-		HashMap.clear();
+		ShaderMap.clear();
 		std::vector<Shader*>().swap(Shaders);
 	}
 }
@@ -79,7 +80,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	uint32_t ID = GetShaderID(config->name);
 	if (ID == INVALID_ID) {
 		ID = NewShaderID();
-		HashMap[config->name] = ID;
+		ShaderMap[config->name] = ID;
 	}
 	else {
 		LOG_WARN("Shader named '%s' already create. It will be covered.", config->name);
@@ -447,8 +448,8 @@ bool ShaderSystem::AddUniform(Shader* shader, ShaderUniformConfig& config) {
 
 uint32_t ShaderSystem::GetShaderID(const char* shader_name) {
 	uint32_t ShaderID = INVALID_ID;
-	auto it = HashMap.find(shader_name);
-	if (it == HashMap.end()){
+	auto it = ShaderMap.find(shader_name);
+	if (it == ShaderMap.end()){
 		return INVALID_ID;
 	}
 

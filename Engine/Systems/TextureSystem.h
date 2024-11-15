@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Renderer/RendererTypes.hpp"
 #include "Resources/Texture.hpp"
@@ -16,21 +16,15 @@ struct STextureSystemConfig {
 	uint32_t max_texture_count;
 };
 
-struct STextureReference {
-	size_t reference_count;
-	unsigned int handle;
-	bool auto_release;
-};
-
 struct TextureLoadParams {
-	char* resource_name = nullptr;
+	std::string resource_name;
 	Texture* out_texture = nullptr;
 	Texture temp_texture;
 	uint32_t current_generation;
 	Resource ImageResource;
 };
 
-class DAPI TextureSystem {
+class TextureSystem {
 public:
 	static bool Initialize(IRenderer* renderer, STextureSystemConfig config);
 	static void Shutdown();
@@ -38,7 +32,7 @@ public:
 	static Texture* Acquire(const char* name, bool auto_release);
 	static Texture* AcquireCube(const char* name, bool auto_release);
 	static Texture* AcquireWriteable(const char* name, uint32_t width, uint32_t height, unsigned char channel_count, bool has_transparency);
-	static void Release(const char* name);
+	static void Release(const std::string& name);
 
 	static void WrapInternal(const char* name, uint32_t width, uint32_t height, unsigned char channel_count,
 		bool has_transparency, bool is_writeable, bool register_texture, void* internal_data, Texture* tex);
@@ -52,13 +46,15 @@ public:
 	static Texture* GetDefaultRoughnessMetallicTexture();
 
 private:
-	static bool LoadTexture(const char* name, Texture* texture);
-	static bool LoadCubeTexture(const char* name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t);
+	static Texture* CheckTextureName(const std::string& name);
+	static bool LoadTexture(const std::string& name, Texture* texture);
+	static bool LoadCubeTexture(const std::string& name, const char texture_names[6][TEXTURE_NAME_MAX_LENGTH], Texture* t);
 	static void DestroyTexture(Texture* t);
 
 	static bool CreateDefaultTexture();
 	static void DestroyDefaultTexture();
-	static bool ProcessTextureReference(const char* name, TextureType type, short reference_diff, bool auto_release, bool skip_load, uint32_t* out_texture_id);
+	static bool ProcessTextureReference(const std::string& name, TextureType type,
+		short reference_diff, bool auto_release, bool skip_load);
 	
 	static void LoadJobSuccess(void* params);
 	static void LoadJobFail(void* params);
@@ -66,17 +62,13 @@ private:
 
 private:
 	static STextureSystemConfig TextureSystemConfig;
-	static Texture DefaultDiffuseTexture;
-	static Texture DefaultSpecularTexture;
-	static Texture DefaultNormalTexture;
-	static Texture DefaultRoughnessMetallicTexture;
-
-	// Array of registered textures.
-	static Texture* RegisteredTextures;
+	static Texture* DefaultDiffuseTexture;
+	static Texture* DefaultSpecularTexture;
+	static Texture* DefaultNormalTexture;
+	static Texture* DefaultRoughnessMetallicTexture;
 
 	// Hashtable for texture lookups.
-	static STextureReference* TableMemory;
-	static HashTable RegisteredTextureTable;
+	static std::unordered_map<std::string, Texture*> TextureMap;
 
 	static bool Initilized;
 

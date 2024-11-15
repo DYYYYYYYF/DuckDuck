@@ -1,4 +1,4 @@
-#include "ImageLoader.hpp"
+﻿#include "ImageLoader.hpp"
 #include "Systems/ResourceSystem.h"
 
 #include "Platform/FileSystem.hpp"
@@ -21,8 +21,8 @@ ImageLoader::ImageLoader() {
 	TypePath = "Textures";
 }
 
-bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
-	if (name == nullptr || resource == nullptr) {
+bool ImageLoader::Load(const std::string& name, void* params, Resource* resource) {
+	if (name.size() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -42,21 +42,21 @@ bool ImageLoader::Load(const char* name, void* params, Resource* resource) {
 	bool Found = false;
 	const char* Extensions[IMAGE_EXTENSION_COUNT] = { ".tga", ".png", ".jpg", ".bmp" };
 	for (uint32_t i = 0; i < IMAGE_EXTENSION_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, Extensions[i]);
+		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), Extensions[i]);
 		if (FileSystemExists(FullFilePath)) {
 			Found = true;
 			break;
 		}
 	}
 
-	// Take a copy of the resource full path and name first.
-	resource->FullPath = StringCopy(FullFilePath);
-	resource->Name = StringCopy(name);
-
 	if (!Found) {
 		LOG_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", FullFilePath);
 		return false;
 	}
+
+	// Take a copy of the resource full path and name first.
+	resource->Name = name;
+	resource->FullPath = FullFilePath;
 
 	FileHandle f;
 	if (!FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, true, &f)) {
@@ -123,16 +123,6 @@ void ImageLoader::Unload(Resource* resource) {
 
 	stbi_image_free(((ImageResourceData*)resource->Data)->pixels);
 
-	if (resource->Name) {
-		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
-		resource->Name = nullptr;
-	}
-
-	if (resource->FullPath) {
-		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
-		resource->FullPath = nullptr;
-	}
-
 	if (resource->Data) {
 		Memory::Free(resource->Data, resource->DataSize * resource->DataCount, MemoryType::eMemory_Type_Texture);
 		resource->Data = nullptr;
@@ -140,6 +130,4 @@ void ImageLoader::Unload(Resource* resource) {
 		resource->DataCount = 0;
 		resource->LoaderID = INVALID_ID;
 	}
-
-	resource = nullptr;
 }

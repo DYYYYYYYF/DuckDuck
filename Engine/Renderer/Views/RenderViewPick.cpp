@@ -1,4 +1,4 @@
-#include "RenderViewPick.hpp"
+﻿#include "RenderViewPick.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
@@ -329,9 +329,9 @@ bool RenderViewPick::RegenerateAttachmentTarget(uint32_t passIndex, RenderTarget
 	uint32_t Height = (uint32_t)Passes[passIndex].GetRenderArea().w;
 	bool HasTransparency = false;
 
-	attachment->texture->Id = INVALID_ID;
+	attachment->texture->SetID(INVALID_ID);
 	attachment->texture->Type = TextureType::eTexture_Type_2D;
-	strncpy(attachment->texture->Name, TextureNameUID.Value.c_str(), TEXTURE_NAME_MAX_LENGTH);
+	attachment->texture->SetName(TextureNameUID.Value);
 	attachment->texture->Width = Width;
 	attachment->texture->Height = Height;
 	attachment->texture->ChannelCount = 4;

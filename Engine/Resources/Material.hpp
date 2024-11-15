@@ -30,7 +30,9 @@ struct SMaterialConfig {
 class Material {
 public:
 	Material() {
-		Id = INVALID_ID;
+		ReferenceCount = 0;
+		AutoRelease = false;
+		ID = INVALID_ID;
 		Generation = INVALID_ID;
 		InternalId = INVALID_ID;
 		DiffuseColor = Vec4(1.0f);
@@ -39,10 +41,42 @@ public:
 		RenderFrameNumer = 0;
 		Metallic = 1.0f;
 		Roughness = 32.0f;
+		AmbientOcclusion = 1.0f;
+	}
+
+	virtual ~Material() {
+		ReferenceCount = 0;
+		AutoRelease = false;
+		ID = INVALID_ID;
+		Generation = INVALID_ID;
+		InternalId = INVALID_ID;
+		DiffuseColor = Vec4(1.0f);
+		Shininess = 32.0f;
+		ShaderID = INVALID_ID;
+		RenderFrameNumer = 0;
+		Metallic = 1.0f;
+		Roughness = 32.0f;
+		AmbientOcclusion = 1.0f;
 	}
 
 public:
-	uint32_t Id;
+	uint32_t GetID() const { return ID; }
+	void SetID(uint32_t id) { ID = id; }
+
+	size_t GetReferenceCount() const { return ReferenceCount; }
+	void SetReferenceCount(uint32_t count) { ReferenceCount = count; }
+	void IncreaseReferenceCount(uint32_t count = 1) { ReferenceCount += count; }
+	void DecreaseReferenceCount(uint32_t count = 1) { ReferenceCount -= count; }
+
+	bool IsAutoRelease() const { return AutoRelease; }
+	void SetIsAutoRelease(bool b) { AutoRelease = b; }
+
+private:
+	uint32_t ID;
+	size_t ReferenceCount = 0;
+	bool AutoRelease = false;
+
+public:
 	uint32_t Generation;
 	uint32_t InternalId;
 	std::string Name;

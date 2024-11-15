@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Resources/Loaders/IResourceLoader.hpp"
 
@@ -7,7 +7,7 @@ public:
 	BinaryLoader();
 
 public:
-	virtual bool Load(const char* name, void* params, Resource* resource) override;
+	virtual bool Load(const std::string& name, void* params, Resource* resource) override;
 	virtual void Unload(Resource* resource) override;
 
 };

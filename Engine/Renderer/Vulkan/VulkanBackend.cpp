@@ -633,8 +633,6 @@ void VulkanBackend::DestroyTexture(Texture* texture) {
 		Memory::Free(texture->InternalData, sizeof(VulkanImage), MemoryType::eMemory_Type_Texture);
 		texture->InternalData = nullptr;
 	}
-
-	Memory::Zero(texture, sizeof(Texture));
 }
 
 vk::Format VulkanBackend::ChannelCountToFormat(unsigned char channel_count, vk::Format default_format /*= vk::Format::eR8G8B8A8Unorm*/) {
