@@ -126,10 +126,12 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	AppConfig.FontConfig.autoRelease = false;
 	AppConfig.FontConfig.defaultBitmapFontCount = 1;
 	AppConfig.FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
+	//AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
+	new (static_cast<BitmapFontConfig*>(AppConfig.FontConfig.bitmapFontConfigs)) BitmapFontConfig(BmpFontConfig);
 	AppConfig.FontConfig.defaultSystemFontCount = 1;
 	AppConfig.FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
+	//AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
+	new (static_cast<SystemFontConfig*>(AppConfig.FontConfig.systemFontConfigs)) SystemFontConfig(SysFontConfig);
 	AppConfig.FontConfig.maxBitmapFontCount = 100;
 	AppConfig.FontConfig.maxSystemFontCount = 100;
 

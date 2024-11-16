@@ -3,7 +3,6 @@
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
-#include "Containers/THashTable.hpp"
 #include "Resources/ResourceTypes.hpp"
 #include "Renderer/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
@@ -45,15 +44,13 @@ struct SystemFontLookup {
 	struct stbtt_fontinfo info;
 };
 
-HashTable FontSystem::BitFontLookup;
-HashTable FontSystem::SysFontLookup;
 FontSystemConfig FontSystem::Config;
-BitmapFontLookup* FontSystem::BitmapFonts = nullptr;
-SystemFontLookup* FontSystem::SystemFonts = nullptr;
-void* FontSystem::BitmapHashTableBlock = nullptr;
-void* FontSystem::SystemHashTableBlock = nullptr;
+std::vector<BitmapFontLookup*> FontSystem::BitmapFonts;
+std::vector<SystemFontLookup*> FontSystem::SystemFonts;
 IRenderer* FontSystem::Renderer = nullptr;
 bool FontSystem::Initilized = false;
+std::unordered_map<std::string, uint32_t> FontSystem::SystemFontMap;
+std::unordered_map<std::string, uint32_t> FontSystem::BitmapFontMap;
 
 bool FontSystem::Initialize(IRenderer* renderer, FontSystemConfig* config){
 	if (renderer == nullptr) {
@@ -65,49 +62,24 @@ bool FontSystem::Initialize(IRenderer* renderer, FontSystemConfig* config){
 		return false;
 	}
 
-	// Figure out how large of a hashtable is needed.
-	// Block of memory will contain state structure then the block for the hashtable.
-	BitmapHashTableBlock = Memory::Allocate(sizeof(unsigned short) * config->maxBitmapFontCount, MemoryType::eMemory_Type_Hashtable);
-	BitmapFonts = (BitmapFontLookup*)Memory::Allocate(sizeof(BitmapFontLookup) * config->maxBitmapFontCount, MemoryType::eMemory_Type_Array);
-
-	SystemHashTableBlock = Memory::Allocate(sizeof(unsigned short) * config->maxSystemFontCount, MemoryType::eMemory_Type_Hashtable);
-	SystemFonts = (SystemFontLookup*)Memory::Allocate(sizeof(SystemFontLookup) * config->maxSystemFontCount, MemoryType::eMemory_Type_Array);
-
 	Config = *config;
 	Renderer = renderer;
 
-	BitFontLookup.Create(sizeof(unsigned short), config->maxBitmapFontCount, BitmapHashTableBlock, false);
-	SysFontLookup.Create(sizeof(unsigned short), config->maxSystemFontCount, SystemHashTableBlock, false);
-
-	// Fill the table with invalid ids.
-	uint32_t InvalidFillID = INVALID_ID_U16;
-	if (!BitFontLookup.Fill(&InvalidFillID) || !SysFontLookup.Fill(&InvalidFillID)) {
-		LOG_ERROR("hashtable_fill failed.");
-		return false;
-	}
-
-	for (uint32_t i = 0; i < config->maxBitmapFontCount; ++i) {
-		BitmapFonts[i].id = INVALID_ID_U16;
-		BitmapFonts[i].referenceCount = 0;
-	}
-
-	for (uint32_t i = 0; i < config->maxSystemFontCount; ++i) {
-		SystemFonts[i].id = INVALID_ID_U16;
-		SystemFonts[i].referenceCount = 0;
-	}
+	BitmapFonts.resize(config->maxBitmapFontCount);
+	SystemFonts.resize(config->maxSystemFontCount);
 
 	// Load up any default fonts.
 	// Bitmap fonts.
 	for (uint32_t i = 0; i < Config.defaultBitmapFontCount; ++i) {
 		if (!LoadBitmapFont(&Config.bitmapFontConfigs[i])) {
-			LOG_ERROR("Failed to load bitmap font: %s.", Config.bitmapFontConfigs[i].name);
+			LOG_ERROR("Failed to load bitmap font: %s.", Config.bitmapFontConfigs[i].name.c_str());
 		}
 	}
 
 	// System fonts.
 	for (uint32_t i = 0; i < Config.defaultSystemFontCount; ++i) {
 		if (!LoadSystemFont(&Config.systemFontConfigs[i])) {
-			LOG_ERROR("Failed to load system font: %s.", Config.systemFontConfigs[i].name);
+			LOG_ERROR("Failed to load system font: %s.", Config.systemFontConfigs[i].name.c_str());
 		}
 	}
 
@@ -119,27 +91,28 @@ void FontSystem::Shutdown() {
 	if (Initilized) {
 		// Clean up bitmap fonts.
 		for (unsigned short i = 0; i < Config.maxBitmapFontCount; ++i) {
-			if (BitmapFonts[i].id != INVALID_ID_U16) {
-				FontData* Data = &BitmapFonts[i].font.resourceData->data;
+			if (BitmapFonts[i] != nullptr) {
+				FontData* Data = &BitmapFonts[i]->font.resourceData->data;
 				CleanupFontData(Data);
 				Data = nullptr;
-				BitmapFonts[i].id = INVALID_ID_U16;
+				BitmapFonts[i]->id = INVALID_ID_U16;
+				DeleteObject(BitmapFonts[i]);
 			}
 		}
 
 		// Clean up system fonts.
 		for (unsigned short i = 0; i < Config.maxSystemFontCount; ++i) {
-			if (SystemFonts[i].id != INVALID_ID_U16) {
+			if (SystemFonts[i] != nullptr) {
 				// Clean up each variant.
-				uint32_t VariantCount = (uint32_t)SystemFonts[i].sizeVariants.size();
+				uint32_t VariantCount = (uint32_t)SystemFonts[i]->sizeVariants.size();
 				for (uint32_t j = 0; j < VariantCount; ++j) {
-					FontData* Data = &SystemFonts[i].sizeVariants[j];
+					FontData* Data = &SystemFonts[i]->sizeVariants[j];
 					CleanupFontData(Data);
 					Data = nullptr;
 				}
 
-				SystemFonts[i].id = INVALID_ID_U16;
-				SystemFonts[i].sizeVariants.clear();
+				SystemFonts[i]->id = INVALID_ID_U16;
+				SystemFonts[i]->sizeVariants.clear();
 			}
 		}
 	}
@@ -164,20 +137,15 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		SystemFontFace* Face = &ResourceData->fonts[i];
 
 		// Make sure a font with this name doesn't already exist.
-		unsigned short ID = INVALID_ID_U16;
-		if (!SysFontLookup.Get(Face->name.c_str(), &ID)) {
-			LOG_ERROR("Hashtable lookup failed. font will not be loaded.");
-			return false;
-		}
-
-		if (ID != INVALID_ID_U16) {
-			LOG_WARN("A font named '%s' already exists and will not be loaded again.", config->name);
+		if (SystemFontMap.find(Face->name) != SystemFontMap.end()) {
+			LOG_WARN("A font named '%s' already exists and will not be loaded again.", config->name.c_str());
 			return true;
 		}
 
 		// Get a new id
+		unsigned short ID = INVALID_ID_U16;
 		for (unsigned short j = 0; j < Config.maxSystemFontCount; ++j) {
-			if (SystemFonts[j].id == INVALID_ID_U16) {
+			if (SystemFonts[j] == nullptr) {
 				ID = j;
 				break;
 			}
@@ -189,7 +157,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		}
 
 		// Obtain the lookup.
-		SystemFontLookup* Lookup = &SystemFonts[ID];
+		SystemFontLookup* Lookup = NewObject<SystemFontLookup>();
 		Lookup->binarySize = ResourceData->binarySize;
 		Lookup->fontBinary = ResourceData->fontBinary;
 		Lookup->face = StringCopy(Face->name.c_str());
@@ -200,7 +168,7 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		int Result = stbtt_InitFont(&Lookup->info, (unsigned char*)Lookup->fontBinary, Lookup->offset);
 		if (Result == 0) {
 			// Zero indicates failure.
-			LOG_ERROR("Failed to init system font %s at index %i.", LoadedResource.FullPath, i);
+			LOG_ERROR("Failed to init system font %s at index %i.", LoadedResource.FullPath.c_str(), i);
 			return false;
 		}
 
@@ -222,10 +190,8 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 
 		// Set the entry id here last before updating the hashtable.
 		Lookup->id = ID;
-		if (!SysFontLookup.Set(Face->name.c_str(), &ID)) {
-			LOG_ERROR("Hashtable failed to set on font load.");
-			return false;
-		}
+		SystemFontMap[Face->name] = ID;
+		SystemFonts[ID] = Lookup;
 	}
 
 	return true;
@@ -233,20 +199,15 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 
 bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	// Make sure a font with this name doesn't already exist.
-	unsigned short ID = INVALID_ID_U16;
-	if (!BitFontLookup.Get(config->name, &ID)) {
-		LOG_ERROR("Hashtable lookup failed. Font will not be loaded.");
-		return false;
-	}
-
-	if (ID != INVALID_ID_U16) {
-		LOG_WARN("A font named '%s already exists and will not be loaded again.", config->name);
+	if (BitmapFontMap.find(config->name) != BitmapFontMap.end()) {
+		LOG_WARN("A font named '%s already exists and will not be loaded again.", config->name.c_str());
 		return true;
 	}
 
 	// Get a new id.
+	unsigned short ID = INVALID_ID_U16;
 	for (unsigned short i = 0; i < Config.maxBitmapFontCount; ++i) {
-		if (BitmapFonts[i].id == INVALID_ID_U16) {
+		if (BitmapFonts[i] == nullptr) {
 			ID = i;
 			break;
 		}
@@ -258,7 +219,7 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	}
 
 	// Obtain the lookup.
-	BitmapFontLookup* Lookup = &BitmapFonts[ID];
+	BitmapFontLookup* Lookup = NewObject<BitmapFontLookup>();
 
 	if (!ResourceSystem::Load(config->resourceName, ResourceType::eResource_Type_Bitmap_Font, nullptr, &Lookup->font.loadedResource)) {
 		LOG_ERROR("Failed to load bitmap font.");
@@ -275,30 +236,23 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 	bool Result = SetupFontData(&Lookup->font.resourceData->data);
 
 	// Set the entry id here last before updating the hastable.
-	if (!BitFontLookup.Set(config->name, &ID)) {
-		LOG_ERROR("Hashtable set failed on bitmap font load.");
-		return false;
-	}
-
 	Lookup->id = ID;
+	BitmapFontMap[config->name] = ID;
+	BitmapFonts[ID] = Lookup;
+
 	return Result;
 }
 
-bool FontSystem::Acquire(const char* fontName, unsigned short fontSize, class UIText* text) {
+bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, class UIText* text) {
 	if (text->Type == UITextType::eUI_Text_Type_Bitmap) {
-		unsigned short ID = INVALID_ID_U16;
-		if (!BitFontLookup.Get(fontName, &ID)) {
-			LOG_ERROR("Bitmap font lookup failed on acquire.");
-			return false;
-		}
-
-		if (ID == INVALID_ID_U16) {
-			LOG_ERROR("A bitmap font named '%s' was not found. Font acquisition failed.", fontName);
+		if (BitmapFontMap.find(fontName) == BitmapFontMap.end()) {
+			LOG_ERROR("A bitmap font named '%s' was not found. Font acquisition failed.", fontName.c_str());
 			return false;
 		}
 
 		// Get the lookup.
-		BitmapFontLookup* Lookup = &BitmapFonts[ID];
+		unsigned short ID = BitmapFontMap[fontName];
+		BitmapFontLookup* Lookup = BitmapFonts[ID];
 
 		// Assign the data, increment the reference.
 		text->Data = &Lookup->font.resourceData->data;
@@ -307,19 +261,14 @@ bool FontSystem::Acquire(const char* fontName, unsigned short fontSize, class UI
 		return true;
 	}
 	else if (text->Type == UITextType::eUI_Text_Type_system) {
-		unsigned short ID = INVALID_ID_U16;
-		if (!SysFontLookup.Get(fontName, &ID)) {
-			LOG_ERROR("System font lookup failed on acquire.");
-			return false;
-		}
-
-		if (ID == INVALID_ID_U16) {
-			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", fontName);
+		if (SystemFontMap.find(fontName) == SystemFontMap.end()) {
+			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", fontName.c_str());
 			return false;
 		}
 
 		// Get the lookup.
-		SystemFontLookup* Lookup = &SystemFonts[ID];
+		unsigned short ID = SystemFontMap[fontName];
+		SystemFontLookup* Lookup = SystemFonts[ID];
 
 		// Search the size variants for the correct size.
 		uint32_t Count = (uint32_t)Lookup->sizeVariants.size();
@@ -350,6 +299,7 @@ bool FontSystem::Acquire(const char* fontName, unsigned short fontSize, class UI
 		// Assign the data, increment the reference.
 		text->Data = &Lookup->sizeVariants[Length - 1];
 		Lookup->referenceCount++;
+		SystemFonts[ID] = Lookup;
 		return true;
 	}
 
@@ -357,32 +307,27 @@ bool FontSystem::Acquire(const char* fontName, unsigned short fontSize, class UI
 	return false;
 }
 
-bool FontSystem::Release(class UIText* text) {
+bool FontSystem::Release(UIText* text) {
 	// TODO: Lookup font by name in appropriate hashtable.
 	return true;
 }
 
-bool FontSystem::VerifyAtlas(struct FontData* font, const char* text) {
-    if (font == nullptr || text == nullptr){ return false;}
+bool FontSystem::VerifyAtlas(FontData* font, const std::string& text) {
+    if (font == nullptr || text.length() == 0){ return false;}
     
 	if (font->type == FontType::eFont_Type_Bitmap) {
 		// Bitmaps don't need verification since they are already generated.
 		return true;
 	} 
 	else if (font->type == FontType::eFont_Type_System) {
-		unsigned short ID = INVALID_ID_U16;
-		if (!SysFontLookup.Get(font->face.c_str(), &ID)) {
-			LOG_ERROR("System font lookup failed on acquire.");
-			return false;
-		}
-
-		if (ID == INVALID_ID_U16) {
+		if (SystemFontMap.find(font->face) == SystemFontMap.end()){
 			LOG_ERROR("A system font named '%s' was not found. Font acquisition failed.", font->face.c_str());
 			return false;
 		}
 
 		// Get the lookup.
-		SystemFontLookup* Lookup = &SystemFonts[ID];
+		unsigned short ID = SystemFontMap[font->face];
+		SystemFontLookup* Lookup = SystemFonts[ID];
 
 		return VerifySystemFontSizeVariant(Lookup, font, text);
 	}
@@ -442,7 +387,7 @@ void FontSystem::CleanupFontData(FontData* font) {
 	font->atlas.texture = nullptr;
 }
 
-bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const char* fontName, FontData* outVariant) {
+bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName, FontData* outVariant) {
 	outVariant->atlasSizeX = 1024;	// TODO: Configurable
 	outVariant->atlasSizeY = 1024;
 	outVariant->size = size;
@@ -462,7 +407,7 @@ bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned shor
 
 	// Create textures.
 	char FontTexName[255];
-	StringFormat(FontTexName, 255, "__system_text_atlas_%s_i%i_sz%i__", fontName, lookup->index, size);
+	StringFormat(FontTexName, 255, "__system_text_atlas_%s_i%i_sz%i__", fontName.c_str(), lookup->index, size);
 	outVariant->atlas.texture = TextureSystem::AcquireWriteable(FontTexName, outVariant->atlasSizeX, outVariant->atlasSizeY, 4, true);
 
 	// Obtain some metrics.
@@ -571,15 +516,15 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 	return true;
 }
 
-bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const char* text) {
+bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const std::string& text) {
 	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant->internalData;
 
-	uint32_t CharLength = (uint32_t)strlen(text);
+	uint32_t CharLength = (uint32_t)text.length();
 	uint32_t AddedCodepointCount = 0;
 	for (uint32_t i = 0; i < CharLength;) {
 		int Codepoint;
 		unsigned char Advance;
-		if (!StringBytesToCodepoint(text, i, &Codepoint, &Advance)) {
+		if (!StringBytesToCodepoint(text.c_str(), i, &Codepoint, &Advance)) {
 			LOG_ERROR("BytesToCodepoint() Failed to get codepoint.");
 			++i;
 			continue;
