@@ -13,12 +13,11 @@
 #include "Renderer/Views/RenderViewSkybox.hpp"
 #include "Renderer/Views/RenderViewPick.hpp"
 
-HashTable RenderViewSystem::Lookup;
-void* RenderViewSystem::TableBlock = nullptr;
-uint32_t RenderViewSystem::MaxViewCount = 0;
-TArray<IRenderView*> RenderViewSystem::RegisteredViews;
 bool RenderViewSystem::Initialized = false;
+uint32_t RenderViewSystem::MaxViewCount = 0;
 IRenderer* RenderViewSystem::Renderer = nullptr;
+std::vector<IRenderView*> RenderViewSystem::RegisteredViews;
+std::unordered_map<std::string, uint32_t> RenderViewSystem::RegisteredViewMap;
 
 bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig config) {
 	if (renderer == nullptr) {
@@ -34,13 +33,8 @@ bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig c
 	MaxViewCount = config.max_view_count;
 	Renderer = renderer;
 
-	TableBlock = Memory::Allocate(sizeof(unsigned short) * MaxViewCount, MemoryType::eMemory_Type_Array);
-	Lookup.Create(sizeof(unsigned short), MaxViewCount, TableBlock, false);
-	unsigned short InvalidID = INVALID_ID_U16;
-	Lookup.Fill(&InvalidID);
-
 	// Fill the array with invalid entries.
-	RegisteredViews.Resize(MaxViewCount);
+	RegisteredViews.resize(MaxViewCount);
 	for (uint32_t i = 0; i < MaxViewCount; ++i) {
 		RegisteredViews[i] = nullptr;
 	}
@@ -51,7 +45,7 @@ bool RenderViewSystem::Initialize(IRenderer* renderer, SRenderViewSystemConfig c
 
 void RenderViewSystem::Shutdown() {
 	// Renderview
-	for (uint32_t i = 0; i < RegisteredViews.Size(); ++i) {
+	for (uint32_t i = 0; i < RegisteredViews.size(); ++i) {
 		IRenderView* View = RegisteredViews[i];
 		if (View == nullptr) {
 			continue;
@@ -68,7 +62,8 @@ void RenderViewSystem::Shutdown() {
 		RegisteredViews[i]->Passes.clear();
 		RegisteredViews[i]->OnDestroy();
 	}
-	RegisteredViews.Clear();
+	RegisteredViews.clear();
+	std::vector<IRenderView*>().swap(RegisteredViews);
 }
 
 bool RenderViewSystem::Create(const RenderViewConfig& config) {
@@ -83,8 +78,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	}
 
 	unsigned short ID = INVALID_ID_U16;
-	Lookup.Get(config.name, &ID);
-	if (ID != INVALID_ID_U16) {
+	if (RegisteredViewMap.find(config.name) != RegisteredViewMap.end()){
 		LOG_ERROR("RenderViewSystem::Create() A view named '%s' already exists. A new one will not be created.", config.name);
 		return false;
 	}
@@ -134,7 +128,7 @@ bool RenderViewSystem::Create(const RenderViewConfig& config) {
 	RegenerateRendertargets(View);
 
 	// Update the hashtable entry.
-	Lookup.Set(config.name, &ID);
+	RegisteredViewMap[config.name] = ID;
 
 	return true;
 }
@@ -182,23 +176,28 @@ void RenderViewSystem::RegenerateRendertargets(IRenderView* view) {
 
 void RenderViewSystem::OnWindowResize(uint32_t width, uint32_t height) {
 	// Send to all view.
-	for (uint32_t i = 0; i < RegisteredViews.Size(); ++i) {
+	for (uint32_t i = 0; i < RegisteredViews.size(); ++i) {
 		if (RegisteredViews[i]) {
 			RegisteredViews[i]->OnResize(width, height);
 		}
 	}
 }
 
-IRenderView* RenderViewSystem::Get(const char* name) {
+IRenderView* RenderViewSystem::Get(const std::string& name) {
 	if (Initialized) {
-		unsigned short ID = INVALID_ID_U16;
-		Lookup.Get(name, &ID);
+		if (RegisteredViewMap.find(name) == RegisteredViewMap.end()){
+			LOG_WARN("Can not find render view '%s', return nullptr.", name.c_str());
+			return nullptr;
+		}
+
+		uint16_t ID = RegisteredViewMap[name];
 		if (ID != INVALID_ID_U16) {
 			IRenderView* Result = RegisteredViews[ID];
 			return Result;
 		}
 	}
 
+	LOG_ERROR("RenderViewSystem::Get() Acquire renderview beform renderview system initialize.");
 	return nullptr;
 }
 
