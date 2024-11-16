@@ -1,4 +1,4 @@
-﻿#include "TextureSystem.h"
+#include "TextureSystem.h"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/Application.hpp"
@@ -146,7 +146,7 @@ void TextureSystem::Release(const std::string& name) {
 	uint32_t ID = INVALID_ID;
 	// NOTE: Decrement the reference count.
 	if (!ProcessTextureReference(name, TextureType::eTexture_Type_2D, -1, false, false)) {
-		LOG_ERROR("TextureSystem::Release() failed to release texture '%s' properly.", name);
+		LOG_ERROR("TextureSystem::Release() failed to release texture '%s' properly.", name.c_str());
 	}
 }
 
