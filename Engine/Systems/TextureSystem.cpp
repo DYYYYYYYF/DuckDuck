@@ -507,7 +507,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 		TextureParams->out_texture->Generation = TextureParams->current_generation + 1;
 	}
 
-	LOG_INFO("Successfully loaded texture '%s.", TextureParams->resource_name);
+	LOG_INFO("Successfully loaded texture '%s.", TextureParams->resource_name.c_str());
 
 	// Clean up data.
 	ResourceSystem::Unload(&TextureParams->ImageResource);
@@ -515,7 +515,7 @@ void TextureSystem::LoadJobSuccess(void* params) {
 
 void TextureSystem::LoadJobFail(void* params) {
 	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
-	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name);
+	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name.c_str());
 	ResourceSystem::Unload(&TextureParams->ImageResource);
 }
 
