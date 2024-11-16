@@ -16,7 +16,7 @@ public:
 	MeshLoader();
 
 public:
-	virtual bool Load(const char* name, void* params, Resource* resource) override;
+	virtual bool Load(const std::string& name, void* params, Resource* resource) override;
 	virtual void Unload(Resource* resource) override;
 
 private:

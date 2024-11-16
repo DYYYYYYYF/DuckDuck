@@ -14,14 +14,14 @@ ShaderLoader::ShaderLoader() {
 	TypePath = "Shaders";
 }
 
-bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
-	if (name == nullptr || resource == nullptr) {
+bool ShaderLoader::Load(const std::string& name, void* params, Resource* resource) {
+	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".scfg");	// shader config
+	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".scfg");	// shader config
 
 
 	FileHandle File;
@@ -29,8 +29,8 @@ bool ShaderLoader::Load(const char* name, void* params, Resource* resource) {
 		LOG_ERROR("Shader loader load. Unable to open file for binary reading: '%s'.", FullFilePath);
 		return false;
 	}
-	resource->FullPath = StringCopy(FullFilePath);
-	resource->Name = StringCopy(name);
+	resource->FullPath = FullFilePath;
+	resource->Name = name;
 
 	// Set some defaults, create arrays.
 	ShaderConfig* ResourceData = (ShaderConfig*)Memory::Allocate(sizeof(ShaderConfig), MemoryType::eMemory_Type_Resource);
@@ -361,16 +361,6 @@ void ShaderLoader::Unload(Resource* resource) {
 	if (Data->name) {
 		Memory::Free(Data->name, sizeof(char) * (strlen(Data->name) + 1), MemoryType::eMemory_Type_String);
 		Data->name = nullptr;
-	}
-
-	if (resource->Name) {
-		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
-		resource->Name = nullptr;
-	}
-
-	if (resource->FullPath) {
-		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
-		resource->FullPath = nullptr;
 	}
 
 	if (resource->Data) {

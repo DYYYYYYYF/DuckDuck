@@ -1,4 +1,4 @@
-message("-- Generating Unit test project")
+﻿message("-- Generating Unit test project")
 
 project(UnitTest)
 

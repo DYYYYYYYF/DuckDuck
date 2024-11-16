@@ -1,10 +1,12 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Math/Transform.hpp"
 #include "Renderer/RendererTypes.hpp"
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
+
+class FontData;
 
 enum UITextType {
 	eUI_Text_Type_Bitmap,
@@ -13,7 +15,7 @@ enum UITextType {
 
 class UIText {
 public:
-	DAPI bool Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent);
+	DAPI bool Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent);
 	DAPI void Destroy();
 
 	DAPI void SetPosition(Vec3 position);
@@ -32,7 +34,7 @@ public:
 	uint32_t UniqueID = INVALID_ID;
 	IRenderer* Renderer = nullptr;
 	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
-	struct FontData* Data = nullptr;
+	FontData* Data = nullptr;
 	IRenderbuffer* VertexBuffer = nullptr;
 	IRenderbuffer* IndexBuffer = nullptr;
 	char* Text = nullptr;

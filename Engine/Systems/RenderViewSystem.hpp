@@ -12,7 +12,7 @@ struct SRenderViewSystemConfig {
 	unsigned short max_view_count;
 };
 
-class DAPI RenderViewSystem {
+class RenderViewSystem {
 public:
 	static bool Initialize(IRenderer* renderer, SRenderViewSystemConfig config);
 	static void Shutdown();
@@ -20,19 +20,18 @@ public:
 	static bool Create(const RenderViewConfig& config);
 	static void OnWindowResize(uint32_t width, uint32_t height);
 
-	static IRenderView* Get(const char* name);
+	DAPI static IRenderView* Get(const std::string& name);
 
-	static bool BuildPacket(IRenderView* view, void* data, struct RenderViewPacket* out_packet);
+	DAPI static bool BuildPacket(IRenderView* view, void* data, struct RenderViewPacket* out_packet);
 	static bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
 
 	static void RegenerateRendertargets(IRenderView* view);
 
 private:
-	static HashTable Lookup;
-	static void* TableBlock;
-	static uint32_t MaxViewCount;
-	static TArray<IRenderView*> RegisteredViews;
-
 	static bool Initialized;
 	static IRenderer* Renderer;
+	static uint32_t MaxViewCount;
+
+	static std::vector<IRenderView*> RegisteredViews;
+	static std::unordered_map<std::string, uint32_t> RegisteredViewMap;
 };

@@ -1,4 +1,4 @@
-#ifdef ENABLE_AUDIO
+ï»¿#ifdef ENABLE_AUDIO
 #include <AudioEngine.hpp>
 #include <thread>
 
@@ -13,12 +13,12 @@ bool UnitTestAudio() {
         std::string AssetPath("../../Assets/Media/Audio/sample1.wav");
 #endif
 
-		// ¼ÓÔØ²¢²¥·Å
+		// åŠ è½½å¹¶æ’­æ”¾
 		LOG_INFO("Start play sound %s", "Footsteps.wav");
 		Engine.GetManager()->LoadSound(AssetPath);
 		Engine.GetManager()->PlaySound(AssetPath);
 
-		// µÈ´ý²¥·Å
+		// ç­‰å¾…æ’­æ”¾
 		std::this_thread::sleep_for(std::chrono::seconds(10));
 		Engine.Shutdown();
 	}

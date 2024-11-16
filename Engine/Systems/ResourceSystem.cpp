@@ -1,4 +1,4 @@
-#include "ResourceSystem.h"
+﻿#include "ResourceSystem.h"
 
 #include "Renderer/Vulkan/VulkanContext.hpp"
 
@@ -84,7 +84,7 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 	return true;
 }
 
-bool ResourceSystem::Load(const char* name, ResourceType type, void* params, Resource* resource) {
+bool ResourceSystem::Load(const std::string& name, ResourceType type, void* params, Resource* resource) {
 	if (type != eResource_type_Custom) {
 		// Select loader.
 		uint32_t Count = Config.max_loader_count;
@@ -101,7 +101,7 @@ bool ResourceSystem::Load(const char* name, ResourceType type, void* params, Res
 	return false;
 }
 
-bool ResourceSystem::LoadCustom(const char* name, const char* custom_type, void* params, Resource* resource) {
+bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type, void* params, Resource* resource) {
 	if (custom_type == nullptr || strlen(custom_type) == 0) {
 		LOG_ERROR("Resouce system load custom failed. custom type is invalid.");
 		return false;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "Containers/THashTable.hpp"
@@ -186,7 +186,7 @@ private:
 public:
 	static IRenderer* Renderer;
 	static ShaderSystem::Config ShaderSystemConfig;
-	static std::unordered_map<std::string, uint32_t> HashMap;
+	static std::unordered_map<std::string, uint32_t> ShaderMap;
 	
 	static uint32_t CurrentShaderID;
 	static std::vector<Shader*> Shaders;

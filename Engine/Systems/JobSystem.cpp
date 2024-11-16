@@ -15,40 +15,6 @@ Mutex JobSystem::HighPriQueueMutex;
 JobResultEntry JobSystem::PendingResults[MAX_JOB_RESULTS];
 Mutex JobSystem::ResultMutex;
 
-void JobSystem::StoreResult(PFN_OnJobComplete callback, void* params, size_t param_size) {
-	// Create the new entry.
-	JobResultEntry Entry;
-	Entry.id = INVALID_ID_U16;
-	Entry.param_size = (uint32_t)param_size;
-	Entry.callback = std::move(callback);
-
-	if (Entry.param_size > 0) {
-		// Take a copy, as the job is destroyed after this.
-		Entry.params = Memory::Allocate(param_size, MemoryType::eMemory_Type_Job);
-		Memory::Copy(Entry.params, params, param_size);
-	}
-	else {
-		Entry.params = nullptr;
-	}
-
-	// Lock, find a free space, store, unlock.
-	if (!ResultMutex.Lock()) {
-		LOG_ERROR("Failed to obtain mutex lock for storing a result! Result storage may be corrupted.");
-	}
-
-	for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
-		if (PendingResults[i].id == INVALID_ID_U16) {
-			PendingResults[i] = Entry;
-			PendingResults[i].id = i;
-			break;
-		}
-	}
-
-	if (!ResultMutex.UnLock()) {
-		LOG_ERROR("Failed to release mutex lock for result storage, storage may be corrupted.");
-	}
-}
-
 uint32_t JobSystem::RunJobThread(void* param) {
 	uint32_t index = *(uint32_t*)param;
 	JobThread* Thr = &JobThreads[index];
@@ -80,7 +46,7 @@ uint32_t JobSystem::RunJobThread(void* param) {
 		}
 
 		if (info.entry_point) {
-			bool Result = info.entry_point(info.param_data, info.result_data);
+			bool Result = info.entry_point(info.param_data.get(), info.result_data.get());
 
 			// Store the result to be executed on the main thread later.
 			// Note that store_result takes a copy of the result_data so it does
@@ -94,10 +60,10 @@ uint32_t JobSystem::RunJobThread(void* param) {
 
 			// Clear the param data and result data.
 			if (info.param_data) {
-				Memory::Free(info.param_data, info.param_data_size, MemoryType::eMemory_Type_Job);
+				info.param_data.reset();
 			}
 			if (info.result_data) {
-				Memory::Free(info.result_data, info.result_data_size, MemoryType::eMemory_Type_Job);
+				info.result_data.reset();
 			}
 
 			// Lock and reset the thread's info object.
@@ -283,10 +249,10 @@ void JobSystem::Update() {
 
 		if (Entry.id != INVALID_ID_U16) {
 			// Execute the callback.
-			Entry.callback(Entry.params);
+			Entry.callback(Entry.params.get());
 
 			if (Entry.params) {
-				Memory::Free(Entry.params, Entry.param_size, MemoryType::eMemory_Type_Job);
+				Entry.params.reset();
 			}
 
 			// Lock actual entry, invalidate and clear it
@@ -349,33 +315,4 @@ void JobSystem::Submit(JobInfo info) {
 	if (!QueueMutex->UnLock()) {
 		LOG_ERROR("Failed to release lock on queue mutex!");
 	}
-}
-
-JobInfo JobSystem::CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,
-	void* param_data, size_t param_data_size, size_t result_data_size, JobType type, JobPriority priority) {
-	JobInfo Job;
-	Job.entry_point = std::move(entry);
-	Job.on_success = std::move(on_success);
-	Job.on_failed = std::move(on_failed);
-	Job.type = type;
-	Job.priority = priority;
-
-	Job.param_data_size = param_data_size;
-	if (param_data_size > 0) {
-		Job.param_data = Memory::Allocate(param_data_size, MemoryType::eMemory_Type_Job);
-		Memory::Copy(Job.param_data, param_data, param_data_size);
-	}
-	else {
-		Job.param_data = nullptr;
-	}
-
-	Job.result_data_size = result_data_size;
-	if (result_data_size > 0) {
-		Job.result_data = Memory::Allocate(result_data_size, MemoryType::eMemory_Type_Job);
-	}
-	else {
-		Job.result_data = nullptr;
-	}
-
-	return Job;
 }

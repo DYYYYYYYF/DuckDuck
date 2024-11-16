@@ -1,4 +1,4 @@
-# Logger
+ï»¿# Logger
 add_subdirectory(UncleDon-Logger)
 
 # Audio
@@ -7,7 +7,7 @@ if (ENABLE_PLUGINS_AUDIO)
         message("-- MSVC")
         set(CMAKE_C_FLAGS_DEBUG "/W4 /MTd")
     endif()
-    # ½ûÓÃ²»±ØÒªµÄÑ¡Ïî£¨¿ÉÑ¡£©
+    # ç¦ç”¨ä¸å¿…è¦çš„é€‰é¡¹ï¼ˆå¯é€‰ï¼‰
     set(ALSOFT_EXAMPLES OFF CACHE BOOL "Build OpenAL Soft examples" FORCE)
     set(ALSOFT_TESTS OFF CACHE BOOL "Build OpenAL Soft tests" FORCE)
     set(ALSOFT_UTILS OFF CACHE BOOL "Build OpenAL Soft utilities" FORCE)

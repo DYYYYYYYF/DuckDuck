@@ -1,10 +1,17 @@
-#include "Camera.hpp"
+﻿#include "Camera.hpp"
 
 Camera::Camera() {
 	Reset();
 }
 
+Camera::Camera(unsigned short id) {
+	Reset();
+	ID = id;
+}
+
 void Camera::Reset() {
+	ID = INVALID_ID_U16;
+	ReferenceCount = 0;
 	EulerRotation = Vec3(0);
 	Position = Vec3(0);
 	IsDirty = false;

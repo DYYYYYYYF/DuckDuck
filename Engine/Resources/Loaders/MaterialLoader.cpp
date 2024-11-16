@@ -1,4 +1,4 @@
-#include "MaterialLoader.h"
+﻿#include "MaterialLoader.h"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -13,17 +13,14 @@ MaterialLoader::MaterialLoader() {
 	TypePath = "Materials";
 }
 
-bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
-	if (name == nullptr || resource == nullptr) {
+bool MaterialLoader::Load(const std::string& name, void* params, Resource* resource) {
+	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, ".dmt");
-
-	// TODO: Should be using an allocator here.
-	resource->FullPath = StringCopy(FullFilePath);
+	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dmt");
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, false, &File)) {
@@ -148,7 +145,8 @@ bool MaterialLoader::Load(const char* name, void* params, Resource* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataSize = sizeof(SMaterialConfig);
-	resource->Name = StringCopy(name);
+	resource->Name = name;
+	resource->FullPath = FullFilePath;
 	resource->DataCount = 1;
 
 	return true;
@@ -158,16 +156,6 @@ void MaterialLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
 		LOG_WARN("Material loader unload called with nullptr.");
 		return;
-	}
-
-	if (resource->Name) {
-		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
-		resource->Name = nullptr;
-	}
-
-	if (resource->FullPath) {
-		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
-		resource->FullPath = nullptr;
 	}
 
 	if (resource->Data) {

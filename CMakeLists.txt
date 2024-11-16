@@ -13,6 +13,7 @@ set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
 
 # Plugins
 option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
+option(GENERATE_TEST_PROGRAME "Generate test module" OFF)
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -79,7 +80,9 @@ add_subdirectory(Plugins)
 add_subdirectory(Editor)
 
 # Unit test
-add_subdirectory(Tests)
+if (GENERATE_TEST_PROGRAME)
+    add_subdirectory(Tests)
+endif()
 
 # Copy necessary dll
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bin/engine.dll)
