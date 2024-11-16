@@ -270,7 +270,6 @@ Texture* TextureSystem::GetDefaultRoughnessMetallicTexture() {
 }
 
 bool TextureSystem::CreateDefaultTexture() {
-
 	// NOTE: create default texture, a 256x256 blue/white checkerboard pattern.
 	// This is done in code to eliminate asset dependencies.
 	LOG_INFO("Createing default texture...");
@@ -493,6 +492,8 @@ void TextureSystem::LoadJobSuccess(void* params) {
 
 	// Take a copy of the old texture.
 	Texture* Old = TextureParams->out_texture;
+	// Destroy the old texture.
+	Renderer->DestroyTexture(Old);
 
 	// Assign the temp texture to the pointer.
 	uint32_t ID = TextureParams->out_texture->GetID();
@@ -510,19 +511,14 @@ void TextureSystem::LoadJobSuccess(void* params) {
 
 	// Clean up data.
 	ResourceSystem::Unload(&TextureParams->ImageResource);
-
-	// Destroy the old texture.
-	Renderer->DestroyTexture(Old);
-	DeleteObject(Old);
-	TextureParams->out_texture = nullptr;
 }
 
 void TextureSystem::LoadJobFail(void* params) {
 	TextureLoadParams* TextureParams = (TextureLoadParams*)params;
-	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name.c_str());
+	LOG_ERROR("Failed to load texture '%s'.", TextureParams->resource_name);
 	ResourceSystem::Unload(&TextureParams->ImageResource);
 }
-                                            
+
 bool TextureSystem::LoadJobStart(void* params, void* result_data) {
 	TextureLoadParams* LoadParams = (TextureLoadParams*)params;
 
@@ -603,7 +599,7 @@ bool TextureSystem::LoadTexture(const std::string& name, Texture* texture) {
 		std::bind(&TextureSystem::LoadJobStart, std::placeholders::_1, std::placeholders::_2),
 		std::bind(&TextureSystem::LoadJobSuccess, std::placeholders::_1),
 		std::bind(&TextureSystem::LoadJobFail, std::placeholders::_1),
-		&Params, 
+		std::make_shared<TextureLoadParams>(Params),
 		sizeof(TextureLoadParams),
 		sizeof(TextureLoadParams));
 	JobSystem::Submit(Job);
@@ -626,6 +622,8 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 				// A free slot has been found. Use its index as the handle.
 				Tex = NewObject<Texture>();
 				Tex->SetID(i);
+				// Either way, update the entry.
+				TextureMap[name] = Tex;
 				break;
 			}
 		}
@@ -716,7 +714,5 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 		UL_DEBUG("Texture '%s' already exists, ref_count increased to %i.", name.c_str(), Tex->GetReferenceCount());
 	}
 
-	// Either way, update the entry.
-	TextureMap[NameCopy] = Tex;
 	return true;
 }

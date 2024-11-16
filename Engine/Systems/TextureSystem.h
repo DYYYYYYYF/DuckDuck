@@ -55,7 +55,7 @@ private:
 	static void DestroyDefaultTexture();
 	static bool ProcessTextureReference(const std::string& name, TextureType type,
 		short reference_diff, bool auto_release, bool skip_load);
-	
+
 	static void LoadJobSuccess(void* params);
 	static void LoadJobFail(void* params);
 	static bool LoadJobStart(void* params, void* result_data);
