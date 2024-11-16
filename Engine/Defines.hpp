@@ -66,6 +66,9 @@
 
 #endif	// #ifdef DEXPORT
 
+// Deprecated macros
+#define DEPRECATED(msg) [[deprecated(msg)]]
+
 #ifndef CLAMP
 #define CLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max : value;
 #endif

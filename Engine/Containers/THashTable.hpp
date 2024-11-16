@@ -42,11 +42,13 @@ public:
 	* @param memory A block of memory to be used. Should be equal in size to element_size * element_count.
 	* @param is_pointer Indicates if this hashtable will hold pointer types.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	void Create(size_t element_size, unsigned int element_count, void* memory, bool is_pointer);
 
 	/*
 	* @brief Destroys the hashtable. Does not release memory  for pointer types.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	void Destroy();
 
 	/*
@@ -56,6 +58,7 @@ public:
 	* @param value The value of be set. Required.
 	* @return True or false if a null pointer is passed.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	bool Set(const char* name, void* value);
 
 	/*
@@ -66,6 +69,7 @@ public:
 	* @param value The value of be set. Can pass nullptr to 'unset' an entry.
 	* @return True or false if a null pointer is passed or if then entry is null.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	bool Set(const char* name, void** value);
 
 	/*
@@ -75,6 +79,7 @@ public:
 	* @param value A pointer to store the retrieved value. Required.
 	* @return True or false if a null pointer is passed.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	bool Get(const char* name, void* out_value);
 
 	/*
@@ -84,6 +89,7 @@ public:
 	* @param value A pointer to store the retrieved value. Required.
 	* @return True or false if a null pointer is passed or if then entry is null.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	bool Get(const char* name, void** out_value);
 
 	/*
@@ -94,6 +100,7 @@ public:
 	* @param value The default value.
 	* @return True or false if successful.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	bool Fill(void* value);
 
 private:
@@ -104,6 +111,7 @@ private:
 	* @param element_count The element count.
 	* @return Hash code.
 	*/
+	DEPRECATED("Suggest to use std library. std::unordered_map")
 	size_t HashName(const char* name, unsigned int element_count) {
 		// A multipler to use when generating a hash. Prime to hopefully avoid collisions.
 		static const size_t Multipler = 97;
