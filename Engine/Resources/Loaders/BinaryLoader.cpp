@@ -1,4 +1,4 @@
-#include "BinaryLoader.h"
+﻿#include "BinaryLoader.h"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -13,17 +13,14 @@ BinaryLoader::BinaryLoader() {
 	TypePath = "";
 }
 
-bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
-	if (name == nullptr || resource == nullptr) {
+bool BinaryLoader::Load(const std::string& name, void* params, Resource* resource) {
+	if (name.size() == 0 || resource == nullptr) {
 		return false;
 	}
 
 	const char* FormatStr = "%s/%s/%s%s";
 	char FullFilePath[512];
-	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, "");
-
-	// TODO: Should be using an allocator here.
-	resource->FullPath = StringCopy(FullFilePath);
+	StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), "");
 
 	FileHandle File;
 	if (!FileSystemOpen(FullFilePath, eFile_Mode_Read, true, &File)) {
@@ -51,7 +48,8 @@ bool BinaryLoader::Load(const char* name, void* params, Resource* resource) {
 
 	resource->Data = ResourceData;
 	resource->DataSize = ReadSize;
-	resource->Name = StringCopy(name);
+	resource->FullPath = FullFilePath;
+	resource->Name = name;
 
 	return true;
 }
@@ -60,16 +58,6 @@ void BinaryLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
 		LOG_WARN("Material loader unload called with nullptr.");
 		return;
-	}
-
-	if (resource->Name) {
-		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
-		resource->Name = nullptr;
-	}
-
-	if (resource->FullPath) {
-		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
-		resource->FullPath = nullptr;
 	}
 
 	if (resource->Data) {

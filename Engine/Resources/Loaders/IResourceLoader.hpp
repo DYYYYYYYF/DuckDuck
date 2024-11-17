@@ -1,24 +1,24 @@
-#pragma once
+﻿#pragma once
 
 #include "Resources/Resource.hpp"
+#include <string>
 
 class IResourceLoader {
 public:
-	IResourceLoader() : Id(INVALID_ID), CustomType(nullptr), TypePath(nullptr) {}
+	IResourceLoader() : Id(INVALID_ID), CustomType(nullptr){}
 	virtual ~IResourceLoader() {
 		Id = INVALID_ID;
 		CustomType = nullptr;
-		TypePath = nullptr;
 	}
 
 public:
-	virtual bool Load(const char* name, void* params, Resource* resource) = 0;
+	virtual bool Load(const std::string& name, void* params, Resource* resource) = 0;
 	virtual void Unload(Resource* resouce) = 0;
 
 public:
 	uint32_t Id;
 	ResourceType Type;
 	const char* CustomType;
-	const char* TypePath;
+	std::string TypePath;
 
 };

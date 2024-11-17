@@ -27,7 +27,8 @@ struct FontKerning {
 	short amount;
 };
 
-struct FontData {
+class FontData {
+public:
 	FontType type = FontType::eFont_Type_Bitmap;
 	std::string face;
 	unsigned int size = 0;

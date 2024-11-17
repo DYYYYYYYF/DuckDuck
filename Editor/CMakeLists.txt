@@ -1,9 +1,9 @@
 message("-- Generating TestEditor")
 
 link_directories(${LIBRARY_OUTPUT_PATH})
-add_executable(DuckEditor Enter.cpp Game.cpp logo.rc)
+add_executable(Editor Enter.cpp Game.cpp logo.rc)
 
-target_link_libraries(DuckEditor PUBLIC engine)
-target_include_directories(DuckEditor PUBLIC engine)
+target_link_libraries(Editor PUBLIC engine)
+target_include_directories(Editor PUBLIC engine)
 
 message("-- Generated TestEditor")

@@ -1,4 +1,4 @@
-#include "GeometrySystem.h"
+﻿#include "GeometrySystem.h"
 
 #include "Renderer/RendererFrontend.hpp"
 #include "Core/EngineLogger.hpp"

@@ -75,7 +75,7 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
 			LOG_DEBUG("Loading dragon...");
 
-			if (!GameInst->DragonMesh->LoadFromResource("Buggy")) {
+			if (!GameInst->DragonMesh->LoadFromResource("Duck")) {
 				LOG_ERROR("Failed to load falcon mesh!");
 			}
 		}
@@ -126,10 +126,12 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	AppConfig.FontConfig.autoRelease = false;
 	AppConfig.FontConfig.defaultBitmapFontCount = 1;
 	AppConfig.FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
+	//AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
+	new (static_cast<BitmapFontConfig*>(AppConfig.FontConfig.bitmapFontConfigs)) BitmapFontConfig(BmpFontConfig);
 	AppConfig.FontConfig.defaultSystemFontCount = 1;
 	AppConfig.FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
+	//AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
+	new (static_cast<SystemFontConfig*>(AppConfig.FontConfig.systemFontConfigs)) SystemFontConfig(SysFontConfig);
 	AppConfig.FontConfig.maxBitmapFontCount = 100;
 	AppConfig.FontConfig.maxSystemFontCount = 100;
 
@@ -241,7 +243,7 @@ bool GameInstance::Initialize() {
 	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
 
 	DragonMesh = &Meshes[6];
-	DragonMesh->Transform = Transform(Vec3(0.0f, 45.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.0f));
+	DragonMesh->Transform = Transform(Vec3(0.0f, 45.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
 	DragonMesh->UniqueID = Identifier::AcquireNewID(DragonMesh);
 
 	// Load up some test UI geometry.

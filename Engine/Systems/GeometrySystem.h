@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "MaterialSystem.h"
 #include "Resources/Geometry.hpp"

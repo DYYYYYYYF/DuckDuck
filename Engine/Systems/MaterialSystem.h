@@ -2,18 +2,18 @@
 
 #include "Defines.hpp"
 #include "Resources/ResourceTypes.hpp"
-#include "Containers/THashTable.hpp"
+#include <unordered_map>
 
 class IRenderer;
 
 struct SMaterialSystemConfig {
-	uint32_t max_material_count;
+	uint32_t max_material_count = 512;
 };
 
 struct SMaterialReference {
-	size_t reference_count;
-	uint32_t handle;
-	bool auto_release;
+	size_t reference_count = 0;
+	uint32_t handle = INVALID_ID;
+	bool auto_release = false;
 };
 
 class MaterialSystem {
@@ -65,14 +65,12 @@ private:
 
 public:
 	static SMaterialSystemConfig MaterialSystemConfig;
-	static Material DefaultMaterial;
+	static Material* DefaultMaterial;
 
 	// Array of registered materials.
-	static Material* RegisteredMaterials;
-
+	static std::vector<Material*> RegisteredMaterials;
 	// Hashtable for material lookups.
-	static SMaterialReference* TableMemory;
-	static HashTable RegisteredMaterialTable;
+	static std::unordered_map<std::string, uint32_t> MaterialMap;
 
 	// Know locations for the material shader.
 	static MaterialShaderUniformLocations MaterialLocations;

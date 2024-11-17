@@ -33,9 +33,23 @@ If your plants form is Windows, you could compile shaders by compile_shader_glsl
 * <font color=Red>ERROR</font>
 * <font color=#8b0000>FATAL </font>
 
+## Plugins
+
+#### Audio: 
+
+``` cmake
+set(ENABLE_PLUGINS_AUDIO ON)
+```
+
+OpenAL and sniffle lib to load audio resource (.wma) and play.
+
 ## Short cut
 
-![](Assets/Shortcuts/DimensionEngine.png)
+Blinn-Phong  
+![](Assets/Shortcuts/BlinnPhong.png)
+
+PBR  
+![](Assets/Shortcuts/PBR.png)
 
 
 

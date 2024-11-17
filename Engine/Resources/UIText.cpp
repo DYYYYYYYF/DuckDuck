@@ -13,8 +13,8 @@
 #include "Systems/ShaderSystem.h"
 
 
-bool UIText::Create(class IRenderer* renderer, UITextType type, const char* fontName, unsigned short fontSize, const char* textContent) {
-	if (fontName == nullptr || textContent == nullptr || textContent[0] == '\0') {
+bool UIText::Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent) {
+	if (fontName.length() == 0 || textContent == nullptr || textContent[0] == '\0') {
 		LOG_ERROR(" UIText::Create() Requires a valid pointer to fontName and textContent.");
 		return false;
 	}
@@ -26,7 +26,7 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const char* font
 	// Acquire the font of the correct type and assign its internal data.
 	// This also gets the atlas texture.
 	if (!FontSystem::Acquire(fontName, fontSize, this)) {
-		LOG_ERROR("Unable to acquire font: '%s'. UIText can not be created.", fontName);
+		LOG_ERROR("Unable to acquire font: '%s'. UIText can not be created.", fontName.c_str());
 		return false;
 	}
 

@@ -1,14 +1,19 @@
-cmake_minimum_required(VERSION 3.0.0)
+﻿cmake_minimum_required(VERSION 3.0.0)
 project(DuckDuck VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(LIBRARY_OUTPUT_PATH  ${PROJECT_SOURCE_DIR}/Bin)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/Bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Library)
 
 set(UD_LOGGER_DIR ${PROJECT_SOURCE_DIR}/3rd/uncledon-logger)
 set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
+
+# Plugins
+option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
+option(GENERATE_TEST_PROGRAME "Generate test module" OFF)
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -47,7 +52,7 @@ if(${APPLE})
     find_package(PkgConfig REQUIRED)
 
     include_directories(${Vulkan_INCLUDE_DIRS})
-  link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE} ${SYSTEM_LIBRARY_DIR})
+    link_directories(${UD_LOGGER_DIR}/lib/MacOS/${CMAKE_BUILD_TYPE} ${SYSTEM_LIBRARY_DIR} ${LIBRARY_OUTPUT_PATH})
 
 elseif(${WIN32})
     message("-- Current environment: Windows")
@@ -71,10 +76,13 @@ source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_SRCS})
 
 add_subdirectory(3rd)
 add_subdirectory(engine)
+add_subdirectory(Plugins)
 add_subdirectory(Editor)
 
 # Unit test
-add_subdirectory(Tests)
+if (GENERATE_TEST_PROGRAME)
+    add_subdirectory(Tests)
+endif()
 
 # Copy necessary dll
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bin/engine.dll)

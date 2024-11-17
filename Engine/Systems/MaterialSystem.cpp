@@ -10,16 +10,15 @@
 #include "Systems/ShaderSystem.h"
 
 SMaterialSystemConfig MaterialSystem::MaterialSystemConfig;
-Material MaterialSystem::DefaultMaterial;
-Material* MaterialSystem::RegisteredMaterials = nullptr;
-SMaterialReference* MaterialSystem::TableMemory = nullptr;
-HashTable MaterialSystem::RegisteredMaterialTable;
+Material* MaterialSystem::DefaultMaterial = nullptr;
 bool MaterialSystem::Initilized = false;
 IRenderer* MaterialSystem::Renderer = nullptr;
 MaterialShaderUniformLocations MaterialSystem::MaterialLocations;
 uint32_t MaterialSystem::MaterialShaderID = INVALID_ID;
 UIShaderUniformLocations MaterialSystem::UILocations;
 uint32_t MaterialSystem::UIShaderID = INVALID_ID;
+std::vector<Material*> MaterialSystem::RegisteredMaterials;
+std::unordered_map<std::string, uint32_t> MaterialSystem::MaterialMap;
 
 bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig config) {
 	if (config.max_material_count == 0) {
@@ -39,32 +38,9 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 	MaterialSystemConfig = config;
 	Renderer = renderer;
 
-	// Block of memory will block for array, then block for hashtable.
-	size_t ArraryRequirement = sizeof(Material) * MaterialSystemConfig.max_material_count;
-	size_t HashtableRequirement = sizeof(SMaterialReference) * MaterialSystemConfig.max_material_count;
-
-	// The array block is after the state. Already allocated, so just set the pointer.
-	RegisteredMaterials = (Material*)Memory::Allocate(ArraryRequirement, MemoryType::eMemory_Type_Material_Instance);
-
-	// Create a hashtable for texture lookups.
-	TableMemory = (SMaterialReference*)Memory::Allocate(HashtableRequirement, MemoryType::eMemory_Type_DArray);
-	RegisteredMaterialTable.Create(sizeof(STextureReference), MaterialSystemConfig.max_material_count, TableMemory, false);
-
-	// Fill the hashtable with invalid references to use as a default.
-	SMaterialReference InvalidRef;
-	InvalidRef.auto_release = false;
-	InvalidRef.handle = INVALID_ID;		// Primary reason for needing default values.
-	InvalidRef.reference_count = 0;
-	RegisteredMaterialTable.Fill(&InvalidRef);
-
 	// Invalidate all textures in the array.
 	uint32_t Count = MaterialSystemConfig.max_material_count;
-	for (uint32_t i = 0; i < Count; ++i) {
-		RegisteredMaterials[i].Id = INVALID_ID;
-		RegisteredMaterials[i].Generation = INVALID_ID;
-		RegisteredMaterials[i].InternalId = INVALID_ID;
-		RegisteredMaterials[i].RenderFrameNumer = INVALID_ID;
-	}
+	RegisteredMaterials.resize(Count);
 
 	// Create default textures for use in the system.
 	if (!CreateDefaultMaterial()) {
@@ -78,18 +54,26 @@ bool MaterialSystem::Initialize(IRenderer* renderer, SMaterialSystemConfig confi
 
 void MaterialSystem::Shutdown() {
 	// Destroy all loaded textures.
-	for (uint32_t i = 0; i < MaterialSystemConfig.max_material_count; ++i) {
-		Material* m = &RegisteredMaterials[i];
-		if (m->Id != INVALID_ID) {
+	for (Material* m : RegisteredMaterials) {
+		if (m) {
 			DestroyMaterial(m);
+			DeleteObject(m);
+			m = nullptr;
 		}
+	};
+	RegisteredMaterials.clear();
+	std::vector<Material*>().swap(RegisteredMaterials);
+
+	if (DefaultMaterial) {
+		DestroyMaterial(DefaultMaterial);
+		DeleteObject(DefaultMaterial);
+		DefaultMaterial = nullptr;
 	}
-	DestroyMaterial(&DefaultMaterial);
 }
 
 Material* MaterialSystem::Acquire(const char* name) {
 	if (StringEquali(name, DEFAULT_MATERIAL_NAME)) {
-		return &DefaultMaterial;
+		return DefaultMaterial;
 	}
 
 	// Load the given material configuration from disk.
@@ -119,96 +103,91 @@ Material* MaterialSystem::Acquire(const char* name) {
 Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	// Return default material.
 	if (StringEquali(config.name.c_str(), DEFAULT_MATERIAL_NAME)) {
-		return &DefaultMaterial;
+		return DefaultMaterial;
 	}
 
-	SMaterialReference Ref;
-	if (RegisteredMaterialTable.Get(config.name.c_str(), &Ref)) {
-		// This can only be changed the first time a material is loaded.
-		if (Ref.reference_count == 0) {
-			Ref.auto_release = config.auto_release;
+	// 如果找不到材质，则创建一个新的材质。
+	if (MaterialMap.find(config.name) == MaterialMap.end()) {
+		uint32_t Count = MaterialSystemConfig.max_material_count;
+		Material* m = nullptr;
+		for (uint32_t i = 0; i < Count; ++i) {
+			if (RegisteredMaterials[i] == nullptr) {
+				// A free slot has been found. Use it index as the handle.
+				RegisteredMaterials[i] = NewObject<Material>();
+				RegisteredMaterials[i]->SetID(i);
+				MaterialMap[config.name] = i;
+				m = RegisteredMaterials[i];
+				break;
+			}
 		}
 
-		Ref.reference_count++;
-		if (Ref.handle == INVALID_ID) {
-			// This means no material exists here. Find a free index first.
-			uint32_t Count = MaterialSystemConfig.max_material_count;
-			Material* m = nullptr;
-			for (uint32_t i = 0; i < Count; ++i) {
-				if (RegisteredMaterials[i].Id == INVALID_ID) {
-					// A free slot has been found. Use it index as the handle.
-					Ref.handle = i;
-					m = &RegisteredMaterials[i];
-					break;
-				}
-			}
+		// Make sure an empty slot was actually found.
+		if (m == nullptr || m->GetID() == INVALID_ID) {
+			LOG_FATAL("Material acquire failed. Material system cannot hold anymore materials. Adjust configuration to allow more.");
+			return nullptr;
+		}
 
-			// Make sure an empty slot was actually found.
-			if (m == nullptr || Ref.handle == INVALID_ID) {
-				LOG_FATAL("Material acquire failed. Material system cannot hold anymore materials. Adjust configuration to allow more.");
-				return nullptr;
-			}
+		// Create new material.
+		if (!LoadMaterial(config, m)) {
+			LOG_ERROR("Load %s material failed.", config.name.c_str());
+			return nullptr;
+		}
 
-			// Create new material.
-			if (!LoadMaterial(config, m)) {
-				LOG_ERROR("Load %s material failed.", config.name.c_str());
-				return nullptr;
-			}
-
-			// Get the uniform indices.
-			Shader* s = ShaderSystem::GetByID(m->ShaderID);
-			// Save off the locations for known types for quick lookups.
-			if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.World") == 0) {
-				MaterialShaderID = s->ID;
-				MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
-				MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
-				MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
-				MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
-				MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
-				MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
-				MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
-				MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
-				MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
-				MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
-				MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
-				MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
-				MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
-				MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
-				MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");
-			}
-			else if (UIShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.UI") == 0) {
-				UIShaderID = s->ID;
-				UILocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
-				UILocations.view = ShaderSystem::GetUniformIndex(s, "view");
-				UILocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
-				UILocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
-				UILocations.model = ShaderSystem::GetUniformIndex(s, "model");
-			}
+		// Get the uniform indices.
+		Shader* s = ShaderSystem::GetByID(m->ShaderID);
+		// Save off the locations for known types for quick lookups.
+		if (MaterialShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.World") == 0) {
+			MaterialShaderID = s->ID;
+			MaterialLocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
+			MaterialLocations.view = ShaderSystem::GetUniformIndex(s, "view");
+			MaterialLocations.ambient_color = ShaderSystem::GetUniformIndex(s, "ambient_color");
+			MaterialLocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
+			MaterialLocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+			MaterialLocations.specular_texture = ShaderSystem::GetUniformIndex(s, "specular_texture");
+			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
+			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
+			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
+			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
+			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
+			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+			MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
+			MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
+			MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");
+		}
+		else if (UIShaderID == INVALID_ID && config.shader_name.compare("Shader.Builtin.UI") == 0) {
+			UIShaderID = s->ID;
+			UILocations.projection = ShaderSystem::GetUniformIndex(s, "projection");
+			UILocations.view = ShaderSystem::GetUniformIndex(s, "view");
+			UILocations.diffuse_color = ShaderSystem::GetUniformIndex(s, "diffuse_color");
+			UILocations.diffuse_texture = ShaderSystem::GetUniformIndex(s, "diffuse_texture");
+			UILocations.model = ShaderSystem::GetUniformIndex(s, "model");
+		}
 
 
-			if (m->Generation == INVALID_ID) {
-				m->Generation = 1;
-			}
-			else {
-				m->Generation++;
-			}
-
-			// Also use the handle as the material id.
-			m->Id = Ref.handle;
-			UL_DEBUG("Material '%s' does not yet exist. Created and RefCount is now %i.", config.name.c_str(), Ref.reference_count);
+		if (m->Generation == INVALID_ID) {
+			m->Generation = 1;
 		}
 		else {
-			UL_DEBUG("Material '%s' already exist. RefCount increased to %i.", config.name.c_str(), Ref.reference_count);
+			m->Generation++;
 		}
-
-		// Update the entry.
-		RegisteredMaterialTable.Set(config.name.c_str(), &Ref);
-		return &RegisteredMaterials[Ref.handle];
 	}
 
-	// NOTO: This can only happen in the event something went wrong with the state.
-	LOG_ERROR("Material acquire failed to acquire material % s, nullptr will be returned.", config.name.c_str());
-	return nullptr;
+	uint32_t MaterialID = MaterialMap[config.name];
+	Material* Mat = RegisteredMaterials[MaterialID];
+	ASSERT(Mat != nullptr);
+
+	// This can only be changed the first time a material is loaded.
+	if (Mat->GetReferenceCount() == 0) {
+		Mat->SetIsAutoRelease(config.auto_release);
+	}
+
+	Mat->IncreaseReferenceCount();
+	{
+		LOG_DEBUG("Material '%s' Reference count increased to %i.", config.name.c_str(), Mat->GetReferenceCount());
+	}
+
+	// Update the entry.
+	return Mat;
 }
 
 void MaterialSystem::Release(const char* name) {
@@ -220,28 +199,25 @@ void MaterialSystem::Release(const char* name) {
 	// Take a copy of name, it will be zero-out in DestroyMaterial();
 	char* CopyMatName = StringCopy(name);
 
-	SMaterialReference Ref;
-	if (RegisteredMaterialTable.Get(CopyMatName, &Ref)) {
-		if (Ref.reference_count == 0) {
+	if (MaterialMap.find(CopyMatName) != MaterialMap.end()) {
+		uint32_t MaterialID = MaterialMap[CopyMatName];
+		Material* Mat = RegisteredMaterials[MaterialID];
+		if (Mat->GetReferenceCount() == 0) {
 			LOG_WARN("Tried to release non-existent material: %s", CopyMatName);
 			return;
 		}
 
-		Ref.reference_count--;
-		if (Ref.reference_count == 0 && Ref.auto_release) {
-			Material* mat = &RegisteredMaterials[Ref.handle];
-
+		Mat->DecreaseReferenceCount();
+		if (Mat->GetReferenceCount() == 0 && Mat->IsAutoRelease()) {
 			// Release material.
-			DestroyMaterial(mat);
-
-			// Reset the reference.
-			Ref.handle = INVALID_ID;
-			Ref.auto_release = false;
+			DestroyMaterial(Mat);
+			DeleteObject(Mat);
+			Mat = nullptr;
 			LOG_INFO("Released material '%s'. Material unloaded.", CopyMatName);
 		}
 
 		// Update the entry.
-		RegisteredMaterialTable.Set(CopyMatName, &Ref);
+		MaterialMap[CopyMatName] = INVALID_ID;
 	}
 	else {
 		LOG_ERROR("Material release failed to release material '%s'.", CopyMatName);
@@ -253,7 +229,7 @@ void MaterialSystem::Release(const char* name) {
 
 Material* MaterialSystem::GetDefaultMaterial() {
 	if (Initilized) {
-		return &DefaultMaterial;
+		return DefaultMaterial;
 	}
 
 	return nullptr;
@@ -398,16 +374,16 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 
 	// Release texture references.
 	if (mat->DiffuseMap.texture != nullptr) {
-		TextureSystem::Release(mat->DiffuseMap.texture->Name);
+		TextureSystem::Release(mat->DiffuseMap.texture->GetName());
 	}
 	if (mat->SpecularMap.texture != nullptr) {
-		TextureSystem::Release(mat->SpecularMap.texture->Name);
+		TextureSystem::Release(mat->SpecularMap.texture->GetName());
 	}
 	if (mat->NormalMap.texture != nullptr) {
-		TextureSystem::Release(mat->NormalMap.texture->Name);
+		TextureSystem::Release(mat->NormalMap.texture->GetName());
 	}
 	if (mat->RoughnessMetallicMap.texture != nullptr) {
-		TextureSystem::Release(mat->RoughnessMetallicMap.texture->Name);
+		TextureSystem::Release(mat->RoughnessMetallicMap.texture->GetName());
 	}
 
 	// Release texture map resources.
@@ -424,68 +400,72 @@ void MaterialSystem::DestroyMaterial(Material* mat) {
 	}
 
 	// Zero it out, invalidate Ids.
-	Memory::Zero(mat, sizeof(Material));
-	mat->Id = INVALID_ID;
+	mat->SetID(INVALID_ID);
 	mat->Generation = INVALID_ID;
 	mat->InternalId = INVALID_ID;
 	mat->RenderFrameNumer = INVALID_ID;
 }
 
 bool MaterialSystem::CreateDefaultMaterial() {
-	Memory::Zero(&DefaultMaterial, sizeof(Material));
-	DefaultMaterial.Id = INVALID_ID;
-	DefaultMaterial.Generation = INVALID_ID;
-	DefaultMaterial.Name = DEFAULT_MATERIAL_NAME;
-	DefaultMaterial.DiffuseColor = Vec4{1.0f, 1.0f, 1.0f, 1.0f};
-	DefaultMaterial.DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
-	DefaultMaterial.DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.DiffuseMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.DiffuseMap.repeat_u = eTexture_Repeat_Repeat;
-	DefaultMaterial.DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
-	DefaultMaterial.DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial.DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
-	if (!Renderer->AcquireTextureMap(&DefaultMaterial.DiffuseMap)) {
+	if (DefaultMaterial) {
+		LOG_WARN("Already exist default material.");
+		return true;
+	}
+
+	DefaultMaterial = NewObject<Material>();
+	DefaultMaterial->SetID(INVALID_ID);
+	DefaultMaterial->Generation = INVALID_ID;
+	DefaultMaterial->Name = DEFAULT_MATERIAL_NAME;
+	DefaultMaterial->DiffuseColor = Vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
+	DefaultMaterial->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
+	DefaultMaterial->DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->DiffuseMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->DiffuseMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial->DiffuseMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial->DiffuseMap.repeat_w = eTexture_Repeat_Repeat;
+	DefaultMaterial->DiffuseMap.texture = TextureSystem::GetDefaultDiffuseTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial->DiffuseMap)) {
 		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
-	DefaultMaterial.SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
-	DefaultMaterial.SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.SpecularMap.repeat_u = eTexture_Repeat_Repeat;
-	DefaultMaterial.SpecularMap.repeat_v = eTexture_Repeat_Repeat;
-	DefaultMaterial.SpecularMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial.SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
-	if (!Renderer->AcquireTextureMap(&DefaultMaterial.SpecularMap)) {
+	DefaultMaterial->SpecularMap.usage = TextureUsage::eTexture_Usage_Map_Specular;
+	DefaultMaterial->SpecularMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->SpecularMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->SpecularMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial->SpecularMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial->SpecularMap.repeat_w = eTexture_Repeat_Repeat;
+	DefaultMaterial->SpecularMap.texture = TextureSystem::GetDefaultSpecularTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial->SpecularMap)) {
 		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
-	DefaultMaterial.NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-	DefaultMaterial.NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.NormalMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.NormalMap.repeat_u = eTexture_Repeat_Repeat;
-	DefaultMaterial.NormalMap.repeat_v = eTexture_Repeat_Repeat;
-	DefaultMaterial.NormalMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial.NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
-	if (!Renderer->AcquireTextureMap(&DefaultMaterial.NormalMap)) {
+	DefaultMaterial->NormalMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+	DefaultMaterial->NormalMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->NormalMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->NormalMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial->NormalMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial->NormalMap.repeat_w = eTexture_Repeat_Repeat;
+	DefaultMaterial->NormalMap.texture = TextureSystem::GetDefaultNormalTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial->NormalMap)) {
 		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
-	DefaultMaterial.RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
-	DefaultMaterial.RoughnessMetallicMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.RoughnessMetallicMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
-	DefaultMaterial.RoughnessMetallicMap.repeat_u = eTexture_Repeat_Repeat;
-	DefaultMaterial.RoughnessMetallicMap.repeat_v = eTexture_Repeat_Repeat;
-	DefaultMaterial.RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
-	DefaultMaterial.RoughnessMetallicMap.texture = TextureSystem::GetDefaultNormalTexture();
-	if (!Renderer->AcquireTextureMap(&DefaultMaterial.RoughnessMetallicMap)) {
+	DefaultMaterial->RoughnessMetallicMap.usage = TextureUsage::eTexture_Usage_Map_Normal;
+	DefaultMaterial->RoughnessMetallicMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->RoughnessMetallicMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
+	DefaultMaterial->RoughnessMetallicMap.repeat_u = eTexture_Repeat_Repeat;
+	DefaultMaterial->RoughnessMetallicMap.repeat_v = eTexture_Repeat_Repeat;
+	DefaultMaterial->RoughnessMetallicMap.repeat_w = eTexture_Repeat_Repeat;
+	DefaultMaterial->RoughnessMetallicMap.texture = TextureSystem::GetDefaultNormalTexture();
+	if (!Renderer->AcquireTextureMap(&DefaultMaterial->RoughnessMetallicMap)) {
 		LOG_ERROR("Unable to acquire resources for diffuse texture map.");
 		return false;
 	}
 
-	std::vector<TextureMap*> Maps = { &DefaultMaterial.DiffuseMap, &DefaultMaterial.SpecularMap, &DefaultMaterial.NormalMap, &DefaultMaterial.RoughnessMetallicMap };
+	std::vector<TextureMap*> Maps = { &DefaultMaterial->DiffuseMap, &DefaultMaterial->SpecularMap, &DefaultMaterial->NormalMap, &DefaultMaterial->RoughnessMetallicMap };
 
 	Shader* s = ShaderSystem::Get("Shader.Builtin.World");
 	if (s == nullptr) {
@@ -494,14 +474,14 @@ bool MaterialSystem::CreateDefaultMaterial() {
 		return false;
 	}
 
-	DefaultMaterial.InternalId = Renderer->AcquireInstanceResource(s, Maps);
-	if (DefaultMaterial.InternalId == INVALID_ID) {
+	DefaultMaterial->InternalId = Renderer->AcquireInstanceResource(s, Maps);
+	if (DefaultMaterial->InternalId == INVALID_ID) {
 		LOG_ERROR("Create default material failed. Application quit now!");
 		return false;
 	}
 
 	// Make sure to assign the shader id.
-	DefaultMaterial.ShaderID = s->ID;
+	DefaultMaterial->ShaderID = s->ID;
 
 	return true;
 }

@@ -11,6 +11,11 @@
 
 #define MAX_JOB_RESULTS 512
 
+//template<typename T>
+//using PFN_OnJobStart = std::function<bool(std::shared_ptr<T>, std::shared_ptr<T>)>
+//template<typename T>
+//using PFN_OnJobComplete = std::function<void(std::shared_ptr<void>)>
+
 typedef std::function<bool(void*, void*)> PFN_OnJobStart;
 typedef std::function<void(void*)> PFN_OnJobComplete;
 
@@ -77,27 +82,14 @@ public:
 		result_data_size = info.result_data_size;
 
 		if (info.param_data) {
-			param_data = Memory::Allocate(param_data_size, MemoryType::eMemory_Type_Job);
-			Memory::Copy(param_data, info.param_data, param_data_size);
+			param_data = info.param_data;
 		}
 		if (info.result_data) {
-			result_data = Memory::Allocate(result_data_size, MemoryType::eMemory_Type_Job);
-			Memory::Copy(result_data, info.result_data, result_data_size);
+			result_data = info.result_data;
 		}
 	}
 
 	void Release() {
-		if (param_data) {
-			Memory::Free(param_data, param_data_size, MemoryType::eMemory_Type_Job);
-			param_data = nullptr;
-            param_data_size = 0;
-		}
-		if (result_data) {
-			Memory::Free(result_data, result_data_size, MemoryType::eMemory_Type_Job);
-			result_data = nullptr;
-            result_data_size = 0;
-		}
-
 		entry_point = nullptr;
 		on_success = nullptr;
 		on_failed = nullptr;
@@ -109,10 +101,10 @@ public:
 	PFN_OnJobComplete on_success = nullptr;
 	PFN_OnJobComplete on_failed = nullptr;
 
-	void* param_data = nullptr;
+	std::shared_ptr<void> param_data = nullptr;
 	size_t param_data_size = 0;
 
-	void* result_data = nullptr;
+	std::shared_ptr<void> result_data = nullptr;
 	size_t result_data_size = 0;
 };
 
@@ -130,7 +122,7 @@ struct JobResultEntry {
 	unsigned short id;
 	PFN_OnJobComplete callback = nullptr;
 	uint32_t param_size = 0;
-	void* params = nullptr;
+	std::shared_ptr<void> params = nullptr;
 };
 
 class JobSystem {
@@ -152,12 +144,72 @@ public:
 	/**
 	 * @brief Creates a new job with default type
 	 */
-	static DAPI JobInfo CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed, 
-		void* param_data, size_t param_data_size, size_t result_data_size,
-		JobType type = JobType::eGeneral, JobPriority priority = JobPriority::eNormal);
+	template<typename T>
+	static DAPI JobInfo CreateJob(PFN_OnJobStart entry, PFN_OnJobComplete on_success, PFN_OnJobComplete on_failed,
+		std::shared_ptr<T> param_data, size_t param_data_size, size_t result_data_size,
+		JobType type = JobType::eGeneral, JobPriority priority = JobPriority::eNormal) {
+		JobInfo Job;
+		Job.entry_point = std::move(entry);
+		Job.on_success = std::move(on_success);
+		Job.on_failed = std::move(on_failed);
+		Job.type = type;
+		Job.priority = priority;
+
+		Job.param_data_size = param_data_size;
+		if (param_data_size > 0) {
+			Job.param_data = std::move(param_data);
+		}
+		else {
+			Job.param_data = nullptr;
+		}
+
+		Job.result_data_size = result_data_size;
+		if (result_data_size > 0) {
+			//Job.result_data = Memory::Allocate(result_data_size, MemoryType::eMemory_Type_Job);
+			Job.result_data = std::make_shared<T>();
+		}
+		else {
+			Job.result_data = nullptr;
+		}
+
+		return Job;
+	}
 
 private:
-	static void StoreResult(PFN_OnJobComplete callback, void* params, size_t param_size);
+	template<typename T>
+	static void StoreResult(PFN_OnJobComplete callback, std::shared_ptr<T> params, size_t param_size) {
+		// Create the new entry.
+		JobResultEntry Entry;
+		Entry.id = INVALID_ID_U16;
+		Entry.param_size = (uint32_t)param_size;
+		Entry.callback = std::move(callback);
+
+		if (Entry.param_size > 0) {
+			// Take a copy, as the job is destroyed after this.
+			Entry.params = std::move(params);
+		}
+		else {
+			Entry.params = nullptr;
+		}
+
+		// Lock, find a free space, store, unlock.
+		if (!ResultMutex.Lock()) {
+			LOG_ERROR("Failed to obtain mutex lock for storing a result! Result storage may be corrupted.");
+		}
+
+		for (unsigned short i = 0; i < MAX_JOB_RESULTS; ++i) {
+			if (PendingResults[i].id == INVALID_ID_U16) {
+				PendingResults[i] = Entry;
+				PendingResults[i].id = i;
+				break;
+			}
+		}
+
+		if (!ResultMutex.UnLock()) {
+			LOG_ERROR("Failed to release mutex lock for result storage, storage may be corrupted.");
+		}
+	}
+
 	static uint32_t RunJobThread(void* params);
 	static void ProcessQueue(std::queue<JobInfo>& queue, Mutex* queue_mutex);
 

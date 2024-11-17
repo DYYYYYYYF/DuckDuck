@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
 
@@ -14,6 +14,7 @@ public:
 	 * of doing so directly.
 	 */
 	Camera();
+	Camera(unsigned short id);
 
 public:
 	/**
@@ -139,7 +140,26 @@ public:
 		return View.Up();
 	}
 
+public:
+	unsigned short GetID() const { return ID; }
+	void SetID(unsigned short id) { ID = id; }
+
+	unsigned short GetReferenceCount() const { return ReferenceCount; }
+	void SetReferenceCount(unsigned short count) { ReferenceCount = count; }
+	void IncreaseReferenceCount(unsigned short count = 1) { ReferenceCount += count; }
+	void DecreaseReferenceCount(unsigned short count = 1) { ReferenceCount -= count; }
+
 private:
+	/**
+	 * @brief The symbol of this camera.
+	 */
+	unsigned short ID;
+
+	/**
+	 * @brief The reference count of this camera.
+	 */
+	unsigned short ReferenceCount;
+
 	/**
 	 * @brief The position of this camera.
 	 * NOTE: Do not set this directly. Use SetPosition() instead so the view

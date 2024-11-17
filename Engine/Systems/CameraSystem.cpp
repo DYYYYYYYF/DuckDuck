@@ -1,4 +1,4 @@
-#include "CameraSystem.h"
+﻿#include "CameraSystem.h"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
@@ -7,10 +7,9 @@
 IRenderer* CameraSystem::Renderer = nullptr;
 bool CameraSystem::Initialized = false;
 SCameraSystemConfig CameraSystem::Config;
-HashTable CameraSystem::Lookup;
-void* CameraSystem::HashTableBlock = nullptr;
-CameraLookup* CameraSystem::Cameras = nullptr;
-Camera CameraSystem::DefaultCamera;
+Camera* CameraSystem::DefaultCamera = nullptr;
+std::vector<Camera*> CameraSystem::Cameras;
+std::unordered_map<std::string, uint32_t> CameraSystem::CameraMap;
 
 bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 	if (config.max_camera_count == 0) {
@@ -29,56 +28,46 @@ bool CameraSystem::Initialize(IRenderer* renderer, SCameraSystemConfig config) {
 
 	Config = config;
 	Renderer = renderer;
-
-	// Block of memory will block for array, then block for hashtable.
-	size_t ArraryRequirement = sizeof(CameraLookup) * Config.max_camera_count;
-	size_t HashtableRequirement = sizeof(CameraLookup) * Config.max_camera_count;
-
-	// The array block is after the state. Already allocated, so just set the pointer.
-	Cameras = (CameraLookup*)Memory::Allocate(ArraryRequirement, MemoryType::eMemory_Type_Array);
-
-	// Create a hashtable for texture lookups.
-	HashTableBlock = (CameraLookup*)Memory::Allocate(HashtableRequirement, MemoryType::eMemory_Type_DArray);
-	Lookup.Create(sizeof(CameraLookup), Config.max_camera_count, HashTableBlock, false);
-
-	// Fill the hashtable with invalid references to use as a default.
-	unsigned short InvalidID = INVALID_ID_U16;
-	Lookup.Fill(&InvalidID);
-
-	// Invalidate all cameras in the array.
-	uint32_t Count = Config.max_camera_count;
-	for (uint32_t i = 0; i < Count; ++i) {
-		Cameras[i].id = INVALID_ID_U16;
-		Cameras[i].reference_count = 0;
-	}
+	Cameras.resize(Config.max_camera_count);
 
 	// Setup default camera.
-	DefaultCamera = Camera();
+	DefaultCamera = NewObject<Camera>(0);
+	Cameras[0] = DefaultCamera;
+	CameraMap[DEFAULT_CAMERA_NAME] = 0;
 
 	Initialized = true;
 	return true;
 }
 
 void CameraSystem::Shutdown() {
+	for (Camera* c : Cameras) {
+		if (c) {
+			DeleteObject(c);
+			c = nullptr;
+		}
+	}
 
+	Cameras.clear();
+	std::vector<Camera*>().swap(Cameras);
 }
 
 Camera* CameraSystem::Acquire(const char* name) {
 	if (Initialized) {
 		if (StringEquali(name, DEFAULT_CAMERA_NAME)) {
-			return &DefaultCamera;
+			return DefaultCamera;
 		}
 
 		unsigned short ID = INVALID_ID_U16;
-		if (!Lookup.Get(name, &ID)) {
+		if (CameraMap.find(name) == CameraMap.end()) {
 			LOG_ERROR("Camera system Acquire() failed lookup. returned nullptr.");
 			return nullptr;
 		}
 
+		ID = CameraMap[name];
 		if (ID == INVALID_ID_U16) {
 			// Find free slot
 			for (unsigned short i = 0; i < Config.max_camera_count; ++i) {
-				if (i == INVALID_ID_U16) {
+				if (Cameras[i] == nullptr || Cameras[i]->GetID() == INVALID_ID_U16) {
 					ID = i;
 					break;
 				}
@@ -91,15 +80,18 @@ Camera* CameraSystem::Acquire(const char* name) {
 
 			// Create/register the new camera.
 			LOG_INFO("Creating new camera named '%s'.", name);
-			Cameras[ID].c = Camera();
-			Cameras[ID].id = ID;
+			Camera* NewCamera = NewObject<Camera>(ID);
+			if (NewCamera == nullptr) {
+				LOG_ERROR("Create camera %s failed.", name);
+				return nullptr;
+			}
 
 			// Update the hashtable.
-			Lookup.Set(name, &ID);
+			CameraMap[name] = ID;
 		}
 
-		Cameras[ID].reference_count++;
-		return &Cameras[ID].c;
+		Cameras[ID]->IncreaseReferenceCount();
+		return Cameras[ID];
 	}
 
 	LOG_ERROR("Camera system acquire called before system initialization. return nullptr.");
@@ -114,26 +106,33 @@ void CameraSystem::Release(const char* name) {
 		}
 
 		unsigned short ID = INVALID_ID_U16;
-		if (!Lookup.Get(name, &ID)) {
+		if (CameraMap.find(name) == CameraMap.end()) {
 			LOG_WARN("Camera system release failed lookup. Nothing was done.");
 			return;
 		}
 
+		ID = CameraMap[name];
 		if (ID != INVALID_ID_U16) {
 			// Decrement the reference count, and reset the camera if the counter reaches 0.
-			Cameras[ID].reference_count--;
-			if (Cameras[ID].reference_count < 1) {
-				Cameras[ID].c.Reset();
-				Cameras[ID].id = INVALID_ID_U16;
-				Lookup.Set(name, &Cameras[ID].id);
+			Camera* Cam = Cameras[ID];
+			if (Cam == nullptr) {
+				LOG_FATAL("Invalid camera refer. It should not happened.");
+				return;
+			}
+
+			Cam->DecreaseReferenceCount();
+			if (Cam->GetReferenceCount() < 1) {
+				Cam->Reset();
+				Cam->SetID(INVALID_ID_U16);
+				CameraMap[name] = INVALID_ID_U16;
 			}
 		}
 	}
 }
 
 Camera* CameraSystem::GetDefault() {
-	if (Initialized) {
-		return &DefaultCamera;
+	if (Initialized && DefaultCamera) {
+		return DefaultCamera;
 	}
 
 	return nullptr;

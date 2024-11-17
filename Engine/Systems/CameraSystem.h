@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Renderer/Camera.hpp"
-#include "Containers/THashTable.hpp"
+#include <unordered_map>
 
 class IRenderer;
 
@@ -9,16 +9,10 @@ struct SCameraSystemConfig {
 	unsigned short max_camera_count;
 };
 
-struct CameraLookup {
-	unsigned short id;
-	unsigned short reference_count;
-	Camera c;
-};
-
 /** @brief The name of default camera */
 #define DEFAULT_CAMERA_NAME "glabol"
 
-class DAPI CameraSystem {
+class CameraSystem {
 public:
 	static bool Initialize(IRenderer* renderer, SCameraSystemConfig config);
 	static void Shutdown();
@@ -47,17 +41,16 @@ public:
 	 * 
 	 * @return A pointer to default camera.
 	 */
-	static Camera* GetDefault();
+	DAPI static Camera* GetDefault();
 
 private:
 	static IRenderer* Renderer;
 	static bool Initialized;
 
 	static SCameraSystemConfig Config;
-	static HashTable Lookup;
-	static void* HashTableBlock;
-	static CameraLookup* Cameras;
+	static std::vector<Camera*> Cameras;
+	static std::unordered_map<std::string, uint32_t> CameraMap;
 	
-	static Camera DefaultCamera;
+	static Camera* DefaultCamera;
 };
 

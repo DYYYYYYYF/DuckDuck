@@ -1,18 +1,19 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
-#include "Containers/TString.hpp"
 #include "Resources/ResourceTypes.hpp"
 #include "Renderer/RendererTypes.hpp"
 
+#include <string>
+#include <unordered_map>
+
+class UIText;
 struct BitmapFontLookup;
 struct SystemFontLookup;
 
 struct SystemFontConfig {
 public:
 	SystemFontConfig() {
-		name = nullptr;
-		resourceName = nullptr;
 		defaultSize = 0;
 	}
 	
@@ -22,16 +23,14 @@ public:
 		resourceName = s.resourceName;
 	}
 
-	const char* name;
+	std::string name;
+	std::string resourceName;
 	unsigned short defaultSize;
-	const char* resourceName;
 };
 
 struct BitmapFontConfig {
 public:
 	BitmapFontConfig() {
-		name = nullptr;
-		resourceName = nullptr;
 		size = 0;
 	}
 	
@@ -41,9 +40,9 @@ public:
 		resourceName = b.resourceName;
 	}
 
-	const char* name;
+	std::string name;
+	std::string resourceName;
 	unsigned short size;
-	const char* resourceName;
 };
 
 struct FontSystemConfig {
@@ -64,10 +63,10 @@ public:
 	static bool LoadSystemFont(SystemFontConfig* config);
 	static bool LoadBitmapFont(BitmapFontConfig* config);
 
-	static bool Acquire(const char* fontName, unsigned short fontSize, class UIText* text);
-	static bool Release(class UIText* text);
+	static bool Acquire(const std::string& fontName, unsigned short fontSize, class UIText* text);
+	static bool Release(UIText* text);
 
-	static bool VerifyAtlas(struct FontData* data, const char* text);
+	static bool VerifyAtlas(FontData* data, const std::string& text);
 
 
 private:
@@ -75,20 +74,18 @@ private:
 	static void CleanupFontData(FontData* font);
 
 	// System fonts.
-	static bool CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const char* fontName, FontData* outVariant);
+	static bool CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName, FontData* outVariant);
 	static bool RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontData* variant);
-	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const char* text);
+	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const std::string& text);
 
 private:
-	static FontSystemConfig Config;
-	static HashTable BitFontLookup;
-	static HashTable SysFontLookup;
-	static BitmapFontLookup* BitmapFonts;
-	static SystemFontLookup* SystemFonts;
-	static void* BitmapHashTableBlock;
-	static void* SystemHashTableBlock;
-
-	static IRenderer* Renderer;
 	static bool Initilized;
+	static IRenderer* Renderer;
+	static FontSystemConfig Config;
+
+	static std::vector<BitmapFontLookup*> BitmapFonts;
+	static std::vector<SystemFontLookup*> SystemFonts;
+	static std::unordered_map<std::string, uint32_t> SystemFontMap;
+	static std::unordered_map<std::string, uint32_t> BitmapFontMap;
 
 };

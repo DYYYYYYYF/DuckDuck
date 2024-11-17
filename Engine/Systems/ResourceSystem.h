@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Resources/Resource.hpp"
 #include <vector>
@@ -19,8 +19,8 @@ public:
 
 public:
 	static bool RegisterLoader(IResourceLoader* loader);
-	static bool Load(const char* name, ResourceType type, void* params, Resource* resource);
-	static bool LoadCustom(const char* name, const char* custom_type, void* params, Resource* resource);
+	static bool Load(const std::string& name, ResourceType type, void* params, Resource* resource);
+	static bool LoadCustom(const std::string& name, const char* custom_type, void* params, Resource* resource);
 
 	static void Unload(Resource* resource);
 	static const char* GetRootPath();

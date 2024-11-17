@@ -1,4 +1,4 @@
-#include "SystemFontLoader.hpp"
+﻿#include "SystemFontLoader.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 
@@ -13,8 +13,8 @@ SystemFontLoader::SystemFontLoader() {
 	TypePath = "Fonts";
 }
 
-bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) {
-	if (name == nullptr || resource == nullptr) {
+bool SystemFontLoader::Load(const std::string& name, void* params, Resource* resource) {
+	if (name.length() == 0 || resource == nullptr) {
 		return false;
 	}
 
@@ -33,7 +33,7 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 	SystemFontFileType Type = SystemFontFileType::eSystem_Font_File_Type_Not_Found;
 	// Try each supported extension.
 	for (uint32_t i = 0; i < SUPPORTED_FILETYPE_COUNT; ++i) {
-		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath, name, SupportedFieTypes[i].extension);
+		StringFormat(FullFilePath, 512, FormatStr, ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), SupportedFieTypes[i].extension);
 		// If the file exist, open it and stop looking.
 		if (FileSystemExists(FullFilePath)) {
 			if (FileSystemOpen(FullFilePath, FileMode::eFile_Mode_Read, SupportedFieTypes[i].isBinary, &f)) {
@@ -45,18 +45,18 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 	}
 
 	if (Type == SystemFontFileType::eSystem_Font_File_Type_Not_Found) {
-		LOG_ERROR("Unable to find system font of supported type called: '%s'.", name);
+		LOG_ERROR("Unable to find system font of supported type called: '%s'.", name.c_str());
 		return false;
 	}
 
-	resource->FullPath = StringCopy(FullFilePath);
-	resource->Name = StringCopy(name);
+	resource->FullPath = FullFilePath;
+	resource->Name = name;
 
 	bool Result = false;
 	switch (Type)
 	{
 	case eSystem_Font_File_Type_Not_Found:
-		LOG_ERROR("Unable to find system font of supported type called '%s'.", name);
+		LOG_ERROR("Unable to find system font of supported type called '%s'.", name.c_str());
 		Result = false;
 		break;
 	case eSystem_Font_File_Type_DSF:
@@ -65,8 +65,8 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 	case eSystem_Font_File_Type_Font_Config:
 		// Generate the dsf file.
 		char DSFFilename[512];
-		StringFormat(DSFFilename, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath, name, ".dsf");
-		Result = ImportFontconfigFile(&f, TypePath, DSFFilename, ResourceData);
+		StringFormat(DSFFilename, 512, "%s/%s/%s%s", ResourceSystem::GetRootPath(), TypePath.c_str(), name.c_str(), ".dsf");
+		Result = ImportFontconfigFile(&f, TypePath.c_str(), DSFFilename, ResourceData);
 		break;
 	}
 
@@ -87,16 +87,6 @@ bool SystemFontLoader::Load(const char* name, void* params, Resource* resource) 
 void SystemFontLoader::Unload(Resource* resource) {
 	if (resource == nullptr) {
 		return;
-	}
-
-	if (resource->Name) {
-		Memory::Free(resource->Name, sizeof(char) * (strlen(resource->Name) + 1), MemoryType::eMemory_Type_String);
-		resource->Name = nullptr;
-	}
-
-	if (resource->FullPath) {
-		Memory::Free(resource->FullPath, sizeof(char) * (strlen(resource->FullPath) + 1), MemoryType::eMemory_Type_String);
-		resource->FullPath = nullptr;
 	}
 
 	if (resource->Data) {
