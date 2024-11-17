@@ -1,4 +1,4 @@
-#include "TextureSystem.h"
+﻿#include "TextureSystem.h"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/Application.hpp"
