@@ -8,7 +8,6 @@
 #include "stdio.h"
 
 SystemFontLoader::SystemFontLoader() {
-	CustomType = nullptr;
 	Type = ResourceType::eResource_Type_System_Font;
 	TypePath = "Fonts";
 }

@@ -71,8 +71,8 @@ bool ResourceSystem::RegisterLoader(IResourceLoader* loader) {
 				LOG_ERROR("Resource system register loader error. Loader of type %d already exists and will ot be registered.", loader->Type);
 				return false;
 			}
-			else if (RegisteredLoaders[i]->CustomType && strlen(RegisteredLoaders[i]->CustomType) > 0 && strcmp(RegisteredLoaders[i]->CustomType, loader->CustomType) == 0) {
-				LOG_ERROR("Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType);
+			else if (RegisteredLoaders[i]->CustomType.length() > 0 && RegisteredLoaders[i]->CustomType.compare(loader->CustomType) == 0) {
+				LOG_ERROR("Resource system register loader error. Loader of custom type %d already exists and will ot be registered.", loader->CustomType.c_str());
 				return false;
 			}
 		}
@@ -109,7 +109,7 @@ bool ResourceSystem::LoadCustom(const std::string& name, const char* custom_type
 
 	uint32_t Count = Config.max_loader_count;
 	for (uint32_t i = 0; i < Count; ++i) {
-		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == eResource_type_Custom && strcmp(RegisteredLoaders[i]->CustomType, custom_type)== 0) {
+		if (RegisteredLoaders[i]->Id != INVALID_ID && RegisteredLoaders[i]->Type == eResource_type_Custom && RegisteredLoaders[i]->CustomType.compare(custom_type)== 0) {
 			resource->LoaderID = RegisteredLoaders[i]->Id;
 			return RegisteredLoaders[i]->Load(name, params, resource);
 		}
