@@ -1,5 +1,6 @@
 ﻿#include "Console.hpp"
 #include "Core/utils.hpp"
+#include "Core/Event.hpp"
 
 const uint32_t MAX_CONSUMER_COUNT = 10;
 

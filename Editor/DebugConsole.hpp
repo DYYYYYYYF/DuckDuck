@@ -37,8 +37,8 @@ private:
 	bool Dirty;
 	bool Visible;
 
-	UIText* TextControl;
-	UIText* EntryControl;
+	UIText* TextControl;	// Log text.
+	UIText* EntryControl;	// Command text.
 
 	IRenderer* Renderer;
 };

@@ -1,6 +1,8 @@
 ﻿#include "DebugConsole.hpp"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
+#include <Core/Input.hpp>
+#include <Containers/TString.hpp>
 #include <Renderer/RendererFrontend.hpp>
 
 bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
@@ -14,7 +16,82 @@ bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
 }
 
 bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context) {
-	
+	if (code == eEventCode::Key_Pressed) {
+		eKeys KeyCode = eKeys(context.data.u16[0]);
+		bool IsShiftHeld = Controller::IsKeyDown(eKeys::LShift) || 
+			Controller::IsKeyDown(eKeys::RShift) || 
+			Controller::IsKeyDown(eKeys::Shift);
+
+		if (KeyCode == eKeys::Enter) {
+			LOG_INFO("Key Enter.");
+			uint32_t Length = strlen(EntryControl->Text);
+			if (Length > 0) {
+				// Execute the command and clear the text.
+				if (!Console::ExecuteCommand(EntryControl->Text)) {
+					// TODO: Handle the error.
+				}
+
+				// Clear text.
+				EntryControl->SetText(" ");
+			}
+		}
+		else if (KeyCode == eKeys::BackSpace) {
+			LOG_INFO("Key BackSpace.");
+			uint32_t Length = strlen(EntryControl->Text);
+			if (Length > 1) {
+				char* str = StringCopy(EntryControl->Text);
+				str[Length - 1] = '\0';
+				EntryControl->SetText(str);
+				Memory::Free(str, Length + 1, MemoryType::eMemory_Type_String);
+			}
+		}
+		else {
+			char cKeyCode = static_cast<char>(KeyCode);
+			if ((KeyCode > eKeys::A) && (KeyCode <= eKeys::Z)) {
+				// TODO: Check caps lock
+				if (!IsShiftHeld) {
+					cKeyCode += 32;
+				}
+			}
+			else if ((KeyCode > eKeys::Num_0) && (KeyCode <= eKeys::Num_9)) {
+				if (IsShiftHeld) {
+					switch (KeyCode)
+					{
+					case eKeys::Num_0: cKeyCode = ')'; break;
+					case eKeys::Num_1: cKeyCode = '!'; break;
+					case eKeys::Num_2: cKeyCode = '@'; break;
+					case eKeys::Num_3: cKeyCode = '#'; break;
+					case eKeys::Num_4: cKeyCode = '$'; break;
+					case eKeys::Num_5: cKeyCode = '%'; break;
+					case eKeys::Num_6: cKeyCode = '^'; break;
+					case eKeys::Num_7: cKeyCode = '&'; break;
+					case eKeys::Num_8: cKeyCode = '*'; break;
+					case eKeys::Num_9: cKeyCode = '('; break;
+					}
+				}
+			}
+			else {
+				switch (KeyCode)
+				{
+				case eKeys::Space: 
+					cKeyCode = static_cast<char>(KeyCode);
+					break;
+				default:
+					cKeyCode = 0;
+					break;
+				}
+			}
+
+			if (cKeyCode != 0) {
+				uint32_t Length = strlen(EntryControl->Text);
+				char* NewText = (char*)Memory::Allocate(Length + 2, MemoryType::eMemory_Type_String);
+				ASSERT(NewText);
+				StringFormat(NewText, Length + 2, "%s%c", EntryControl->Text, cKeyCode);
+				EntryControl->SetText(NewText);
+				Memory::Free(NewText, Length + 1, MemoryType::eMemory_Type_String);
+			}
+		}
+	}
 
 	return true;
 }
@@ -60,7 +137,7 @@ DebugConsole::~DebugConsole() {
 bool DebugConsole::Load() {
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();
-	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Test text control.")) {
+	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, " ")) {
 		LOG_FATAL("Unable to create text control for debug console.");
 		return false;
 	}
@@ -69,7 +146,7 @@ bool DebugConsole::Load() {
 
 	// Create another ui text control for rendering typed text.
 	EntryControl = NewObject<UIText>();
-	if (!EntryControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Test entry control.")) {
+	if (!EntryControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Press 'entry' to record command.")) {
 		LOG_FATAL("Unable to create entry control for debug console.");
 		return false;
 	}
