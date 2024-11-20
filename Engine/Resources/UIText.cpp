@@ -1,4 +1,4 @@
-#include "UIText.hpp"
+﻿#include "UIText.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"

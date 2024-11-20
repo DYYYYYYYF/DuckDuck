@@ -1,6 +1,7 @@
 ﻿#include "DebugConsole.hpp"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
+#include <Renderer/RendererFrontend.hpp>
 
 bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
 	std::vector<std::string> SplitMessage = Utils::StringSplit(msg, '\n', true, false);
@@ -52,26 +53,28 @@ DebugConsole::~DebugConsole() {
 		DeleteObject(EntryControl);
 		EntryControl = nullptr;
 	}
+
+	Console::UnregisterConsumer(std::bind(&DebugConsole::Write, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 bool DebugConsole::Load() {
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();
-	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 31, "Test text control.")) {
+	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Test text control.")) {
 		LOG_FATAL("Unable to create text control for debug console.");
 		return false;
 	}
 
-	TextControl->SetPosition(Vec3(350, 450, 0));
+	TextControl->SetPosition(Vec3(0.7f * Renderer->GetWidth(), 100, 0));
 
 	// Create another ui text control for rendering typed text.
 	EntryControl = NewObject<UIText>();
-	if (!EntryControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 31, "Test entry control.")) {
+	if (!EntryControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "Test entry control.")) {
 		LOG_FATAL("Unable to create entry control for debug console.");
 		return false;
 	}
 
-	EntryControl->SetPosition(Vec3(350, 450 + (31.0f * DisplayLineCount), 0.0f));
+	EntryControl->SetPosition(Vec3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
 
 	EngineEvent::Register(eEventCode::Key_Pressed, nullptr,
 		std::bind(

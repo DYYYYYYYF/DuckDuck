@@ -89,6 +89,12 @@ std::vector<std::string> Utils::StringSplit(const std::string& str, char delimit
 	}
 
 	// 处理最后一个子字符串
-	Result.push_back(str.substr(Head));
+	std::string LastSubString = str.substr(Head);
+	LastSubString = Strtrim(LastSubString);
+	if (LastSubString.length() > 1 || include_empty) {
+		Result.push_back(str.substr(Head));
+
+	}
+
 	return Result;
 }

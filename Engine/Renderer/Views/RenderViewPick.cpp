@@ -285,9 +285,8 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
 		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
 		if (!PacketData->WorldMeshData.empty()) {
-			/*Memory::Free(PacketData->WorldMeshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);*/
-			/*PacketData->WorldMeshData.clear();
-			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);*/
+			PacketData->WorldMeshData.clear();
+			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);
 		}
 
 		DeleteObject(packet->extended_data);

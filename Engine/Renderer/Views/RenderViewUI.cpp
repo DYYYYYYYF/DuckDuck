@@ -141,11 +141,13 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		if (PacketData->Textes != nullptr) {
-			Memory::Free(PacketData->Textes, sizeof(UIText) * 2, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->Textes, sizeof(UIText) * PacketData->textCount, MemoryType::eMemory_Type_Array);
+			PacketData->Textes = nullptr;
 		}
 
 		if (PacketData->meshData.meshes != nullptr) {
-			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * PacketData->meshData.mesh_count, MemoryType::eMemory_Type_Array);
+			PacketData->meshData.meshes = nullptr;
 		}
 
 		DeleteObject(packet->extended_data);

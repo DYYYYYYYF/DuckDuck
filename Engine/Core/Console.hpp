@@ -38,6 +38,7 @@ public:
 	static void Shutdown();
 
 	static DAPI void RegisterConsumer(PFN_ConsoleWrite callback);
+	static DAPI void UnregisterConsumer(PFN_ConsoleWrite callback);
 	static DAPI void WriteLine(Log::Logger::Level level, const std::string& msg);
 	static DAPI bool RegisterCommand(const std::string& cmd, unsigned char arg_count, PFN_ConsoleCommand func);
 	static DAPI bool ExecuteCommand(const std::string& cmd);

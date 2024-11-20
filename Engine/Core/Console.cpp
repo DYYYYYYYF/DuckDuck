@@ -21,6 +21,17 @@ void Console::RegisterConsumer(PFN_ConsoleWrite callback) {
 	RegisteredConsumers.push_back(NewConsumer);
 }
 
+void Console::UnregisterConsumer(PFN_ConsoleWrite callback) {
+	for (size_t i = 0; i < RegisteredConsumers.size(); ++i) {
+		Consumer& consumer = RegisteredConsumers[i];
+		if (consumer.Callback.target<bool(Log::Logger::Level, const std::string&)>() ==
+			callback.target<bool(Log::Logger::Level, const std::string&)>()) {
+			RegisteredConsumers.erase(RegisteredConsumers.begin() + i);
+			continue;
+		}
+	}
+}
+
 void Console::WriteLine(Log::Logger::Level level, const std::string& msg) {
 	// Notify each consumer that a line has been added.
 	for (unsigned char i = 0; i < RegisteredConsumers.size(); ++i) {

@@ -17,7 +17,7 @@
 #include "DebugConsole.hpp"
 
 static bool EnableFrustumCulling = false;
-static DebugConsole* GameConsole = nullptr;
+DebugConsole* GameConsole = nullptr;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
@@ -150,9 +150,6 @@ bool GameInstance::Boot(IRenderer* renderer) {
 bool GameInstance::Initialize() {
 	LOG_DEBUG("GameInitialize() called.");
 
-	// Load console
-	GameConsole->Load();
-
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
 
@@ -184,6 +181,9 @@ bool GameInstance::Initialize() {
 	}
 	TestSysText.SetPosition(Vec3(100, 200, 0));
 	TestSysText.SetName("Keyboard map texts.");
+
+	// Load console
+	GameConsole->Load();
 
 	// Skybox
 	if (!SB.Create("SkyboxCube", Renderer)) {
@@ -625,8 +625,7 @@ bool GameInstance::Update(float delta_time) {
 	);
 	TestText.SetText(FPSText);
 
-	//Console::WriteLine(Log::Logger::INFO, "Test Info.");
-	//GameConsole->Update();
+	GameConsole->Update();
 
 	return true;
 }
@@ -674,16 +673,16 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	}
 
 
-	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 2, MemoryType::eMemory_Type_Array);
+	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 4, MemoryType::eMemory_Type_Array);
 	Texts[0] = &TestText;
 	Texts[1] = &TestSysText;
-	//Texts[2] = GameConsole->GetText();
-	//Texts[3] = GameConsole->GetEntryText();
+	Texts[2] = GameConsole->GetText();
+	Texts[3] = GameConsole->GetEntryText();
 
 	UIPacketData UIPacket;
 	UIPacket.meshData.mesh_count = UIMeshCount;
 	UIPacket.meshData.meshes = TempUIMeshes;
-	UIPacket.textCount = 2;
+	UIPacket.textCount = 4;
 	UIPacket.Textes = Texts;
 
 	IRenderView* UIView = RenderViewSystem::Get("UI");
