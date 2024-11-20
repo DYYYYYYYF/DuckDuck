@@ -14,8 +14,10 @@
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
+#include "DebugConsole.hpp"
 
 static bool EnableFrustumCulling = false;
+static DebugConsole* GameConsole = nullptr;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
@@ -111,7 +113,8 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	LOG_INFO("Booting...");
 
 	Renderer = renderer;
-	
+	GameConsole = NewObject<DebugConsole>(Renderer);
+
 	// Configure fonts.
 	BitmapFontConfig BmpFontConfig;
 	BmpFontConfig.name = "Ubuntu Mono 21px";
@@ -146,6 +149,9 @@ bool GameInstance::Boot(IRenderer* renderer) {
 
 bool GameInstance::Initialize() {
 	LOG_DEBUG("GameInitialize() called.");
+
+	// Load console
+	GameConsole->Load();
 
 	// Load python script
 	TestPython.SetPythonFile("recompile_shader");
@@ -313,6 +319,10 @@ bool GameInstance::Initialize() {
 void GameInstance::Shutdown() {
 	// TODO: Temp
 	SB.Destroy();
+
+	if (GameConsole) {
+		DeleteObject(GameConsole);
+	}
 
 	TestText.Destroy();
 	TestSysText.Destroy();
@@ -615,6 +625,9 @@ bool GameInstance::Update(float delta_time) {
 	);
 	TestText.SetText(FPSText);
 
+	//Console::WriteLine(Log::Logger::INFO, "Test Info.");
+	//GameConsole->Update();
+
 	return true;
 }
 
@@ -625,21 +638,28 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	std::vector<RenderViewPacket> Views;
 	Views.resize(packet->view_count);
 	packet->views = Views;
+	uint32_t ViewCounter = 0;
 
 	// Skybox
 	SkyboxPacketData SkyboxData;
 	SkyboxData.sb = &SB;
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Skybox"), &SkyboxData, &packet->views[0])) {
-		LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
-		return false;
+	IRenderView* SkyboxView = RenderViewSystem::Get("Skybox");
+	if (SkyboxView) {
+		if (!RenderViewSystem::BuildPacket(SkyboxView, &SkyboxData, &packet->views[ViewCounter++])) {
+			LOG_ERROR("Failed to build packet for view 'World_Opaque'.");
+			return false;
+		}
 	}
 
 	// World
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("World"), &FrameData.WorldGeometries, &packet->views[1])) {
-		LOG_ERROR("Failed to build packet for view 'World'.");
-		return false;
+	IRenderView* WorldView = RenderViewSystem::Get("World");
+	if(WorldView) {
+		if (!RenderViewSystem::BuildPacket(WorldView, &FrameData.WorldGeometries, &packet->views[ViewCounter++])) {
+			LOG_ERROR("Failed to build packet for view 'World'.");
+			return false;
+		}
 	}
-
+	
 	// UI
 	uint32_t UIMeshCount = 0;
 	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
@@ -655,6 +675,8 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 2, MemoryType::eMemory_Type_Array);
 	Texts[0] = &TestText;
 	Texts[1] = &TestSysText;
+	//Texts[2] = GameConsole->GetText();
+	//Texts[3] = GameConsole->GetEntryText();
 
 	UIPacketData UIPacket;
 	UIPacket.meshData.mesh_count = UIMeshCount;
@@ -662,21 +684,27 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	UIPacket.textCount = 2;
 	UIPacket.Textes = Texts;
 
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &packet->views[2])) {
-		LOG_ERROR("Failed to build packet for view 'UI'.");
-		return false;
+	IRenderView* UIView = RenderViewSystem::Get("UI");
+	if (UIView) {
+		if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("UI"), &UIPacket, &packet->views[ViewCounter++])) {
+			LOG_ERROR("Failed to build packet for view 'UI'.");
+			return false;
+		}
 	}
+	
+	IRenderView* PickView = RenderViewSystem::Get("Pick");
+	if (PickView) {
+		// Pick uses both world and ui packet data.
+		PickPacketData PickPacket;
+		PickPacket.UIMeshData = UIPacket.meshData;
+		PickPacket.WorldMeshData = FrameData.WorldGeometries;
+		PickPacket.Texts = UIPacket.Textes;
+		PickPacket.TextCount = UIPacket.textCount;
 
-	// Pick uses both world and ui packet data.
-	PickPacketData PickPacket;
-	PickPacket.UIMeshData = UIPacket.meshData;
-	PickPacket.WorldMeshData = FrameData.WorldGeometries;
-	PickPacket.Texts = UIPacket.Textes;
-	PickPacket.TextCount = UIPacket.textCount;
-
-	if (!RenderViewSystem::BuildPacket(RenderViewSystem::Get("Pick"), &PickPacket, &packet->views[3])) {
-		LOG_ERROR("Failed to build packet for view 'Pick'.");
-		return false;
+		if (!RenderViewSystem::BuildPacket(PickView, &PickPacket, &packet->views[ViewCounter++])) {
+			LOG_ERROR("Failed to build packet for view 'Pick'.");
+			return false;
+		}
 	}
 
 	return true;

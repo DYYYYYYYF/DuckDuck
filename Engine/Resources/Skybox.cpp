@@ -27,6 +27,11 @@ bool Skybox::Create(const char* cubeName, IRenderer* renderer) {
 	g = GeometrySystem::AcquireFromConfig(SkyboxCubeConfig, true);
 	RenderFrameNumber = INVALID_ID_U64;
 	Shader* SkyboxShader = ShaderSystem::Get("Shader.Builtin.Skybox");
+	if (SkyboxShader == nullptr) {
+		LOG_WARN("Skybox shader is not loaded. Maybe there is no skybox render pass be created.");
+		return true;
+	}
+
 	std::vector<TextureMap*> Maps = { &CubeMap };
 
 	InstanceID = Renderer->AcquireInstanceResource(SkyboxShader, Maps);

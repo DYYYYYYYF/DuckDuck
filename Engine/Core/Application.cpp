@@ -54,7 +54,7 @@ bool Application::Initialize(){
 	is_running = true;
 	is_suspended = false;
 
-	// Input
+	// Event
 	if (!EngineEvent::Initialize()) {
 		LOG_ERROR("Event system init failed. Application can not start.");
 		return false;

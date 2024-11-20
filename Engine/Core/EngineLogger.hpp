@@ -1,6 +1,6 @@
 #pragma once
 #include "Platform/Platform.hpp"
-#include <Logger.hpp>
+#include "Core/Console.hpp"
 #include <filesystem>
 
 template<typename ... Args>
@@ -44,6 +44,7 @@ public:
 #define LOG_INFO(format, ...) \
     {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
     Platform::PlatformConsoleWrite(str, 5);  \
+      \
     delete[] str;\
     UL_INFO(format, ##__VA_ARGS__);}
 #endif
