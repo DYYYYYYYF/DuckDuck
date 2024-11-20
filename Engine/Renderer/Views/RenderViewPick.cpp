@@ -204,7 +204,7 @@ void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
 	}
 }
 
-bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
@@ -219,8 +219,6 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 
 	// Set the pick packet data to extended data.
 	PacketData->UIGeometryCount = 0;
-	out_packet->extended_data = Memory::Allocate(sizeof(PickPacketData), MemoryType::eMemory_Type_Renderer);
-
 	uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
 
 	uint32_t HighestInstanceID = 0;
@@ -271,7 +269,7 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 	}
 
 	// Copy over the packet data.
-	Memory::Copy(out_packet->extended_data, PacketData, sizeof(PickPacketData));
+	out_packet->extended_data = NewObject<PickPacketData>(*PacketData);
 
 	return true;
 }
@@ -292,7 +290,7 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);*/
 		}
 
-		Memory::Free(packet->extended_data, sizeof(PickPacketData), eMemory_Type_Renderer);
+		DeleteObject(packet->extended_data);
 		packet->extended_data = nullptr;
 	}
 

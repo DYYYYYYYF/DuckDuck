@@ -654,7 +654,9 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	// World
 	IRenderView* WorldView = RenderViewSystem::Get("World");
 	if(WorldView) {
-		if (!RenderViewSystem::BuildPacket(WorldView, &FrameData.WorldGeometries, &packet->views[ViewCounter++])) {
+		WorldPacketData WorldData;
+		WorldData.Meshes = FrameData.WorldGeometries;
+		if (!RenderViewSystem::BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
 			LOG_ERROR("Failed to build packet for view 'World'.");
 			return false;
 		}

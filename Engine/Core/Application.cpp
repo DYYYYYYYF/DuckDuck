@@ -1,9 +1,4 @@
-\
-
-
-
-
-#include "Application.hpp"
+﻿#include "Application.hpp"
 
 #include "EngineLogger.hpp"
 #include "Event.hpp"

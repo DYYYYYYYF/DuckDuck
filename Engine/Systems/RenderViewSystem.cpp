@@ -201,7 +201,7 @@ IRenderView* RenderViewSystem::Get(const std::string& name) {
 	return nullptr;
 }
 
-bool RenderViewSystem::BuildPacket(IRenderView* view, void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewSystem::BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (out_packet && view) {
 		return view->OnBuildPacket(data, out_packet);
 	}
