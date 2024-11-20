@@ -14,7 +14,7 @@ bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
 }
 
 bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context) {
-	LOG_INFO("Onkey");
+	
 
 	return true;
 }
@@ -104,14 +104,14 @@ void DebugConsole::Update() {
 	}
 
 	size_t LineCount = Lines.size();
-	size_t MaxLines = DMIN(LineCount, DisplayLineCount);
+	size_t MaxLines = DMIN(DisplayLineCount, DMAX(LineCount, DisplayLineCount));
 
 	// Calculate the min line first, taking into account the line offset as well.
 	size_t MinLine = DMAX(LineCount - MaxLines - LineOffset, 0);
 	size_t MaxLine = MinLine + MaxLines - 1;
 
 	std::string Buffer = "";
-	for (size_t i = 0; i < MaxLines; ++i) {
+	for (size_t i = MinLine; i < MaxLine; ++i) {
 		// TODO: insert colour codes for the message type.
 
 		// Copy line
