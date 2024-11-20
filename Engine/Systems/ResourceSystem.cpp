@@ -1,4 +1,4 @@
-﻿#include "ResourceSystem.h"
+#include "ResourceSystem.h"
 
 #include "Renderer/Vulkan/VulkanContext.hpp"
 
@@ -40,7 +40,7 @@ bool ResourceSystem::Initialize(SResourceSystemConfig config) {
 	RegisterLoader(SysFontLoader);
 
 	Initilized = true;
-	LOG_INFO("Resource system initialize with base path: '%s'.", config.asset_base_path);
+	LOG_INFO("Resource system initialize with base path: '%s'.", config.asset_base_path.c_str());
 	return true;
 
 }
@@ -135,7 +135,7 @@ void ResourceSystem::Unload(Resource* resource) {
 
 const char* ResourceSystem::GetRootPath() {
 	if (Initilized) {
-		return Config.asset_base_path;
+		return Config.asset_base_path.c_str();
 	}
 
 	LOG_ERROR("Resource system GetRootPaht() called beform initialization, returning empty string.");

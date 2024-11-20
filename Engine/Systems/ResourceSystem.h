@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Resources/Resource.hpp"
 #include <vector>
@@ -9,7 +9,7 @@ struct SResourceSystemConfig {
 	uint32_t max_loader_count;
 
 	// The relative base path for assets.
-	const char* asset_base_path = nullptr;
+    std::string asset_base_path;
 };
 
 class ResourceSystem {

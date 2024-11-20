@@ -83,10 +83,10 @@ bool Application::Initialize(){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
-#ifdef DPLATFORM_WINDOWS
-	ResourceSystemConfig.asset_base_path = "../Assets";
-#elif DPLATFORM_MACOS
-    ResourceSystemConfig.asset_base_path = "../../Assets";
+#ifdef ROOT_PATH
+    ResourceSystemConfig.asset_base_path = std::string(ROOT_PATH) + "/Assets";
+#else
+    // TODO: Runtime get project root path
 #endif
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
 		LOG_FATAL("Resource system failed to initialize!");
