@@ -16,6 +16,10 @@ bool DebugConsole::Write(Log::Logger::Level level, const std::string& msg) {
 }
 
 bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context) {
+	if (!Visible) {
+		return false;
+	}
+
 	if (code == eEventCode::Key_Pressed) {
 		eKeys KeyCode = eKeys(context.data.u16[0]);
 		bool IsShiftHeld = Controller::IsKeyDown(eKeys::LShift) || 
@@ -24,7 +28,7 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 
 		if (KeyCode == eKeys::Enter) {
 			LOG_INFO("Key Enter.");
-			uint32_t Length = strlen(EntryControl->Text);
+			uint32_t Length = (uint32_t)strlen(EntryControl->Text);
 			if (Length > 0) {
 				// Execute the command and clear the text.
 				if (!Console::ExecuteCommand(EntryControl->Text)) {
@@ -37,8 +41,8 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 		}
 		else if (KeyCode == eKeys::BackSpace) {
 			LOG_INFO("Key BackSpace.");
-			uint32_t Length = strlen(EntryControl->Text);
-			if (Length > 1) {
+			uint32_t Length = (uint32_t)strlen(EntryControl->Text);
+			if (Length > 0) {
 				char* str = StringCopy(EntryControl->Text);
 				str[Length - 1] = '\0';
 				EntryControl->SetText(str);
@@ -83,7 +87,7 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 			}
 
 			if (cKeyCode != 0) {
-				uint32_t Length = strlen(EntryControl->Text);
+				uint32_t Length = (uint32_t)strlen(EntryControl->Text);
 				char* NewText = (char*)Memory::Allocate(Length + 2, MemoryType::eMemory_Type_String);
 				ASSERT(NewText);
 				StringFormat(NewText, Length + 2, "%s%c", EntryControl->Text, cKeyCode);
@@ -100,6 +104,7 @@ DebugConsole::DebugConsole(){
 	DisplayLineCount = 10;
 	LineOffset = 0;
 	Visible = false;
+	Dirty = false;
 	Renderer = nullptr;
 	TextControl = nullptr;
 	EntryControl = nullptr;
@@ -111,6 +116,7 @@ DebugConsole::DebugConsole(IRenderer* renderer) {
 	DisplayLineCount = 10;
 	LineOffset = 0;
 	Visible = false;
+	Dirty = false;
 	Renderer = renderer;
 	TextControl = nullptr;
 	EntryControl = nullptr;
@@ -227,7 +233,7 @@ void DebugConsole::MoveDown() {
 	Dirty = true;
 	size_t LineCount = Lines.size();
 	// Don't bother with trying an offset, just reset and boot out.
-	if (LineCount <= DisplayLineCount) {
+	if (LineCount < DisplayLineCount) {
 		LineOffset = 0;
 		return;
 	}

@@ -14,10 +14,9 @@
 #include <Systems/RenderViewSystem.hpp>
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
-#include "DebugConsole.hpp"
+#include "Keybinds.hpp"
 
 static bool EnableFrustumCulling = false;
-DebugConsole* GameConsole = nullptr;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
@@ -88,32 +87,14 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 	return false;
 }
 
-
-bool GameOnKey(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
-	if (code == eEventCode::Key_Pressed) {
-		eKeys KeyCode = eKeys(context.data.u16[0]);
-		if (KeyCode == eKeys::Escape) {
-			// NOTE: Technically dispatch an event to itself, but there may be other listeners.
-			SEventContext data = {};
-			EngineEvent::Fire(eEventCode::Application_Quit, 0, data);
-
-			// Block anything else from processing this.
-			return true;
-		}
-	}
-	else if (code == eEventCode::Key_Released) {
-
-		return true;
-	}
-
-	return false;
-}
-
 bool GameInstance::Boot(IRenderer* renderer) {
 	LOG_INFO("Booting...");
 
 	Renderer = renderer;
 	GameConsole = NewObject<DebugConsole>(Renderer);
+
+	Keybind GameKeybind;
+	GameKeybind.Setup(this);
 
 	// Configure fonts.
 	BitmapFontConfig BmpFontConfig;
@@ -310,9 +291,6 @@ bool GameInstance::Initialize() {
 	EngineEvent::Register(eEventCode::Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
-	EngineEvent::Register(eEventCode::Key_Pressed, this, GameOnKey);
-	EngineEvent::Register(eEventCode::Key_Released, this, GameOnKey);
-
 	return true;
 }
 
@@ -335,9 +313,6 @@ void GameInstance::Shutdown() {
 	EngineEvent::Unregister(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
 	EngineEvent::Unregister(eEventCode::Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
-
-	EngineEvent::Unregister(eEventCode::Key_Pressed, this, GameOnKey);
-	EngineEvent::Unregister(eEventCode::Key_Released, this, GameOnKey);
 }
 
 bool GameInstance::Update(float delta_time) {
@@ -348,110 +323,8 @@ bool GameInstance::Update(float delta_time) {
 		std::vector<GeometryRenderData>().swap(FrameData.WorldGeometries);
 	}
 
-	static size_t AllocCount = 0;
-	size_t PrevAllocCount = AllocCount;
-	AllocCount = Memory::GetAllocateCount();
-    size_t UsedMemory = AllocCount - PrevAllocCount;
-	if (Controller::IsKeyUp(eKeys::M) && Controller::WasKeyDown(eKeys::M)) {
-		char* Usage = Memory::GetMemoryUsageStr();
-		LOG_INFO(Usage);
-		StringFree(Usage);
-		LOG_DEBUG("Allocations: %llu (%llu this frame)", AllocCount, UsedMemory);
-	}
-
-	// Temp shader debug
-	if (Controller::IsKeyUp(eKeys::F1) && Controller::WasKeyDown(eKeys::F1)) {
-		SEventContext Context;
-		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Default;
-		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
-	}
-	if (Controller::IsKeyUp(eKeys::F2) && Controller::WasKeyDown(eKeys::F2)) {
-		SEventContext Context;
-		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Lighting;
-		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
-	}
-	if (Controller::IsKeyUp(eKeys::F3) &&Controller::WasKeyDown(eKeys::F3)) {
-		SEventContext Context;
-		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Normals;
-		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
-	}
-	if (Controller::IsKeyUp(eKeys::F4) &&Controller::WasKeyDown(eKeys::F4)) {
-		SEventContext Context;
-		Context.data.i32[0] = ShaderRenderMode::eShader_Render_Mode_Depth;
-		EngineEvent::Fire(eEventCode::Set_Render_Mode, nullptr, Context);
-	}
-
-	if (Controller::IsKeyDown(eKeys::Left)) {
-		WorldCamera->RotateYaw(1.0f * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::Right)) {
-		WorldCamera->RotateYaw(-1.0f * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::Up)) {
-		WorldCamera->RotatePitch(1.0f * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::Down)) {
-		WorldCamera->RotatePitch(-1.0f * delta_time);
-	}
-
-	float TempMoveSpeed = 50.0f;
-	if (Controller::IsKeyDown(eKeys::Shift)) {
-		TempMoveSpeed *= 2.0f;
-	}
-
-	if (Controller::IsKeyDown(eKeys::W)) {
-		WorldCamera->MoveForward(TempMoveSpeed * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::S)) {
-		WorldCamera->MoveBackward(TempMoveSpeed * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::A)) {
-		WorldCamera->MoveLeft(TempMoveSpeed * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::D)) {
-		WorldCamera->MoveRight(TempMoveSpeed * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::Q)) {
-		WorldCamera->MoveDown(TempMoveSpeed * delta_time);
-	}
-	if (Controller::IsKeyDown(eKeys::E)) {
-		WorldCamera->MoveUp(TempMoveSpeed * delta_time);
-	}
-
-	if (Controller::IsKeyDown(eKeys::R)) {
-		WorldCamera->Reset();
-	}
-
-	// TODO: Remove
-	if (Controller::IsKeyUp(eKeys::O) &&Controller::WasKeyDown(eKeys::O)) {
-		SEventContext Context = {};
-		EngineEvent::Fire(eEventCode::Debug_0, this, Context);
-	}
-
-	if (Controller::IsKeyUp(eKeys::L) &&Controller::WasKeyDown(eKeys::L)) {
-		SEventContext Context = {};
-		EngineEvent::Fire(eEventCode::Debug_2, this, Context);
-	}
-
-	if (Controller::IsKeyUp(eKeys::K) &&Controller::WasKeyDown(eKeys::K)) {
-		SEventContext Context = {};
-		EngineEvent::Fire(eEventCode::Debug_3, this, Context);
-	}
-
-	if (Controller::IsKeyUp(eKeys::P) &&Controller::WasKeyDown(eKeys::P)) {
-		SEventContext Context = {};
-		EngineEvent::Fire(eEventCode::Debug_1, this, Context);
-	}
-
 	if (Controller::IsKeyUp(eKeys::G) &&Controller::WasKeyDown(eKeys::G)) {
 		TestPython.ExecuteFunc("CompileShaders", "glsl");
-
-		// Reload
-		SEventContext Context = {};
-		EngineEvent::Fire(eEventCode::Reload_Shader_Module, this, Context);
-	}
-	if (Controller::IsKeyUp(eKeys::H) &&Controller::WasKeyDown(eKeys::H)) {
-		TestPython.ExecuteFunc("CompileShaders", "hlsl");
 
 		// Reload
 		SEventContext Context = {};

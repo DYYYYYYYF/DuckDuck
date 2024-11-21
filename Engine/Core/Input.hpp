@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Defines.hpp"
+#include "DMemory.hpp"
+#include <vector>
+
+class Keymap;
 
 enum class eButtons : char{
 	// Mouse
@@ -18,6 +22,7 @@ enum class eKeys : unsigned int{
 	DEFINE_KEY(Tab, 0x09),
 	DEFINE_KEY(Shift, 0x10),
 	DEFINE_KEY(Control, 0x11),
+	DEFINE_KEY(Alt, 0x12),
 
 	DEFINE_KEY(Pause, 0x13),
 	DEFINE_KEY(Capital, 0x14),
@@ -158,6 +163,10 @@ enum class eKeys : unsigned int{
 };
 
 class Controller {
+public:
+	Controller() {}
+	virtual ~Controller();
+
 private:
 	struct SKeyboardState {
 		bool keys[256];
@@ -190,6 +199,12 @@ public:
 	static void ProcessMouseMove(short x, short y);
 	static void ProcessMouseWheel(char z_delta);
 
+	static DAPI void PushKeymap(Keymap* map);
+	static DAPI void PopKeymap();
+
+private:
+	static bool CheckModifiers(uint32_t modifiers);
+
 private:
 	static bool Initialized;
 	static SKeyboardState keyboard_current;
@@ -197,4 +212,6 @@ private:
 
 	static SMouseState mouse_current;
 	static SMouseState mouse_previous;
+
+	static std::vector<Keymap*> KeymapStack;
 };

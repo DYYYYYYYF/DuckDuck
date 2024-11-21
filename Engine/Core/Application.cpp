@@ -8,7 +8,7 @@
 #include "UID.hpp"
 #include "Metrics.hpp"
 
-#include "GameType.hpp"
+#include "IGame.hpp"
 #include "Platform/Platform.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
@@ -265,6 +265,7 @@ bool Application::Run() {
 				is_running = false;
 				break;
 			}
+			GameController->Update(DeltaTime);
 
 			// TODO: Refactor packet creation.
 			SRenderPacket Packet;
@@ -302,7 +303,7 @@ bool Application::Run() {
 			}
 
 			last_time = CurrentTime;
-			GameController->Update(DeltaTime);
+			GameInst->DeltaTime = DeltaTime;
 		}
 	}
 

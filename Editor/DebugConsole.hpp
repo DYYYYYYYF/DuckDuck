@@ -22,7 +22,15 @@ public:
 	void MoveToBottom();
 
 	bool IsVisible() const { return Visible; }
-	void SetVisible(bool visiblable) { Visible = visiblable; }
+	void SetVisible(bool visiblable) { 
+		Visible = visiblable; 
+		if (Visible) {
+			EntryControl->SetText(" ");
+		}
+		else {
+			EntryControl->SetText("Press 'entry' to record command.");
+		}
+	}
 
 	bool OnKey(eEventCode code, void* sender, void* listener_inst, SEventContext context);
 
