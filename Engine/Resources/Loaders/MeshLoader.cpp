@@ -14,7 +14,6 @@
 
 MeshLoader::MeshLoader() {
 	Type = ResourceType::eResource_type_Static_Mesh;
-	CustomType = nullptr;
 	TypePath = "Models";
 }
 

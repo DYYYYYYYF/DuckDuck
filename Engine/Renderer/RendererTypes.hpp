@@ -84,19 +84,48 @@ struct RenderTarget {
 	void* internal_framebuffer = nullptr;
 };
 
-struct MeshPacketData {
+struct IRenderviewPacketData {};
+struct WorldPacketData : public IRenderviewPacketData {
+public:
+	WorldPacketData() {}
+	WorldPacketData(const WorldPacketData& data) {
+		Meshes = data.Meshes;
+	}
+
+	std::vector<GeometryRenderData> Meshes;
+};
+
+struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
 	Mesh** meshes = nullptr;
 };
 
-struct UIPacketData {
+struct UIPacketData : public IRenderviewPacketData {
+public:
+	UIPacketData() {}
+	UIPacketData(const UIPacketData& data) {
+		meshData = data.meshData;
+		textCount = data.textCount;
+		Textes = data.Textes;
+	}
+
 	MeshPacketData meshData;
 	// TODO: temp
 	uint32_t textCount = 0;
 	class UIText** Textes = nullptr;
 };
 
-struct PickPacketData {
+struct PickPacketData : public IRenderviewPacketData {
+public:
+	PickPacketData() {}
+	PickPacketData(const PickPacketData& data) {
+		WorldMeshData = data.WorldMeshData;
+		UIMeshData = data.UIMeshData;
+		UIGeometryCount = data.UIGeometryCount;
+		TextCount = data.TextCount;
+		Texts = data.Texts;
+	}
+
 	std::vector<GeometryRenderData> WorldMeshData;
 	MeshPacketData UIMeshData;
 	uint32_t UIGeometryCount = 0;
@@ -105,7 +134,13 @@ struct PickPacketData {
 	class UIText** Texts = nullptr;
 };
 
-struct SkyboxPacketData {
+struct SkyboxPacketData : public IRenderviewPacketData {
+public:
+	SkyboxPacketData() {}
+	SkyboxPacketData(const SkyboxPacketData& data) {
+		sb = data.sb;
+	}
+
 	Skybox* sb = nullptr;
 };
 

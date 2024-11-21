@@ -15,6 +15,7 @@ enum ResourceType {
 	eResource_Type_Bitmap_Font,
 	eResource_Type_System_Font,
 	eResource_type_Custom,
+	eResource_type_Unkonw
 };
 
 struct ResourceHeader {

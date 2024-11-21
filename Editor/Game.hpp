@@ -1,15 +1,17 @@
 ﻿#pragma once
 
+#include "GameConsole.hpp"
 #include <Defines.hpp>
-#include <GameType.hpp>
+#include <IGame.hpp>
 #include <Math/MathTypes.hpp>
 #include <Core/CPython.hpp>
+#include <Core/Keymap.hpp>
 
 class Camera;
 
 class GameInstance : public IGame {
 public:
-	GameInstance() : WorldCamera(nullptr), delta_time(0), Width(1920), Height(1080) {}
+	GameInstance() : WorldCamera(nullptr), Width(1920), Height(1080), ConsoleKeymap(nullptr){}
 	virtual ~GameInstance() {};
 
 public:
@@ -21,13 +23,14 @@ public:
 	virtual void OnResize(unsigned int width, unsigned int height) override;
 
 public:
-	float delta_time;
 	short Width, Height;
 	Camera* WorldCamera;
 	Frustum CameraFrustum;
 
 	// TODO: temp
 	Skybox SB;
+	Keymap* ConsoleKeymap;
+	DebugConsole* GameConsole = nullptr;
 
 	std::vector<Mesh> Meshes;
 	Mesh* CarMesh = nullptr;

@@ -1,19 +1,14 @@
-\
-
-
-
-
-#include "Application.hpp"
+﻿#include "Application.hpp"
 
 #include "EngineLogger.hpp"
 #include "Event.hpp"
-#include "Input.hpp"
+#include "Controller.hpp"
 #include "DMemory.hpp"
 #include "Clock.hpp"
 #include "UID.hpp"
 #include "Metrics.hpp"
 
-#include "GameType.hpp"
+#include "IGame.hpp"
 #include "Platform/Platform.hpp"
 
 #include "Renderer/RendererFrontend.hpp"
@@ -54,7 +49,7 @@ bool Application::Initialize(){
 	is_running = true;
 	is_suspended = false;
 
-	// Input
+	// Event
 	if (!EngineEvent::Initialize()) {
 		LOG_ERROR("Event system init failed. Application can not start.");
 		return false;
@@ -83,10 +78,10 @@ bool Application::Initialize(){
 	// Init texture system
 	SResourceSystemConfig ResourceSystemConfig;
 	ResourceSystemConfig.max_loader_count = 32;
-#ifdef DPLATFORM_WINDOWS
-	ResourceSystemConfig.asset_base_path = "../Assets";
-#elif DPLATFORM_MACOS
-    ResourceSystemConfig.asset_base_path = "../../Assets";
+#ifdef ROOT_PATH
+    ResourceSystemConfig.asset_base_path = std::string(ROOT_PATH) + "/Assets";
+#else
+    // TODO: Runtime get project root path
 #endif
 	if (!ResourceSystem::Initialize(ResourceSystemConfig)) {
 		LOG_FATAL("Resource system failed to initialize!");
@@ -270,6 +265,7 @@ bool Application::Run() {
 				is_running = false;
 				break;
 			}
+			GameController->Update(DeltaTime);
 
 			// TODO: Refactor packet creation.
 			SRenderPacket Packet;
@@ -307,7 +303,7 @@ bool Application::Run() {
 			}
 
 			last_time = CurrentTime;
-			GameController->Update(DeltaTime);
+			GameInst->DeltaTime = (float)DeltaTime;
 		}
 	}
 

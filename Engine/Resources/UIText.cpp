@@ -1,4 +1,4 @@
-#include "UIText.hpp"
+﻿#include "UIText.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -121,6 +121,10 @@ void UIText::SetPosition(Vec3 position) {
 }
 
 void UIText::SetText(const char* text) {
+	if (text == nullptr || text[0] == '\0') {
+		return;
+	}
+
 	if (Text) {
 		// If strings are already equal, don't do anything.
 		if (StringEqual(Text, text)) {
@@ -143,14 +147,16 @@ void UIText::SetText(const char* text) {
 void UIText::Draw() {
 	// TODO: utf8 length.
 	uint32_t TextLength = (uint32_t)strlen(Text);
-	static const size_t QuadVertCount = 4;
-	if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
-		LOG_ERROR("Failed to draw ui font vertex buffer.");
-	}
+	if (TextLength > 0) {
+		static const size_t QuadVertCount = 4;
+		if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
+			LOG_ERROR("Failed to draw ui font vertex buffer.");
+		}
 
-	static const unsigned char QuadIndexCount = 6;
-	if (!Renderer->DrawRenderbuffer(IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
-		LOG_ERROR("Failed to draw ui font index buffer.");
+		static const unsigned char QuadIndexCount = 6;
+		if (!Renderer->DrawRenderbuffer(IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
+			LOG_ERROR("Failed to draw ui font index buffer.");
+		}
 	}
 }
 
