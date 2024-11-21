@@ -121,6 +121,10 @@ void UIText::SetPosition(Vec3 position) {
 }
 
 void UIText::SetText(const char* text) {
+	if (text == nullptr || text[0] == '\0') {
+		return;
+	}
+
 	if (Text) {
 		// If strings are already equal, don't do anything.
 		if (StringEqual(Text, text)) {

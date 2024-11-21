@@ -92,13 +92,15 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 			else {
 				// Execute
 				CommandContext Context;
-				if (Cmd->ArgCount > 0) {
-
+				if (ArgCount > 0) {
+					Context.Arguments.resize(ArgCount);
+					for (unsigned char j = 0; j < ArgCount; ++j) {
+						Context.Arguments[j] = Parts[j];
+					}
 				}
 
 				Cmd->Func(Context);
-
-				if (Context.Arguments.size() > 0) {
+				if (!Context.Arguments.empty()) {
 					Context.Arguments.clear();
 					std::vector<std::string>().swap(Context.Arguments);
 				}
@@ -109,8 +111,13 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 	}
 
 	if (!CommandFound) {
-		LOG_ERROR("The command '%s' does not exist.", Parts[0]);
+		LOG_ERROR("The command '%s' does not exist.", Parts[0].c_str());
 		HasError = true;
+	}
+
+	if (!Parts.empty()) {
+		Parts.clear();
+		std::vector<std::string>().swap(Parts);
 	}
 
 	return !HasError;

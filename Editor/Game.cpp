@@ -291,7 +291,6 @@ bool GameInstance::Initialize() {
 	EngineEvent::Register(eEventCode::Debug_2, this, GameOnDebugEvent);
 	EngineEvent::Register(eEventCode::Debug_3, this, GameOnDebugEvent);
 	EngineEvent::Register(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
-	EngineEvent::Register(eEventCode::Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 
 	return true;
@@ -314,7 +313,6 @@ void GameInstance::Shutdown() {
 	EngineEvent::Unregister(eEventCode::Debug_2, this, GameOnDebugEvent);
 	EngineEvent::Unregister(eEventCode::Debug_3, this, GameOnDebugEvent);
 	EngineEvent::Unregister(eEventCode::Object_Hover_ID_Changed, this, GameOnEvent);
-	EngineEvent::Unregister(eEventCode::Reload_Shader_Module, this, GameOnEvent);
 	// TEMP
 }
 
@@ -325,15 +323,6 @@ bool GameInstance::Update(float delta_time) {
 		FrameData.WorldGeometries.clear();
 		std::vector<GeometryRenderData>().swap(FrameData.WorldGeometries);
 	}
-
-	if (Controller::IsKeyUp(eKeys::G) &&Controller::WasKeyDown(eKeys::G)) {
-		TestPython.ExecuteFunc("CompileShaders", "glsl");
-
-		// Reload
-		SEventContext Context = {};
-		EngineEvent::Fire(eEventCode::Reload_Shader_Module, this, Context);
-	}
-	// Remove
 
 	int px, py, cx, cy;
 	Controller::GetMousePosition(cx, cy);

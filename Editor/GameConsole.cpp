@@ -27,9 +27,8 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 			Controller::IsKeyDown(eKeys::Shift);
 
 		if (KeyCode == eKeys::Enter) {
-			LOG_INFO("Key Enter.");
 			uint32_t Length = (uint32_t)strlen(EntryControl->Text);
-			if (Length > 0) {
+			if (Length > 0 && EntryControl->Text[0] != '\0') {
 				// Execute the command and clear the text.
 				if (!Console::ExecuteCommand(EntryControl->Text)) {
 					// TODO: Handle the error.
@@ -40,7 +39,6 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 			}
 		}
 		else if (KeyCode == eKeys::BackSpace) {
-			LOG_INFO("Key BackSpace.");
 			uint32_t Length = (uint32_t)strlen(EntryControl->Text);
 			if (Length > 0) {
 				char* str = StringCopy(EntryControl->Text);
@@ -51,13 +49,13 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 		}
 		else {
 			char cKeyCode = static_cast<char>(KeyCode);
-			if ((KeyCode > eKeys::A) && (KeyCode <= eKeys::Z)) {
+			if ((KeyCode >= eKeys::A) && (KeyCode <= eKeys::Z)) {
 				// TODO: Check caps lock
 				if (!IsShiftHeld) {
 					cKeyCode += 32;
 				}
 			}
-			else if ((KeyCode > eKeys::Num_0) && (KeyCode <= eKeys::Num_9)) {
+			else if ((KeyCode >= eKeys::Num_0) && (KeyCode <= eKeys::Num_9)) {
 				if (IsShiftHeld) {
 					switch (KeyCode)
 					{
@@ -143,7 +141,7 @@ DebugConsole::~DebugConsole() {
 bool DebugConsole::Load() {
 	// Create UI text control for rendering.
 	TextControl = NewObject<UIText>();
-	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, " ")) {
+	if (!TextControl->Create(Renderer, UITextType::eUI_Text_Type_system, "Noto Sans CJK JP", 26, "No Log.")) {
 		LOG_FATAL("Unable to create text control for debug console.");
 		return false;
 	}

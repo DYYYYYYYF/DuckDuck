@@ -197,6 +197,20 @@ void GameOnLoadScene(eKeys key, KeymapEntryBindType type, KeymapModifierFlags mo
 	}
 }
 
+void GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
+	GameInstance* GameInst = (GameInstance*)user_data;
+	if (GameInst == nullptr) {
+		return;
+	}
+
+	GameInst->TestPython.ExecuteFunc("CompileShaders", "glsl");
+	// Reload
+	SEventContext Context = {};
+	EngineEvent::Fire(eEventCode::Reload_Shader_Module, GameInst, Context);
+}
+
+void GameOnTemplate(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {}
+
 // ------------------------------- Console ---------------------------------- //
 void GameOnConsoleScroll(eKeys key, KeymapEntryBindType type, KeymapModifierFlags modifiers, void* user_data) {
 	DebugConsole* Console = (DebugConsole*)user_data;
@@ -302,7 +316,9 @@ void Keybind::Setup(IGame* game) {
 	// Print memory
 	GameKeymap->AddBinding(eKeys::M, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
 		std::bind(&GameOnPrintMemory, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
-
+	// Compiler shader
+	GameKeymap->AddBinding(eKeys::G, KeymapEntryBindType::ePress, (uint32_t)KeymapModifierFlagBits::eNone, GameInst,
+		std::bind(&GameOnCompilerShader, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 	Controller::PushKeymap(GameKeymap);
 
 	// Console keymap

@@ -80,7 +80,7 @@ std::vector<std::string> Utils::StringSplit(const std::string& str, char delimit
 		}
 
 		// 如果字符串不为空或者需要包含空字符都存储子字符串
-		if (SubString.length() > 0 || include_empty) {
+		if (!SubString.empty() || include_empty) {
 			Result.push_back(str.substr(Head, Rear - Head)); 
 		}
 
@@ -89,11 +89,16 @@ std::vector<std::string> Utils::StringSplit(const std::string& str, char delimit
 	}
 
 	// 处理最后一个子字符串
-	std::string LastSubString = str.substr(Head);
-	LastSubString = Strtrim(LastSubString);
-	if (LastSubString.length() > 1 || include_empty) {
-		Result.push_back(str.substr(Head));
+	if (Head < str.length()) {
+		std::string LastSubString = str.substr(Head);
+		if (trim_entries) {
+			LastSubString = Strtrim(LastSubString);
 
+		}
+		if (!LastSubString.empty() || include_empty) {
+			Result.push_back(LastSubString);
+
+		}
 	}
 
 	return Result;
