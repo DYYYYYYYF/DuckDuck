@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "DMath.hpp"
@@ -1417,6 +1417,11 @@ struct Vertex2D {
 };
 
 // Frustum culling
+enum class FrustumCullMode {
+	eSphere_Cull,
+	eAABB_Cull
+};
+
 class DAPI Plane3D {
 public:
     Plane3D() : Normal(0), Distance(0.0f) {}

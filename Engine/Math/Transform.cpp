@@ -1,4 +1,4 @@
-#include "Transform.hpp"
+﻿#include "Transform.hpp"
 
 Transform::Transform() {
 	SetPRS(Vec3(0.0f), Quaternion::Identity(), Vec3(1.0f));

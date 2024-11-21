@@ -17,6 +17,7 @@
 #include "Keybinds.hpp"
 #include "GameCommands.hpp"
 
+static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
 static bool EnableFrustumCulling = false;
 
 bool ConfigureRenderviews(Application::SConfig* config);
@@ -385,38 +386,41 @@ bool GameInstance::Update(float delta_time) {
 					continue;
 				}
 
+				switch (CullMode)
+				{
 				// Bounding sphere calculation
-				//{
-				//	Vec3 ExtensMin = g->Extents.min.Transform(Model);
-				//	Vec3 ExtensMax = g->Extents.max.Transform(Model);
+				case FrustumCullMode::eSphere_Cull:
+				{
+					Vec3 ExtensMin = g->Extents.min.Transform(Model);
+					Vec3 ExtensMax = g->Extents.max.Transform(Model);
 
-				//	float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
-				//	float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
-				//	float Diff = Dabs(Max - Min);
-				//	float Radius = Diff / 2.0f;
+					float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
+					float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
+					float Diff = Dabs(Max - Min);
+					float Radius = Diff / 2.0f;
 
-				//	// Translate/scale the center.
-				//	Vec3 Center = g->Center.Transform(Model);
+					// Translate/scale the center.
+					Vec3 Center = g->Center.Transform(Model);
 
-				//	if (State->CameraFrustum.IntersectsSphere(Center, Radius)) {
-				//		// Add it to the list to be rendered.
-				//		GeometryRenderData Data;
-				//		Data.model = Model;
-				//		Data.geometry = g;
-				//		Data.uniqueID = m->UniqueID;
-				//		game_instance->FrameData.WorldGeometries.push_back(Data);
-				//		DrawCount++;
-				//	}
-				//}
-
+					if (CameraFrustum.IntersectsSphere(Center, Radius)) {
+						// Add it to the list to be rendered.
+						GeometryRenderData Data;
+						Data.model = Model;
+						Data.geometry = g;
+						Data.uniqueID = m->UniqueID;
+						FrameData.WorldGeometries.push_back(Data);
+						DrawCount++;
+					}
+				} break;
 				// AABB calculation
+				case FrustumCullMode::eAABB_Cull:
 				{
 					// Translate/scale the extents.
 					Vec3 ExtentsMax = g->Extents.max.Transform(Model);
 
 					// Translate/scale the center.
 					Vec3 Center = g->Center.Transform(Model);
-					Vec3 HalfExtents = {                                     
+					Vec3 HalfExtents = {
 						Dabs(ExtentsMax.x - Center.x),
 						Dabs(ExtentsMax.y - Center.y),
 						Dabs(ExtentsMax.z - Center.z)
@@ -431,7 +435,7 @@ bool GameInstance::Update(float delta_time) {
 						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
-					else if (!EnableFrustumCulling){
+					else if (!EnableFrustumCulling) {
 						// Add it to the list to be rendered.
 						GeometryRenderData Data;
 						Data.model = Model;
@@ -440,6 +444,7 @@ bool GameInstance::Update(float delta_time) {
 						FrameData.WorldGeometries.push_back(Data);
 						DrawCount++;
 					}
+				} break;
 				}
 			}
 		}
