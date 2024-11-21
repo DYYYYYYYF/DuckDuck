@@ -80,27 +80,39 @@ public:
 #else
 
 #ifndef LOG_DEBUG
-#define LOG_DEBUG(...) 
+#define LOG_DEBUG(format, ...) 
 #endif
 
 #ifndef LOG_INFO
-#define LOG_INFO(...) \
-    UL_INFO(__VA_ARGS__);
+#define LOG_INFO(format, ...) \
+    {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
+    Console::WriteLine(Log::Logger::INFO, str);  \
+    delete[] str;\
+    UL_INFO(format, ##__VA_ARGS__);}
 #endif
 
 #ifndef LOG_WARN
-#define LOG_WARN(...) \
-    UL_WARN(__VA_ARGS__);
+#define LOG_WARN(format, ...) \
+    {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
+    Console::WriteLine(Log::Logger::WARN, str);  \
+    delete[] str;\
+    UL_WARN(format, ##__VA_ARGS__);}
 #endif
 
 #ifndef LOG_ERROR
-#define LOG_ERROR(...) \
-    UL_ERROR(__VA_ARGS__);
+#define LOG_ERROR(format, ...) \
+    {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
+    Console::WriteLine(Log::Logger::ERROR, str);  \
+    delete[] str;\
+    UL_ERROR(format, ##__VA_ARGS__);}
 #endif
 
 #ifndef LOG_FATAL
-#define LOG_FATAL(...) \
-    UL_FATAL(__VA_ARGS__);
+#define LOG_FATAL(format, ...) \
+    {char* str = AppendLogMessage(format, ##__VA_ARGS__);\
+    Console::WriteLine(Log::Logger::FATAL, str);  \
+    delete[] str;\
+    UL_FATAL(format, ##__VA_ARGS__);}
 #endif
 
 #define ASSERT(expr) {}

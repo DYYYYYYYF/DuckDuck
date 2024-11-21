@@ -193,7 +193,7 @@ void DebugConsole::Update() {
 	size_t MinLine = DMAX(LineCount - MaxLines - LineOffset, 0);
 	size_t MaxLine = MinLine + MaxLines - 1;
 
-	std::string Buffer = "";
+	std::string Buffer = " ";
 	for (size_t i = MinLine; i < MaxLine; ++i) {
 		// TODO: insert colour codes for the message type.
 

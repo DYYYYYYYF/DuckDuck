@@ -303,7 +303,7 @@ bool Application::Run() {
 			}
 
 			last_time = CurrentTime;
-			GameInst->DeltaTime = DeltaTime;
+			GameInst->DeltaTime = (float)DeltaTime;
 		}
 	}
 

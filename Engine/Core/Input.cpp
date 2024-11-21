@@ -80,7 +80,7 @@ void Controller::ProcessKey(eKeys key, bool pressed) {
 		keyboard_current.keys[(unsigned int)key] = pressed;
 
 		// Check key for key bindings.
-		size_t MapCount = KeymapStack.size();
+		int MapCount = (int)KeymapStack.size();
 		for (int m = MapCount - 1; m >= 0; m--) {
 			Keymap* Map = KeymapStack[m];
 			if (Map == nullptr) continue;
