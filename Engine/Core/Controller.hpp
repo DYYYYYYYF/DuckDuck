@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Defines.hpp"
+#include "DMemory.hpp"
+#include <vector>
+
+class Keymap;
 
 enum class eButtons : char{
 	// Mouse
@@ -18,6 +22,7 @@ enum class eKeys : unsigned int{
 	DEFINE_KEY(Tab, 0x09),
 	DEFINE_KEY(Shift, 0x10),
 	DEFINE_KEY(Control, 0x11),
+	DEFINE_KEY(Alt, 0x12),
 
 	DEFINE_KEY(Pause, 0x13),
 	DEFINE_KEY(Capital, 0x14),
@@ -44,6 +49,17 @@ enum class eKeys : unsigned int{
 	DEFINE_KEY(Insert, 0x2D),
 	DEFINE_KEY(DELETE, 0x2E),
 	DEFINE_KEY(Help, 0x2F),
+
+	DEFINE_KEY(Num_0, 0x30),
+	DEFINE_KEY(Num_1, 0x31),
+	DEFINE_KEY(Num_2, 0x32),
+	DEFINE_KEY(Num_3, 0x33),
+	DEFINE_KEY(Num_4, 0x34),
+	DEFINE_KEY(Num_5, 0x35),
+	DEFINE_KEY(Num_6, 0x36),
+	DEFINE_KEY(Num_7, 0x37),
+	DEFINE_KEY(Num_8, 0x38),
+	DEFINE_KEY(Num_9, 0x39),
 
 	DEFINE_KEY(A, 0x41),
 	DEFINE_KEY(B, 0x42),
@@ -147,6 +163,10 @@ enum class eKeys : unsigned int{
 };
 
 class Controller {
+public:
+	Controller() {}
+	virtual ~Controller();
+
 private:
 	struct SKeyboardState {
 		bool keys[256];
@@ -179,6 +199,12 @@ public:
 	static void ProcessMouseMove(short x, short y);
 	static void ProcessMouseWheel(char z_delta);
 
+	static DAPI void PushKeymap(Keymap* map);
+	static DAPI void PopKeymap();
+
+private:
+	static bool CheckModifiers(uint32_t modifiers);
+
 private:
 	static bool Initialized;
 	static SKeyboardState keyboard_current;
@@ -186,4 +212,6 @@ private:
 
 	static SMouseState mouse_current;
 	static SMouseState mouse_previous;
+
+	static std::vector<Keymap*> KeymapStack;
 };

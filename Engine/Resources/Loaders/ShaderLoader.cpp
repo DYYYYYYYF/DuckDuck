@@ -10,7 +10,6 @@
 
 ShaderLoader::ShaderLoader() {
 	Type = eResource_Type_Shader;
-	CustomType = nullptr;
 	TypePath = "Shaders";
 }
 

@@ -9,7 +9,6 @@
 
 MaterialLoader::MaterialLoader() {
 	Type = eResource_type_Material;
-	CustomType = nullptr;
 	TypePath = "Materials";
 }
 

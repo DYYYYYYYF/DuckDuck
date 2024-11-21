@@ -463,11 +463,14 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 
 	// Free pixel/rgba pixel data.
 	Memory::Free(Pixels, PackImageSize, MemoryType::eMemory_Type_Array);
+	Pixels = nullptr;
 	Memory::Free(RGBAPixels, PackImageSize * 4, MemoryType::eMemory_Type_Array);
+	RGBAPixels = nullptr;
 
 	// Regenerate glyphs
 	if (variant->glyphs && variant->glyphCount) {
 		Memory::Free(variant->glyphs, sizeof(FontGlyph) * variant->glyphCount, MemoryType::eMemory_Type_Array);
+		variant->glyphs = nullptr;
 	}
 
 	variant->glyphCount = CodepointCount;
@@ -489,6 +492,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 	// Regenerate kernings.
 	if (variant->kerningCount && variant->kernings) {
 		Memory::Free(variant->kernings, sizeof(FontKerning) * variant->kerningCount, MemoryType::eMemory_Type_Array);
+		variant->kernings = nullptr;
 	}
 
 	variant->kerningCount = stbtt_GetKerningTableLength(&lookip->info);

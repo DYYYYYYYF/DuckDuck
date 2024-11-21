@@ -2,7 +2,7 @@
 
 #if defined(DPLATFORM_WINDOWS)
 
-#include "Core/Input.hpp"
+#include "Core/Controller.hpp"
 #include "Core/Event.hpp"
 #include "Core/DThread.hpp"
 #include "Core/DMutex.hpp"

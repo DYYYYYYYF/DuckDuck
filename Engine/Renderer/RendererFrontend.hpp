@@ -216,6 +216,8 @@ public:
 
 public:
 	RendererBackendType GetBackendType() const { return BackendType; }
+	uint32_t GetWidth() const { return FramebufferWidth; }
+	uint32_t GetHeight() const { return FramebufferHeight; }
 
 protected:
 	RendererBackendType BackendType;

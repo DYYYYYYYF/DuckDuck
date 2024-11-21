@@ -17,7 +17,6 @@
 
 ImageLoader::ImageLoader() {
 	Type = eResource_type_Image;
-	CustomType = nullptr;
 	TypePath = "Textures";
 }
 

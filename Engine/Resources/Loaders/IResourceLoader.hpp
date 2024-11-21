@@ -5,10 +5,10 @@
 
 class IResourceLoader {
 public:
-	IResourceLoader() : Id(INVALID_ID), CustomType(nullptr){}
+	IResourceLoader() : Id(INVALID_ID), Type(ResourceType::eResource_type_Unkonw){}
 	virtual ~IResourceLoader() {
 		Id = INVALID_ID;
-		CustomType = nullptr;
+		Type = eResource_type_Unkonw;
 	}
 
 public:
@@ -18,7 +18,7 @@ public:
 public:
 	uint32_t Id;
 	ResourceType Type;
-	const char* CustomType;
+	std::string CustomType;
 	std::string TypePath;
 
 };

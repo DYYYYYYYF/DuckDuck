@@ -9,7 +9,6 @@
 #include "stdio.h"
 
 BitmapFontLoader::BitmapFontLoader() {
-	CustomType = nullptr;
 	Type = ResourceType::eResource_Type_Bitmap_Font;
 	TypePath = "Fonts";
 }
