@@ -185,7 +185,7 @@ void DebugConsole::Update() {
 	}
 
 	size_t LineCount = Lines.size();
-	size_t MaxLines = DMIN(DisplayLineCount, DMAX(LineCount, DisplayLineCount));
+	size_t MaxLines = DMIN(DisplayLineCount, LineCount);
 
 	// Calculate the min line first, taking into account the line offset as well.
 	size_t MinLine = DMAX(LineCount - MaxLines - LineOffset, 0);
@@ -216,7 +216,7 @@ UIText* DebugConsole::GetEntryText() {
 
 void DebugConsole::MoveUp() {
 	Dirty = true;
-	size_t LineCount = Lines.size();
+	int LineCount = (int)Lines.size();
 	// Don't bother with trying an offset, just reset and boot out.
 	if (LineCount <= DisplayLineCount) {
 		LineOffset = 0;
@@ -242,7 +242,7 @@ void DebugConsole::MoveDown() {
 
 void DebugConsole::MoveToTop() {
 	Dirty = true;
-	size_t LineCount = Lines.size();
+	int LineCount = (int)Lines.size();
 	// Don't bother with trying an offset, just reset and boot out.
 	if (LineCount <= DisplayLineCount) {
 		LineOffset = 0;

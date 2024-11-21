@@ -38,8 +38,8 @@ private:
 	bool Write(Log::Logger::Level level, const std::string& msg);
 
 private:
-	size_t DisplayLineCount;
-	size_t LineOffset;
+	int DisplayLineCount;
+	int LineOffset;
 	std::vector<std::string> Lines;
 
 	bool Dirty;
