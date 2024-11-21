@@ -77,8 +77,41 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 	WriteLine(Log::Logger::INFO, Temp);
 
 	// Strings are slow. But it's a console. It doesn't need to be lightning fast.
-	// TODO: Complete
+	bool HasError = false;
+	bool CommandFound = false;
+	uint32_t CommandCount = (uint32_t)RegisteredCommands.size();
+	for (uint32_t i = 0; i < CommandCount; ++i) {
+		Console::Command* Cmd = &RegisteredCommands[i];
+		if (Cmd->Name.compare(Parts[0]) == 0) {
+			CommandFound = true;
+			unsigned char ArgCount = (unsigned char)(Parts.size() - 1);
+			if (Cmd->ArgCount != ArgCount) {
+				LOG_ERROR("The console command '%s' requires %u arguments but %u were provided.", Cmd->Name.c_str(), Cmd->ArgCount, ArgCount);
+				HasError = true;
+			}
+			else {
+				// Execute
+				CommandContext Context;
+				if (Cmd->ArgCount > 0) {
 
+				}
 
-	return true;
+				Cmd->Func(Context);
+
+				if (Context.Arguments.size() > 0) {
+					Context.Arguments.clear();
+					std::vector<std::string>().swap(Context.Arguments);
+				}
+			}
+
+			break;
+		}
+	}
+
+	if (!CommandFound) {
+		LOG_ERROR("The command '%s' does not exist.", Parts[0]);
+		HasError = true;
+	}
+
+	return !HasError;
 }

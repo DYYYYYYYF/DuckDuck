@@ -1,7 +1,7 @@
 ﻿#include "Game.hpp"
 
 #include <Core/EngineLogger.hpp>
-#include <Core/Input.hpp>
+#include <Core/Controller.hpp>
 #include <Core/Event.hpp>
 #include <Core/Metrics.hpp>
 #include <Systems/CameraSystem.h>
@@ -15,6 +15,7 @@
 #include <Core/Identifier.hpp>
 #include <Renderer/RendererFrontend.hpp>
 #include "Keybinds.hpp"
+#include "GameCommands.hpp"
 
 static bool EnableFrustumCulling = false;
 
@@ -95,6 +96,8 @@ bool GameInstance::Boot(IRenderer* renderer) {
 
 	Keybind GameKeybind;
 	GameKeybind.Setup(this);
+	GameCommand GameCmd;
+	GameCmd.Setup();
 
 	// Configure fonts.
 	BitmapFontConfig BmpFontConfig;

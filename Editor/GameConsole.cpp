@@ -1,7 +1,7 @@
-﻿#include "DebugConsole.hpp"
+﻿#include "GameConsole.hpp"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
-#include <Core/Input.hpp>
+#include <Core/Controller.hpp>
 #include <Containers/TString.hpp>
 #include <Renderer/RendererFrontend.hpp>
 

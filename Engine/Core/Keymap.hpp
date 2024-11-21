@@ -2,7 +2,7 @@
 
 #include "Defines.hpp"
 #include "Event.hpp"
-#include "Input.hpp"
+#include "Controller.hpp"
 #include <array>
 #include <functional>
 

@@ -20,7 +20,7 @@ private:
 	struct Consumer {
 	public:
 		PFN_ConsoleWrite Callback;
-		void* Instance;
+		void* Instance = nullptr;
 	};
 
 	struct Command {
