@@ -43,6 +43,26 @@ set(ENABLE_PLUGINS_AUDIO ON)
 
 OpenAL and sniffle lib to load audio resource (.wma) and play.
 
+## Console
+
+| Key  | Description                                        |
+| ---- | -------------------------------------------------- |
+| `    | Toggle console command line status. (Write / None) |
+
+#### Command Mode
+
+| Key  | Description             |
+| ---- | ----------------------- |
+| Up   | Move up console text.   |
+| Down | Move down console text. |
+
+#### Commands
+
+| Name | Description       |
+| ---- | ----------------- |
+| quit | Quit application. |
+| exit | Quit application. |
+
 ## Short cut
 
 Blinn-Phong  
