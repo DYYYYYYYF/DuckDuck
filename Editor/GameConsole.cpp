@@ -1,4 +1,4 @@
-#include "GameConsole.hpp"
+﻿#include "GameConsole.hpp"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
 #include <Core/Controller.hpp>

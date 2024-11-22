@@ -1,4 +1,4 @@
-#include "Utils.hpp"
+﻿#include "Utils.hpp"
 #include "Platform/File.hpp"
 #include "Resources/Shader.hpp"
 
