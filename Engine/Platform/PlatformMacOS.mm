@@ -845,7 +845,7 @@ enum class eKeys TranslateKeyCode(uint32_t ns_keycode) {
 	case 0x25:
 		return eKeys::L;
 	case 0x2E:
-		return eKeys::I;
+		return eKeys::M;
 	case 0x2D:
 		return eKeys::N;
 	case 0x1F:

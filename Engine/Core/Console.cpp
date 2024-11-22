@@ -1,4 +1,4 @@
-﻿#include "Console.hpp"
+#include "Console.hpp"
 #include "Core/utils.hpp"
 #include "Core/Event.hpp"
 
@@ -65,7 +65,7 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 	}
 
 	// TODO: If strings are ever used as arguments, this will split improperly.
-	std::vector<std::string> Parts = Utils::StringSplit(cmd, ' ', true, false);
+	std::vector<std::string> Parts = Utils::StringSplit(cmd, '-', true, false);
 	if (Parts.size() < 1){
 		Parts.clear();
 		std::vector<std::string>().swap(Parts);
@@ -87,24 +87,24 @@ bool Console::ExecuteCommand(const std::string& cmd) {
 			unsigned char ArgCount = (unsigned char)(Parts.size() - 1);
 			if (Cmd->ArgCount != ArgCount) {
 				LOG_ERROR("The console command '%s' requires %u arguments but %u were provided.", Cmd->Name.c_str(), Cmd->ArgCount, ArgCount);
-				HasError = true;
+                // TODO: Should handle it inside callback, because it may has default param.
+				// HasError = true;
 			}
-			else {
-				// Execute
-				CommandContext Context;
-				if (ArgCount > 0) {
-					Context.Arguments.resize(ArgCount);
-					for (unsigned char j = 0; j < ArgCount; ++j) {
-						Context.Arguments[j] = Parts[j];
-					}
-				}
+            
+            // Execute
+            CommandContext Context;
+            if (ArgCount > 0) {
+                Context.Arguments.resize(ArgCount);
+                for (unsigned char j = 0; j < ArgCount; ++j) {
+                    Context.Arguments[j] = Parts[j + 1];
+                }
+            }
 
-				Cmd->Func(Context);
-				if (!Context.Arguments.empty()) {
-					Context.Arguments.clear();
-					std::vector<std::string>().swap(Context.Arguments);
-				}
-			}
+            Cmd->Func(Context);
+            if (!Context.Arguments.empty()) {
+                Context.Arguments.clear();
+                std::vector<std::string>().swap(Context.Arguments);
+            }
 
 			break;
 		}

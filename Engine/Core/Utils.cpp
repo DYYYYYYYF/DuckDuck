@@ -1,4 +1,4 @@
-﻿#include "Utils.hpp"
+#include "Utils.hpp"
 #include "Platform/File.hpp"
 #include "Resources/Shader.hpp"
 
@@ -62,9 +62,7 @@ std::string Utils::Strtrim(const std::string& str) {
 
 	// 找到右边最后一个非空白字符
 	size_t end = str.find_last_not_of(" \t\n\r\f\v");
-
-	// 截取子字符串
-	return str.substr(start, end - start + 1);
+    return str.substr(start, end - start + 1);
 }
 
 std::vector<std::string> Utils::StringSplit(const std::string& str, char delimiter, bool trim_entries, bool include_empty) {
@@ -81,7 +79,7 @@ std::vector<std::string> Utils::StringSplit(const std::string& str, char delimit
 
 		// 如果字符串不为空或者需要包含空字符都存储子字符串
 		if (!SubString.empty() || include_empty) {
-			Result.push_back(str.substr(Head, Rear - Head)); 
+			Result.push_back(SubString); 
 		}
 
 		Head = Rear + 1;                                 // 更新起始位置

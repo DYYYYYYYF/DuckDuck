@@ -144,7 +144,8 @@ enum class eKeys : unsigned int{
 	DEFINE_KEY(LMenu, 0xA4),
 	DEFINE_KEY(RMenu, 0xA5),
 
-	DEFINE_KEY(Comma, 0xBC),
+    DEFINE_KEY(Comma, 0xBC),
+	DEFINE_KEY(Add, 0xBB),
 	DEFINE_KEY(Minus, 0xBD),
 	DEFINE_KEY(Period, 0xBE),
 	DEFINE_KEY(Slash, 0xBF),

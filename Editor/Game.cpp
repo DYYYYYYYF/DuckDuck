@@ -1,4 +1,4 @@
-﻿#include "Game.hpp"
+#include "Game.hpp"
 
 #include <Core/EngineLogger.hpp>
 #include <Core/Controller.hpp>

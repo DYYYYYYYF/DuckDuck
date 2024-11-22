@@ -8,7 +8,18 @@ void GameExit(CommandContext cmd) {
 }
 
 void GameOnCompilerShader(CommandContext cmd) {
-	LOG_INFO("Please complete 'GameOnCompilerShader' method.");
+    size_t ArgCount = cmd.Arguments.size();
+    if (ArgCount > 0){
+        std::string args = "";
+        for (size_t i =0; i < ArgCount; ++i){
+            args += cmd.Arguments[i];
+        }
+        
+        LOG_INFO("Please complete 'GameOnCompilerShader' method. Arguments: %s.", args.c_str());
+    } else {
+        LOG_INFO("Please complete 'GameOnCompilerShader' method.");
+    }
+	
 	// Reload
 	// SEventContext Context = {};
 	// EngineEvent::Fire(eEventCode::Reload_Shader_Module, nullptr, Context);
@@ -17,5 +28,5 @@ void GameOnCompilerShader(CommandContext cmd) {
 void GameCommand::Setup() {
 	Console::RegisterCommand("exit", 0, &GameExit);
 	Console::RegisterCommand("quit", 0, &GameExit);
-	Console::RegisterCommand("compile", 0, &GameOnCompilerShader);
+    Console::RegisterCommand("compile shader", 1, &GameOnCompilerShader);
 }

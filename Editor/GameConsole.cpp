@@ -1,4 +1,4 @@
-﻿#include "GameConsole.hpp"
+#include "GameConsole.hpp"
 #include <Core/Utils.hpp>
 #include <Core/Console.hpp>
 #include <Core/Controller.hpp>
@@ -55,7 +55,13 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 					cKeyCode += 32;
 				}
 			}
-			else if ((KeyCode >= eKeys::Num_0) && (KeyCode <= eKeys::Num_9)) {
+			else if (((KeyCode >= eKeys::Num_0) && (KeyCode <= eKeys::Num_9)) || 
+                     KeyCode == eKeys::Minus) {
+                // TODO：为什么数字0边上的'-'符号属于Minus，但是输入后无法转换为UTF8字符。
+                if (KeyCode == eKeys::Minus){
+                    cKeyCode = '-';
+                }
+                
 				if (IsShiftHeld) {
 					switch (KeyCode)
 					{
@@ -68,14 +74,15 @@ bool DebugConsole::OnKey(eEventCode code, void* sender, void* listener_inst, SEv
 					case eKeys::Num_6: cKeyCode = '^'; break;
 					case eKeys::Num_7: cKeyCode = '&'; break;
 					case eKeys::Num_8: cKeyCode = '*'; break;
-					case eKeys::Num_9: cKeyCode = '('; break;
+                    case eKeys::Num_9: cKeyCode = '('; break;
+					case eKeys::Insert: cKeyCode = '_'; break;
 					}
 				}
 			}
 			else {
 				switch (KeyCode)
 				{
-				case eKeys::Space: 
+				case eKeys::Space:
 					cKeyCode = static_cast<char>(KeyCode);
 					break;
 				default:
