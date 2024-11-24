@@ -1,6 +1,6 @@
 #include "CPython.hpp"
-
 #include "Core/EngineLogger.hpp"
+
 #include <Python.h>
 
 CPythonModule::CPythonModule(const char* pyFileName) {

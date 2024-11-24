@@ -1,7 +1,6 @@
 #pragma once
 #include "Platform/Platform.hpp"
 #include "Core/Console.hpp"
-#include <filesystem>
 
 template<typename ... Args>
 char* AppendLogMessage(const char* format, Args ... args)

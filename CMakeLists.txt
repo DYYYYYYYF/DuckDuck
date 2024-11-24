@@ -29,7 +29,6 @@ if (NOT LOG_LEVEL)
     endif()
 endif()
 
-add_definitions(-DROOT_PATH="${CMAKE_SOURCE_DIR}")
 if(${LOG_LEVEL} STREQUAL "INFO")
     add_definitions(-DLEVEL_INFO -DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
 elseif(${LOG_LEVEL}  STREQUAL "DEBUG")

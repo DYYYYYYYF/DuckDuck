@@ -88,6 +88,11 @@
 #define MEGABYTES(amount) (amount * 1000 * 1000)
 #define KIGABYTES(amount) (amount * 1000)
 
+#include <filesystem>
+#ifndef ROOT_PATH
+#define ROOT_PATH std::filesystem::current_path().generic_string() + "/.."
+#endif
+
 struct Range {
 	size_t offset = 0;
 	size_t size = 0;
