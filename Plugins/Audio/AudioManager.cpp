@@ -51,3 +51,12 @@ void AudioManager::PlaySound(const std::string& filename) {
 
 	Sounds[filename]->Play();
 }
+
+void AudioManager::StopSound(const std::string& filename) {
+	if (Sounds.find(filename) == Sounds.end()) {
+		LOG_WARN("Can not found audio asset %s.", filename.c_str());
+		return;
+	}
+
+	Sounds[filename]->Stop();
+}
