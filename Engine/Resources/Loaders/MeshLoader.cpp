@@ -123,17 +123,13 @@ void MeshLoader::Unload(Resource* resource) {
 bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 	// Positions
 	std::vector<Vec3> Positions;
-	Positions.reserve(65535);
 	// Normals
 	std::vector<Vec3> Normals;
-	Normals.reserve(65535);
 	// Texcoords
 	std::vector<Vec2> Texcoords;
-	Texcoords.reserve(65535);
 
 	//Groups
 	std::vector<MeshGroupData> Groups;
-	Groups.reserve(10);
 
 	// Default name is filename.
 	char name[512] = "";
@@ -305,9 +301,9 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		case 'u': {
 			// Any time there is a usemtl, assume a new group.
 			// New named group or smoothing group, all faces coming after should be added to it.
-			MeshGroupData NewGroup;
+			/*MeshGroupData NewGroup;
 			NewGroup.Faces.reserve(16384);
-			Groups.push_back(NewGroup);
+			Groups.push_back(NewGroup);*/
 
 			// usemtl
 			// Read the material name.
