@@ -1,4 +1,4 @@
-#include "Game.hpp"
+﻿#include "Game.hpp"
 
 #include <Core/EngineLogger.hpp>
 #include <Core/Controller.hpp>
@@ -38,79 +38,26 @@ bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventCont
 	return false;
 }
 
+void LoadScene1(GameInstance* Game);
+void LoadScene2(GameInstance* Game);
+
 bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listener_instance;
 
 	if (code == eEventCode::Debug_0) {
-		std::string ModelName = "sponza";
-		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
-			Mesh* M = GameInst->Meshes[i];
-			if (M->Name.compare(ModelName) == 0) {
-				DeleteObject(M);
-				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
-				return true;
-			}
-		}
-
-		Mesh* Model = NewObject<Mesh>();
-		Model->LoadFromResource(ModelName.c_str());	// It always return true.
-		Model->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
-		Model->UniqueID = Identifier::AcquireNewID(Model);
-		GameInst->Meshes.push_back(Model);
+		LoadScene1(GameInst);
 		return true;
 	}
 	else if (code == eEventCode::Debug_1) {
-		std::string ModelName = "mountain_part";
-		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
-			Mesh* M = GameInst->Meshes[i];
-			if (M->Name.compare(ModelName) == 0) {
-				DeleteObject(M);
-				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
-				return true;
-			}
-		}
-
-		Mesh* Model = NewObject<Mesh>();
-		Model->LoadFromResource(ModelName.c_str());	// It always return true.
-		Model->Transform = Transform(Vec3(10.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.f));
-		Model->UniqueID = Identifier::AcquireNewID(Model);
-		GameInst->Meshes.push_back(Model);
+		LoadScene2(GameInst);
 		return true;
 	}
 	else if (code == eEventCode::Debug_2) {
-		std::string ModelName = "bunny";
-		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
-			Mesh* M = GameInst->Meshes[i];
-			if (M->Name.compare(ModelName) == 0) {
-				DeleteObject(M);
-				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
-				return true;
-			}
-		}
-
-		Mesh* Model = NewObject<Mesh>();
-		Model->LoadFromResource(ModelName.c_str());	// It always return true.
-		Model->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
-		Model->UniqueID = Identifier::AcquireNewID(Model);
-		GameInst->Meshes.push_back(Model);
+		
 		return true;
 	}
 	else if (code == eEventCode::Debug_3) {
-		std::string ModelName = "Duck";
-		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
-			Mesh* M = GameInst->Meshes[i];
-			if (M->Name.compare(ModelName) == 0) {
-				DeleteObject(M);
-				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
-				return true;
-			}
-		}
-
-		Mesh* Model = NewObject<Mesh>();
-		Model->LoadFromResource(ModelName.c_str());	// It always return true.
-		Model->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
-		Model->UniqueID = Identifier::AcquireNewID(Model);
-		GameInst->Meshes.push_back(Model);
+		
 		return true;
 	}
 
@@ -813,4 +760,47 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	config->Renderviews.push_back(PickViewConfig);
 
 	return true;
+}
+
+
+void LoadScene1(GameInstance* GameInst) {
+	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+		Mesh* M = GameInst->Meshes[i];
+		DeleteObject(M);
+		GameInst->Meshes[i] = nullptr;
+	}
+	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
+
+	Mesh* Model = NewObject<Mesh>();
+	Model->LoadFromResource("mountain_part");	// It always return true.
+	Model->Transform = Transform(Vec3(300.0f, -50.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(50.f));
+	Model->UniqueID = Identifier::AcquireNewID(Model);
+	GameInst->Meshes.push_back(Model);
+}
+
+void LoadScene2(GameInstance* GameInst) {
+	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+		Mesh* M = GameInst->Meshes[i];
+		DeleteObject(M);
+		GameInst->Meshes[i] = nullptr;
+	}
+	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
+
+	Mesh* Model1 = NewObject<Mesh>();
+	Model1->LoadFromResource("sponza");	// It always return true.
+	Model1->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
+	Model1->UniqueID = Identifier::AcquireNewID(Model1);
+	GameInst->Meshes.push_back(Model1);
+
+	Mesh* Model2 = NewObject<Mesh>();
+	Model2->LoadFromResource("bunny");	// It always return true.
+	Model2->Transform = Transform(Vec3(30.0f, 0.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	Model2->UniqueID = Identifier::AcquireNewID(Model2);
+	GameInst->Meshes.push_back(Model2);
+
+	Mesh* Model3 = NewObject<Mesh>();
+	Model3->LoadFromResource("falcon");	// It always return true.
+	Model3->Transform = Transform(Vec3(-30.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)));
+	Model3->UniqueID = Identifier::AcquireNewID(Model3);
+	GameInst->Meshes.push_back(Model3);
 }
