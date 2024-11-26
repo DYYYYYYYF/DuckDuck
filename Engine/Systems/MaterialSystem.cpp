@@ -173,7 +173,10 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	}
 
 	uint32_t MaterialID = MaterialMap[config.name];
-	Material* Mat = RegisteredMaterials[MaterialID];
+	Material* Mat = GetDefaultMaterial();
+	if (MaterialID != INVALID_ID) {
+		Mat = RegisteredMaterials[MaterialID];
+	}
 	ASSERT(Mat != nullptr);
 
 	// This can only be changed the first time a material is loaded.
@@ -182,9 +185,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 	}
 
 	Mat->IncreaseReferenceCount();
-	{
-		LOG_DEBUG("Material '%s' Reference count increased to %i.", config.name.c_str(), Mat->GetReferenceCount());
-	}
+	LOG_DEBUG("Material '%s' Reference count increased to %i.", config.name.c_str(), Mat->GetReferenceCount());
 
 	// Update the entry.
 	return Mat;
@@ -212,15 +213,12 @@ void MaterialSystem::Release(const char* name) {
 			// Release material.
 			DestroyMaterial(Mat);
 			DeleteObject(Mat);
-			Mat = nullptr;
+			RegisteredMaterials[MaterialID] = nullptr;
 			LOG_INFO("Released material '%s'. Material unloaded.", CopyMatName);
 		}
 
 		// Update the entry.
-		MaterialMap[CopyMatName] = INVALID_ID;
-	}
-	else {
-		LOG_ERROR("Material release failed to release material '%s'.", CopyMatName);
+		MaterialMap.erase(CopyMatName);
 	}
 
 	Memory::Free(CopyMatName, sizeof(char) * strlen(CopyMatName) + 1, MemoryType::eMemory_Type_String);

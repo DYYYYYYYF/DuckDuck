@@ -35,8 +35,9 @@ struct MeshGroupData {
 class Mesh {
 public:
 	Mesh() : geometries(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
-	DAPI bool LoadFromResource(const char* resource_name);
-	void Unload();
+	virtual ~Mesh() { Unload(); }
+	DAPI bool LoadFromResource(const std::string& resource_name);
+	DAPI void Unload();
 
 private:
 	void LoadJobSuccess(void* params);
@@ -53,7 +54,7 @@ public:
 };
 
 struct MeshLoadParams {
-	const char* resource_name = nullptr;
+	std::string resource_name;
 	Mesh* out_mesh = nullptr;
 	class Resource mesh_resource;
 };

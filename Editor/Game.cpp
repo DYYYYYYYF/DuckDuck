@@ -42,47 +42,75 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 	GameInstance* GameInst = (GameInstance*)listener_instance;
 
 	if (code == eEventCode::Debug_0) {
-		if (GameInst->SponzaMesh->Generation == INVALID_ID_U8) {
-			LOG_DEBUG("Loading sponza...");
-
-			if (!GameInst->SponzaMesh->LoadFromResource("sponza")) {
-				LOG_ERROR("Failed to load sponza mesh!");
+		std::string ModelName = "sponza";
+		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
+			Mesh* M = GameInst->Meshes[i];
+			if (M->Name.compare(ModelName) == 0) {
+				DeleteObject(M);
+				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
+				return true;
 			}
 		}
 
+		Mesh* Model = NewObject<Mesh>();
+		Model->LoadFromResource(ModelName.c_str());	// It always return true.
+		Model->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
+		Model->UniqueID = Identifier::AcquireNewID(Model);
+		GameInst->Meshes.push_back(Model);
 		return true;
 	}
 	else if (code == eEventCode::Debug_1) {
-		if (GameInst->CarMesh->Generation == INVALID_ID_U8) {
-			LOG_DEBUG("Loading falcon...");
-
-			if (!GameInst->CarMesh->LoadFromResource("falcon")) {
-				LOG_ERROR("Failed to load falcon mesh!");
+		std::string ModelName = "mountain_part";
+		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
+			Mesh* M = GameInst->Meshes[i];
+			if (M->Name.compare(ModelName) == 0) {
+				DeleteObject(M);
+				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
+				return true;
 			}
 		}
 
+		Mesh* Model = NewObject<Mesh>();
+		Model->LoadFromResource(ModelName.c_str());	// It always return true.
+		Model->Transform = Transform(Vec3(10.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.f));
+		Model->UniqueID = Identifier::AcquireNewID(Model);
+		GameInst->Meshes.push_back(Model);
 		return true;
 	}
 	else if (code == eEventCode::Debug_2) {
-		if (GameInst->BunnyMesh->Generation == INVALID_ID_U8) {
-			LOG_DEBUG("Loading bunny...");
-
-			if (!GameInst->BunnyMesh->LoadFromResource("bunny")) {
-				LOG_ERROR("Failed to load falcon mesh!");
+		std::string ModelName = "bunny";
+		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
+			Mesh* M = GameInst->Meshes[i];
+			if (M->Name.compare(ModelName) == 0) {
+				DeleteObject(M);
+				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
+				return true;
 			}
 		}
 
+		Mesh* Model = NewObject<Mesh>();
+		Model->LoadFromResource(ModelName.c_str());	// It always return true.
+		Model->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
+		Model->UniqueID = Identifier::AcquireNewID(Model);
+		GameInst->Meshes.push_back(Model);
 		return true;
 	}
 	else if (code == eEventCode::Debug_3) {
-		if (GameInst->DragonMesh->Generation == INVALID_ID_U8) {
-			LOG_DEBUG("Loading dragon...");
-
-			if (!GameInst->DragonMesh->LoadFromResource("Duck")) {
-				LOG_ERROR("Failed to load falcon mesh!");
+		std::string ModelName = "Duck";
+		for (size_t i = 0; i < GameInst->Meshes.size(); ++i) {
+			Mesh* M = GameInst->Meshes[i];
+			if (M->Name.compare(ModelName) == 0) {
+				DeleteObject(M);
+				GameInst->Meshes.erase(GameInst->Meshes.begin() + i);
+				return true;
 			}
 		}
 
+		Mesh* Model = NewObject<Mesh>();
+		Model->LoadFromResource(ModelName.c_str());	// It always return true.
+		Model->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
+		Model->UniqueID = Identifier::AcquireNewID(Model);
+		GameInst->Meshes.push_back(Model);
 		return true;
 	}
 
@@ -177,14 +205,7 @@ bool GameInstance::Initialize() {
 	}
 
 	// World meshes
-	Meshes.resize(10);
-	UIMeshes.resize(10);
-	for (uint32_t i = 0; i < 10; ++i) {
-		Meshes[i].Generation = INVALID_ID_U8;
-		UIMeshes[i].Generation = INVALID_ID_U8;
-	}
-
-	Mesh* CubeMesh = &Meshes[0];
+	Mesh* CubeMesh = NewObject<Mesh>();
 	CubeMesh->Name = "TestCube";
 	CubeMesh->geometry_count = 1;
 	CubeMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh->geometry_count, MemoryType::eMemory_Type_Array);
@@ -193,8 +214,9 @@ bool GameInstance::Initialize() {
 	CubeMesh->Generation = 0;
 	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
 	CubeMesh->Transform = Transform();
+	Meshes.push_back(CubeMesh);
 
-	Mesh* CubeMesh2 = &Meshes[1];
+	Mesh* CubeMesh2 = NewObject<Mesh>();
 	CubeMesh2->Name = "TestCube2";
 	CubeMesh2->geometry_count = 1;
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
@@ -204,8 +226,9 @@ bool GameInstance::Initialize() {
 	CubeMesh2->Generation = 0;
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
+	Meshes.push_back(CubeMesh2);
 
-	Mesh* CubeMesh3 = &Meshes[2];
+	Mesh* CubeMesh3 = NewObject<Mesh>();
 	CubeMesh3->Name = "TestCube3";
 	CubeMesh3->geometry_count = 1;
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
@@ -215,27 +238,12 @@ bool GameInstance::Initialize() {
 	CubeMesh3->Generation = 0;
 	CubeMesh3->UniqueID = Identifier::AcquireNewID(CubeMesh3);
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
+	Meshes.push_back(CubeMesh3);
 
 	// Clean up the allocations for the geometry config.
 	GeometrySystem::ConfigDispose(&GeoConfig);
 	GeometrySystem::ConfigDispose(&GeoConfig2);
 	GeometrySystem::ConfigDispose(&GeoConfig3);
-
-	CarMesh = &Meshes[3];
-	CarMesh->Transform = Transform(Vec3(0.0f, 15.0f, 0.0f));
-	CarMesh->UniqueID = Identifier::AcquireNewID(CarMesh);
-
-	SponzaMesh = &Meshes[4];
-	SponzaMesh->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
-	SponzaMesh->UniqueID = Identifier::AcquireNewID(SponzaMesh);
-
-	BunnyMesh = &Meshes[5];
-	BunnyMesh->Transform = Transform(Vec3(0.0f, 30.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
-	BunnyMesh->UniqueID = Identifier::AcquireNewID(BunnyMesh);
-
-	DragonMesh = &Meshes[6];
-	DragonMesh->Transform = Transform(Vec3(0.0f, 45.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
-	DragonMesh->UniqueID = Identifier::AcquireNewID(DragonMesh);
 
 	// Load up some test UI geometry.
 	SGeometryConfig UIConfig;
@@ -279,12 +287,13 @@ bool GameInstance::Initialize() {
 	UIConfig.indices = UIIndices;
 
 	// Get UI geometry from config.
-	Mesh* UIMesh = &UIMeshes[0];
+	Mesh* UIMesh = NewObject<Mesh>();
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 	UIMesh->Generation = 0;
 	UIMesh->UniqueID = Identifier::AcquireNewID(UIMesh);
+	UIMeshes.push_back(UIMesh);
 
 	// TODO: TEMP
 	EngineEvent::Register(eEventCode::Debug_0, this, GameOnDebugEvent);
@@ -303,6 +312,13 @@ void GameInstance::Shutdown() {
 
 	if (GameConsole) {
 		DeleteObject(GameConsole);
+	}
+
+	// Delete meshes.
+	for (Mesh* m : Meshes) {
+		if (m) {
+			DeleteObject(m);
+		}
 	}
 
 	TestText.Destroy();
@@ -339,9 +355,9 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	Quaternion Rotation = QuaternionFromAxisAngle(Axis::Y, 0.5f * (float)delta_time, false);
-	Meshes[0].Transform.Rotate(Rotation);
-	Meshes[1].Transform.Rotate(Rotation);
-	Meshes[2].Transform.Rotate(Rotation);
+	Meshes[0]->Transform.Rotate(Rotation);
+	Meshes[1]->Transform.Rotate(Rotation);
+	Meshes[2]->Transform.Rotate(Rotation);
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
@@ -371,8 +387,8 @@ bool GameInstance::Update(float delta_time) {
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
 	FrameData.WorldGeometries.reserve(512);
-	for (uint32_t i = 0; i < 10; ++i) {
-		Mesh* m = &Meshes[i];
+	for (uint32_t i = 0; i < (uint32_t)Meshes.size(); ++i) {
+		Mesh* m = Meshes[i];
 		if (m == nullptr) {
 			continue;
 		}
@@ -461,17 +477,17 @@ bool GameInstance::Update(float delta_time) {
 			HoverdObjectName = TestSysText.Name;
 		}
 
-		for (const auto& Mesh : Meshes) {
-			if (Mesh.UniqueID == HoveredObjectID)
+		for (Mesh* Mesh : Meshes) {
+			if (Mesh->UniqueID == HoveredObjectID)
 			{
-				HoverdObjectName = Mesh.Name;
+				HoverdObjectName = Mesh->Name;
 				break;
 			}
 		}
-		for (const auto& UI : UIMeshes) {
-			if (UI.UniqueID == HoveredObjectID)
+		for (Mesh* UI : UIMeshes) {
+			if (UI->UniqueID == HoveredObjectID)
 			{
-				HoverdObjectName = UI.Name;
+				HoverdObjectName = UI->Name;
 				break;
 			}
 		}
@@ -535,13 +551,12 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	uint32_t UIMeshCount = 0;
 	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
-	for (uint32_t i = 0; i < 10; ++i) {
-		if (UIMeshes[i].Generation != INVALID_ID_U8) {
-			TempUIMeshes[UIMeshCount] = &UIMeshes[i];
+	for (uint32_t i = 0; i < (uint32_t)UIMeshes.size(); ++i) {
+		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
+			TempUIMeshes[UIMeshCount] = UIMeshes[i];
 			UIMeshCount++;
 		}
 	}
-
 
 	UIText** Texts = (UIText**)Memory::Allocate(sizeof(UIText*) * 4, MemoryType::eMemory_Type_Array);
 	Texts[0] = &TestText;
@@ -629,7 +644,7 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	uint32_t UIIndices[6] = { 0, 2, 1, 0, 1, 3 };
 	UIConfig.indices = UIIndices;
 
-	UIMeshes[0].geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
+	UIMeshes[0]->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 }
 
 bool ConfigureRenderviews(Application::SConfig* config) {

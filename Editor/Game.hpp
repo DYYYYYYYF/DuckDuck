@@ -32,13 +32,8 @@ public:
 	Keymap* ConsoleKeymap;
 	DebugConsole* GameConsole = nullptr;
 
-	std::vector<Mesh> Meshes;
-	Mesh* CarMesh = nullptr;
-	Mesh* SponzaMesh = nullptr;
-	Mesh* DragonMesh = nullptr;
-	Mesh* BunnyMesh = nullptr;
-
-	std::vector<Mesh> UIMeshes;
+	std::vector<Mesh*> Meshes;
+	std::vector<Mesh*> UIMeshes;
 	UIText TestText;
 	UIText TestSysText;
 

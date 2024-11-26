@@ -94,6 +94,7 @@ void GeometrySystem::Release(Geometry* geometry) {
 
 		// Take a copy of id.
 		if (Ref->geometry.ID == geometry->ID) {
+
 			if (Ref->reference_count > 0) {
 				Ref->reference_count--;
 			}

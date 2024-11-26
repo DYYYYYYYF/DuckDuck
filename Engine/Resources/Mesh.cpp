@@ -20,13 +20,13 @@ void Mesh::LoadJobSuccess(void* params) {
 	}
 	MeshParams->out_mesh->Generation++;
 
-	LOG_INFO("Successfully loaded mesh: '%s'.", MeshParams->resource_name);
+	LOG_INFO("Successfully loaded mesh: '%s'.", MeshParams->resource_name.c_str());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
 void Mesh::LoadJobFail(void* params) {
 	MeshLoadParams* MeshParams = (MeshLoadParams*)params;
-	LOG_ERROR("Failed to load mesh: '%s'.", MeshParams->resource_name);
+	LOG_ERROR("Failed to load mesh: '%s'.", MeshParams->resource_name.c_str());
 	ResourceSystem::Unload(&MeshParams->mesh_resource);
 }
 
@@ -39,7 +39,7 @@ bool Mesh::LoadJobStart(void* params, void* result_data) {
 	return Result;
 }
 
-bool Mesh::LoadFromResource(const char* resource_name) {
+bool Mesh::LoadFromResource(const std::string& resource_name) {
 	Generation = INVALID_ID_U8;
 
 	MeshLoadParams Params;
