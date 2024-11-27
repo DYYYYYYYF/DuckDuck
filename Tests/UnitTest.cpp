@@ -3,6 +3,7 @@
 #include "String/TestString.cpp"
 #include "Audio/TestAudio.cpp"
 #include "Array/UnitTestArray.cpp"
+#include "Matrix/TestMatrix.cpp"
 
 int main() {
 
@@ -13,6 +14,8 @@ int main() {
 	TestFreelist();
 	TestString();
 	UnitTestAudio();
+
+	TestMatrix();
 
 	return 0;
 }

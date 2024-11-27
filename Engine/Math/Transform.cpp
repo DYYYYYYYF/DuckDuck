@@ -1,7 +1,7 @@
 ﻿#include "Transform.hpp"
 
 Transform::Transform() {
-	SetPRS(Vec3(0.0f), Quaternion::Identity(), Vec3(1.0f));
+	SetPRS(Vec3(0.0f), Quaternion(), Vec3(1.0f));
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
@@ -13,7 +13,7 @@ Transform::Transform(const Transform& trans) {
 }
 
 Transform::Transform(const Vec3& position) {
-	SetPRS(position, Quaternion::Identity(), Vec3(1.0f));
+	SetPRS(position, Quaternion(), Vec3(1.0f));
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
@@ -43,7 +43,7 @@ void Transform::Translate(const Vec3& translation) {
 
 void Transform::Rotate(const Quaternion& rotation) {
 	Quaternion r = rotation;
-	vRotation = r.QuaternionMultiply(vRotation);
+	vRotation = r.Multiply(vRotation);
 	IsDirty = true;
 }
 
@@ -68,7 +68,7 @@ void Transform::SetPRS(const Vec3& pos, const Quaternion& rotation, const Vec3& 
 void Transform::TransformRotate(const Vec3& translation, const Quaternion& rotation) {
 	vPosition = vPosition + translation;
 	Quaternion r = rotation;
-	vRotation = r.QuaternionMultiply(vRotation);
+	vRotation = r.Multiply(vRotation);
 	IsDirty = true;
 }
 
@@ -85,8 +85,7 @@ void Transform::UpdateLocal() {
 	Matrix4 T = Matrix4::FromTranslation(vPosition);
 	Matrix4 S = Matrix4::FromScale(vScale);
 
-	Matrix4 TempLocal = S.Multiply(R);
-	Local = TempLocal.Multiply(T);
+	Local = R.Multiply(S.Multiply(T));
 	IsDirty = false;
 }
 

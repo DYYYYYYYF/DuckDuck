@@ -33,6 +33,8 @@ DAPI float DSin(float x);
 DAPI float DCos(float x);
 DAPI float DTan(float x);
 DAPI float DAcos(float x);
+DAPI float DArcTan(float x);
+DAPI float DArcTan2(float x, float y);
 DAPI float Dabs(float x);
 DAPI float Dsqrt(float x);
 
@@ -55,8 +57,9 @@ DAPI float DRandom(float min, float max);
 * @param degrees The degrees to be converted.
 * @return The amount in radians.
 */
-inline float Deg2Rad(float degress) {
-	return degress * D_DEG2RAD_MULTIPLIER;
+template<typename T>
+inline T Deg2Rad(T degress) {
+	return static_cast<T>(std::fmod(degress * D_DEG2RAD_MULTIPLIER, D_PI_2));
 }
 
 /*
@@ -65,11 +68,13 @@ inline float Deg2Rad(float degress) {
 * @param radians The radians to be converted.
 * @return The amount in degress.
 */
-inline float Rad2Deg(float radians) {
-	return radians * D_RAD2DEG_MULTIPLIER;
+template<typename T>
+inline T Rad2Deg(T radians) {
+	return static_cast<T>(std::fmod(radians * D_RAD2DEG_MULTIPLIER, 360.0));
 }
 
-inline float RangeConvertfloat(float value, float old_min, float old_max, float new_min, float new_max) {
+template<typename T>
+inline T RangeConvertfloat(T value, T old_min, T old_max, T new_min, T new_max) {
 	return (((value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
 }
 

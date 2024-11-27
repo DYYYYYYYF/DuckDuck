@@ -13,7 +13,7 @@ set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
 
 # Plugins
 option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
-option(GENERATE_TEST_PROGRAME "Generate test module" OFF)
+option(GENERATE_TEST_PROGRAME "Generate test module" ON)
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)

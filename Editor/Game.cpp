@@ -18,7 +18,7 @@
 #include "GameCommands.hpp"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
-static bool EnableFrustumCulling = false;
+static bool EnableFrustumCulling = true;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
@@ -40,6 +40,8 @@ bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventCont
 
 void LoadScene1(GameInstance* Game);
 void LoadScene2(GameInstance* Game);
+void LoadScene3(GameInstance* Game);
+void LoadScene4(GameInstance* Game);
 
 bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listener_instance;
@@ -53,11 +55,11 @@ bool GameOnDebugEvent(eEventCode code, void* sender, void* listener_instance, SE
 		return true;
 	}
 	else if (code == eEventCode::Debug_2) {
-		
+		LoadScene3(GameInst);
 		return true;
 	}
 	else if (code == eEventCode::Debug_3) {
-		
+		LoadScene4(GameInst);
 		return true;
 	}
 
@@ -114,8 +116,10 @@ bool GameInstance::Initialize() {
 	TestPython.SetPythonFile("recompile_shader");
 
 	WorldCamera = CameraSystem::GetDefault();
-	WorldCamera->SetPosition(Vec3(-60.0f, 43.0f, -19.0f));
-	WorldCamera->SetEulerAngles(Vec3(-19.0f, -100.0f, 0.0f));
+	/*WorldCamera->SetPosition(Vec3(-60.0f, 43.0f, -19.0f));
+	WorldCamera->SetEulerAngles(Vec3(-19.0f, -100.0f, 0.0f));*/
+	WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 60.0f));
+	WorldCamera->SetEulerAngles(Vec3(0.0f, 0.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -301,7 +305,7 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	Quaternion Rotation = QuaternionFromAxisAngle(Axis::Y, 0.5f * (float)delta_time, false);
+	Quaternion Rotation = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
 	Meshes[0]->Transform.Rotate(Rotation);
 	Meshes[1]->Transform.Rotate(Rotation);
 	Meshes[2]->Transform.Rotate(Rotation);
@@ -448,7 +452,7 @@ bool GameInstance::Update(float delta_time) {
 	FPS: %d\tDelta time: %.2f\n\
 	Drawn Count: %-5u",
 		Pos.x, Pos.y, Pos.z,
-		Rad2Deg(Rot.x), Rad2Deg(Rot.y), Rad2Deg(Rot.z),
+		Rot.x, Rot.y, Rot.z,
 		LeftDown ? "Y" : "N", RightDown ? "Y" : "N",
 		MouseX_NDC, MouseY_NDC,
 		HoverdObjectName.c_str(),
@@ -788,7 +792,7 @@ void LoadScene2(GameInstance* GameInst) {
 
 	Mesh* Model1 = NewObject<Mesh>();
 	Model1->LoadFromResource("sponza");	// It always return true.
-	Model1->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(0.1f));
+	Model1->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
 	Model1->UniqueID = Identifier::AcquireNewID(Model1);
 	GameInst->Meshes.push_back(Model1);
 
@@ -803,4 +807,34 @@ void LoadScene2(GameInstance* GameInst) {
 	Model3->Transform = Transform(Vec3(-30.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)));
 	Model3->UniqueID = Identifier::AcquireNewID(Model3);
 	GameInst->Meshes.push_back(Model3);
+}
+
+void LoadScene3(GameInstance* GameInst) {
+	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+		Mesh* M = GameInst->Meshes[i];
+		DeleteObject(M);
+		GameInst->Meshes[i] = nullptr;
+	}
+	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
+
+	Mesh* Model = NewObject<Mesh>();
+	Model->LoadFromResource("Buggy");	
+	Model->Transform = Transform(Vec3(300.0f, -50.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.f));
+	Model->UniqueID = Identifier::AcquireNewID(Model);
+	GameInst->Meshes.push_back(Model);
+}
+
+void LoadScene4(GameInstance* GameInst) {
+	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+		Mesh* M = GameInst->Meshes[i];
+		DeleteObject(M);
+		GameInst->Meshes[i] = nullptr;
+	}
+	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
+
+	Mesh* Model = NewObject<Mesh>();
+	Model->LoadFromResource("Duck");	
+	Model->Transform = Transform(Vec3(0.0f, 50.0f, 0.0f), Quaternion(Vec3(0.0f, 180.0f, 0.0f)), Vec3(0.1f));
+	Model->UniqueID = Identifier::AcquireNewID(Model);
+	GameInst->Meshes.push_back(Model);
 }

@@ -540,59 +540,6 @@ public:
 		return Result;
 	}
 
-	//-----------------------------------------------
-	// Quaternion
-	//-----------------------------------------------
-	Vec4 QuaternionIdentity() {
-		return Vec4{ 0.0f, 0.0f, 0.0f, 1.0f };
-	}
-
-	float QuaternionNormal() const {
-		return Dsqrt(
-			x * x +
-			y * y +
-			z * z +
-			w * w
-		);
-	}
-
-	Vec4 QuaternionConjugate() {
-		x *= -1;
-		y *= -1;
-		z *= -1;
-		return *this;
-	}
-
-	Vec4 QuaternionInverse() {
-		return QuaternionConjugate().Normalize();
-	}
-
-	Vec4 QuaternionMultiply(const Vec4& q) {
-		Vec4 NewVector;
-		NewVector.x = x * q.w +
-			y * q.z -
-			z * q.y +
-			w * q.x;
-		NewVector.y = -x * q.z +
-			y * q.w +
-			z * q.x +
-			w * q.y;
-		NewVector.z = x * q.y -
-			y * q.x +
-			z * q.w +
-			w * q.z;
-		NewVector.w = -x * q.x -
-			y * q.y -
-			z * q.z +
-			w * q.w;
-
-		return NewVector;
-	}
-
-	float QuaternionDot(const Vec4& v) {
-		return x * v.x + y * v.y + z * v.z + w * v.w;
-	}
-
 	static Vec4 Identity() {
 		Vec4 Result = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		return Result;
@@ -645,7 +592,180 @@ public:
 	}
 };
 
-typedef Vec4 Quaternion;
+//-----------------------------------------------
+// Quaternion
+//-----------------------------------------------
+struct DAPI Quaternion {
+	union
+	{
+#if defined(DUSE_SIMD)
+		// Used for SIMD operations
+		/*alignas(16) */__m128 data;
+#endif
+		// An array of x, y, z, w
+		/*alignas(16) */float elements[4] = { 0.0f };
+		struct
+		{
+			union
+			{
+				float x, r, s;
+			};
+			union
+			{
+				float y, g, t;
+			};
+			union
+			{
+				float z, b, p;
+			};
+			union
+			{
+				float w, a, q;
+			};
+		};
+	};
+
+public:
+	Quaternion() {
+		x = 0.0;
+		y = 0.0;
+		z = 0.0;
+		w = 1.0;
+	}
+
+	Quaternion(float x, float y, float z, float w) {
+		r = x;
+		g = y;
+		b = z;
+		a = w;
+	}
+
+	Quaternion(const Vec3& euler) {
+		float EulerX = Deg2Rad(euler.x);
+		float EulerY = Deg2Rad(euler.y);
+		float EulerZ = Deg2Rad(euler.z);
+
+		float CosPitch = DCos(EulerX / 2);
+		float SinPitch = DSin(EulerX / 2);
+		float CosYaw = DCos(EulerY / 2);
+		float SinYaw = DSin(EulerY / 2);
+		float CosRoll = DCos(EulerZ / 2);
+		float SinRoll = DSin(EulerZ / 2);
+
+		// Calculate quaternion
+		w = CosPitch * CosYaw * CosRoll + SinPitch * SinYaw * SinRoll;
+		x = SinPitch * CosYaw * CosRoll - CosPitch * SinYaw * SinRoll;
+		y = CosPitch * SinYaw * CosRoll + SinPitch * CosYaw * SinRoll;
+		z = CosPitch * CosYaw * SinRoll - SinPitch * SinYaw * CosRoll;
+	}
+
+	Quaternion(const Vec3& axis, float angle, bool normalize = true) {
+		const float HalfAngle = 0.5f * angle;
+		float s = DSin(HalfAngle);
+		float c = DCos(HalfAngle);
+
+		x = s * axis.x;
+		y = s * axis.y;
+		z = s * axis.z;
+		w = c;
+
+		if (normalize) {
+			Normalize();
+		}
+	}
+
+	Quaternion(const Quaternion& quat) {
+		x = quat.x;
+		y = quat.y;
+		z = quat.z;
+		w = quat.w;
+	}
+
+public:
+	inline Vec3 ToEuler() const {
+		float Pitch = 0.0f;
+		float Yaw = 0.0f;
+		float Roll = 0.0f;
+
+		// Pitch
+		float SinR_CosP = 2.0f * (w * x + y * z);
+		float CosR_CosP = 1.0f - 2.0f * (x * x + y * y);
+		Roll = DArcTan2(SinR_CosP, CosR_CosP);
+
+		// Yaw
+		float Sinp = 2.0f * (w * x + y * z);
+		if (Dabs(Sinp) >= 1.0f) {
+			Pitch = copysign(D_PI / 2.0f, Sinp);
+		}
+		else {
+			Pitch = DSin(Sinp);
+		}
+
+		// Roll
+		float SinY_CosP = 2.0f * (w * z + x * y);
+		float CosY_CosP = 1.0f - 2.0f * (y * y + z * z);
+		Yaw = DArcTan2(SinY_CosP, CosY_CosP);
+
+		return Vec3(Pitch, Yaw, Roll);
+	}
+
+	inline float Normal() const {
+		return Dsqrt(
+			x * x +
+			y * y +
+			z * z +
+			w * w
+		);
+	}
+
+	// 共轭
+	inline void Conjugate() {
+		x *= -1;
+		y *= -1;
+		z *= -1;
+	}
+
+	inline void Inverse() {
+		Conjugate();
+	}
+
+	inline Quaternion Multiply(const Quaternion& q) {
+		Quaternion NewQuat;
+		NewQuat.x = x * q.w +
+			y * q.z -
+			z * q.y +
+			w * q.x;
+		NewQuat.y = -x * q.z +
+			y * q.w +
+			z * q.x +
+			w * q.y;
+		NewQuat.z = x * q.y -
+			y * q.x +
+			z * q.w +
+			w * q.z;
+		NewQuat.w = -x * q.x -
+			y * q.y -
+			z * q.z +
+			w * q.w;
+
+		return NewQuat;
+	}
+
+	float LengthSquared() const { return x * x + y * y + z * z + w * w; }
+	float Length() const { return Dsqrt(LengthSquared()); }
+	Quaternion Normalize() {
+		x /= Length();
+		y /= Length();
+		z /= Length();
+		w /= Length();
+
+		return *this;
+	}
+
+	float Dot(const Quaternion& v) {
+		return x * v.x + y * v.y + z * v.z + w * v.w;
+	}
+};
 
 inline Vec3 ToVec3(const Vec4& vec) {
 	return Vec3{ vec.x, vec.y, vec.z };
@@ -704,7 +824,7 @@ public:
 
 		for (int i = 0; i < 4; ++i) {
 			for (int j = 0; j < 4; j++) {
-				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
+				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] + 
 					MatPtr1[i * 4 + 1] * MatPtr2[4 + j] +
 					MatPtr1[i * 4 + 2] * MatPtr2[8 + j] +
 					MatPtr1[i * 4 + 3] * MatPtr2[12 + j];
@@ -1057,8 +1177,8 @@ public:
 		Matrix4 my = Matrix4::EulerY(y_radians);
 		Matrix4 mz = Matrix4::EulerZ(z_radians);
 
-		Matrix = mx.Multiply(my);
-		Matrix = Matrix.Multiply(mz);
+		Matrix = my.Multiply(mz);
+		Matrix = mx.Multiply(Matrix);
 
 		return Matrix;
 	}
@@ -1222,7 +1342,7 @@ inline Quaternion MatrixToQuat(const Matrix4& M) {
 	}
 
 	if (q.Length() != 1.0f) {
-		q = q.QuaternionIdentity();
+		return Quaternion();
 	}
 
 	return q;
@@ -1233,16 +1353,16 @@ inline Matrix4 QuatToMatrix(const Quaternion& q) {
 	Quaternion n =  q;
 	n.Normalize();
 
-	Matrix.data[0] = 1.0f - 2.0f * (n.y * n.y - n.z * n.z);
-	Matrix.data[1] = 2.0f * (n.x * n.y - n.z * n.w);
-	Matrix.data[2] = 2.0f * (n.x * n.z + n.y * n.w);
+	Matrix.data[0] = 1.0f - 2.0f * (n.y * n.y + n.z * n.z);
+	Matrix.data[1] = 2.0f * (n.x * n.y + n.z * n.w);
+	Matrix.data[2] = 2.0f * (n.x * n.z - n.y * n.w);
 
-	Matrix.data[4] = 2.0f * (n.x * n.y + n.z * n.w);
+	Matrix.data[4] = 2.0f * (n.x * n.y - n.z * n.w);
 	Matrix.data[5] = 1.0f - 2.0f * (n.x * n.x + n.z * n.z);
 	Matrix.data[6] = 2.0f * (n.y * n.z - n.x * n.w);
 
-	Matrix.data[8] = 2.0f * (n.x * n.z - n.y * n.w);
-	Matrix.data[9] = 2.0f * (n.y * n.z + n.x * n.w);
+	Matrix.data[8] = 2.0f * (n.x * n.z + n.y * n.w);
+	Matrix.data[9] = 2.0f * (n.y * n.z - n.x * n.w);
 	Matrix.data[10] = 1.0f - 2.0f * (n.x * n.x + n.y * n.y);
 
 	return Matrix;
@@ -1274,19 +1394,6 @@ inline Matrix4 QuatToRotationMatrix(const Quaternion& q, const Vec3& center) {
 	o[15] = 1.0f;
 
 	return Matrix;
-}
-
-inline Quaternion QuaternionFromAxisAngle(const Vec3& axis, float angle, bool normalize = true) {
-	const float HalfAngle = 0.5f * angle;
-	float s = DSin(HalfAngle);
-	float c = DCos(HalfAngle);
-
-	Quaternion q = Quaternion( s * axis.x, s * axis.y, s * axis.z, c );
-	if (normalize) {
-		q.Normalize();
-	}
-
-	return q;
 }
 
 inline Quaternion QuaternionSlerp(Quaternion q0, Quaternion q1, float percentage) {

@@ -1,10 +1,10 @@
-#include "DMath.hpp"
+ï»¿#include "DMath.hpp"
 #include "MathTypes.hpp"
 
 #include <math.h>
 #include <random>
 
-// Ref: ×÷Õß£º¿ìÀÖ´óÑ¼²± https://www.bilibili.com/read/cv31060791/
+// Ref: ä½œè€…ï¼šå¿«ä¹å¤§é¸­è„– https://www.bilibili.com/read/cv31060791/
 static std::random_device m_seed;
 
 #if DPLATFORM_WINDOWS
@@ -23,6 +23,14 @@ float DCos(float x) {
 
 float DTan(float x) {
 	return tanf(x);
+}
+
+float DArcTan(float x) {
+	return atan(x);
+}
+
+float DArcTan2(float x, float y) {
+	return atan2(x, y);
 }
 
 float DAcos(float x) {

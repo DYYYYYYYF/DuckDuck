@@ -28,7 +28,7 @@ void Camera::SetPosition(Vec3 pos) {
 }
 
 Vec3 Camera::GetEulerAngles() {
-	return EulerRotation;
+	return Vec3(Rad2Deg(EulerRotation.x), Rad2Deg(EulerRotation.y), Rad2Deg(EulerRotation.z));
 }
 
 void Camera::SetEulerAngles(Vec3 eular) {
