@@ -85,6 +85,7 @@ public:
 	static DAPI void* Copy(void* dst, const void* src, size_t size);
 	static DAPI void* Set(void* dst, int val, size_t size);
 	static DAPI char* GetMemoryUsageStr();
+	static DAPI void ShowMemoryUsage();
 
 	static DAPI void AllocateReport(size_t size, MemoryType type);
 	static DAPI void FreeReport(size_t size, MemoryType type);

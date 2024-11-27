@@ -1,4 +1,4 @@
-#include "DMemory.hpp"
+﻿#include "DMemory.hpp"
 
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
@@ -192,6 +192,11 @@ char* Memory::GetMemoryUsageStr() {
 
 	char* outString = StringCopy(buffer);
 	return outString;
+}
+
+void Memory::ShowMemoryUsage() {
+	std::string Msg = GetMemoryUsageStr();
+	LOG_DEBUG(Msg.c_str());
 }
 
 size_t Memory::GetAllocateCount() { 
