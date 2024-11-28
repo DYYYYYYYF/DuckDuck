@@ -9,23 +9,6 @@
 #include "Frustum.hpp"
 #include "Quaternion.hpp"
 
-#if defined(__AVX2__)
-#ifndef SIMD_SUPPORTED
-#define SIMD_SUPPORTED
-#endif
-#define SIMD_SUPPORTED_AVX2
-#elif defined(__ARM_NEON)
-#ifndef SIMD_SUPPORTED
-#define SIMD_SUPPORTED
-#endif
-#define SIMD_SUPPORTED_NEON
-#elif defined(__SSE__)
-#ifndef SIMD_SUPPORTED
-#define SIMD_SUPPORTED
-#endif
-#define SIMD_SUPPORTED_SSE
-#endif
-
 struct DAPI Axis {
 	inline static TVector3<float> X = TVector3<float>{ 1.0f, 0.0f, 0.0f };
 	inline static TVector3<float> Y = TVector3<float>{ 0.0f, 1.0f, 0.0f };

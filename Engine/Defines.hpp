@@ -73,6 +73,33 @@
 
 #endif	// #ifdef DEXPORT
 
+// SIMD Macros
+#ifdef _MSC_VER
+#if defined(_AVX)
+#define SIMD_SUPPORTED_AVX
+#elif defined(_AVX2)
+#define SIMD_SUPPORTED_AVX2
+#elif defined(_SSE2)
+#define SIMD_SUPPORTED_SSE2
+#endif
+#else
+#if defined(__AVX2__)
+#define SIMD_SUPPORTED_AVX2
+#elif defined(__ARM_NEON)
+#define SIMD_SUPPORTED_NEON
+#elif defined(__SSE2__)
+#define SIMD_SUPPORTED_SSE2
+#elif defined(__AVX__)
+#define SIMD_SUPPORTED_AVX
+#endif
+#endif
+
+#ifndef SIMD_SUPPORTED
+#if defined(SIMD_SUPPORTED_AVX) || defined(SIMD_SUPPORTED_AVX2) || defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_NEON)
+#define SIMD_SUPPORTED
+#endif
+#endif
+
 // Deprecated macros
 #define DEPRECATED(msg) [[deprecated(msg)]]
 
