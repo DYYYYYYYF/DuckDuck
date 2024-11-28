@@ -18,7 +18,7 @@ public:
 	DAPI bool Create(class IRenderer* renderer, UITextType type, const std::string& fontName, unsigned short fontSize, const char* textContent);
 	DAPI void Destroy();
 
-	DAPI void SetPosition(Vec3 position);
+	DAPI void SetPosition(Vector3 position);
 	DAPI void SetText(const char* text);
 
 	void Draw();

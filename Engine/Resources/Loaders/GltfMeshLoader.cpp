@@ -55,7 +55,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 		else {
 			// 计算变换矩阵，如果没有 matrix 数据，使用 scale、rotation、translation 生成
 			if (!Node.scale.empty()) {
-				Vec3 Scale = Vec3((float)Node.scale[0], (float)Node.scale[1], (float)Node.scale[2]);
+				Vector3 Scale = Vector3((float)Node.scale[0], (float)Node.scale[1], (float)Node.scale[2]);
 				LocalTransform.SetScale(Scale);
 			}
 			if (!Node.rotation.empty()) {
@@ -63,7 +63,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				LocalTransform.SetRotation(rotation);
 			}
 			if (!Node.translation.empty()) {
-				Vec3 Translation = Vec3((float)Node.translation[0], (float)Node.translation[1], (float)Node.translation[2]);
+				Vector3 Translation = Vector3((float)Node.translation[0], (float)Node.translation[1], (float)Node.translation[2]);
 				LocalTransform.SetPosition(Translation);
 			}
 		}
@@ -113,7 +113,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 		// 基础颜色
 		if (material.values.find("baseColorFactor") != material.values.end()) {
 			const auto& baseColorFactor = material.values.at("baseColorFactor").number_array;
-			CurrentConfig.diffuse_color = Vec4((float)baseColorFactor[0], (float)baseColorFactor[1], (float)baseColorFactor[2], (float)baseColorFactor[3]);
+			CurrentConfig.diffuse_color = Vector4((float)baseColorFactor[0], (float)baseColorFactor[1], (float)baseColorFactor[2], (float)baseColorFactor[3]);
 		}
 
 		// 金属度
@@ -129,7 +129,7 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 		// 粗糙度
 		if (material.values.find("emissiveFactor") != material.values.end()) {
 			const auto& emissiveColorFactor = material.values.at("baseColorFactor").number_array;
-			CurrentConfig.EmissiveColor = Vec4((float)emissiveColorFactor[0], (float)emissiveColorFactor[1], (float)emissiveColorFactor[2], 1.0f);
+			CurrentConfig.EmissiveColor = Vector4((float)emissiveColorFactor[0], (float)emissiveColorFactor[1], (float)emissiveColorFactor[2], 1.0f);
 		}
 
 		// 基本颜色纹理贴图
@@ -207,16 +207,16 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 
 bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model, const std::vector<SMaterialConfig>& materialConfigs, std::vector<SGeometryConfig>& out_geometries) {
 	// Positions
-	std::vector<Vec3> Positions;
+	std::vector<Vector3> Positions;
 	Positions.reserve(65535);
 	// Normals
-	std::vector<Vec3> Normals;
+	std::vector<Vector3> Normals;
 	Normals.reserve(65535);
 	// Texcoords
-	std::vector<Vec2> Texcoords;
+	std::vector<Vector2f> Texcoords;
 	Texcoords.reserve(65535);
 	// Tangents
-	std::vector<Vec3> Tangents;
+	std::vector<Vector3> Tangents;
 	Tangents.reserve(65535);
 	// Indices
 	std::vector<uint32_t> Indices;
@@ -327,7 +327,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 				const float* positions = reinterpret_cast<const float*>(&model.buffers[positionView.buffer]
 					.data[positionAccessor.byteOffset + positionView.byteOffset]);
 				for (size_t i = 0; i < positionAccessor.count; i++) {
-					Vec3 vPosition = Vec3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+					Vector3 vPosition = Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
 					Positions.push_back(vPosition);
 				}
 			} break;
@@ -336,7 +336,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 				const double* positions = reinterpret_cast<const double*>(&model.buffers[positionView.buffer]
 					.data[positionAccessor.byteOffset + positionView.byteOffset]);
 				for (size_t i = 0; i < positionAccessor.count; i++) {
-					Vec3 vPosition = Vec3((float)positions[i * 3], (float)positions[i * 3 + 1], (float)positions[i * 3 + 2]);
+					Vector3 vPosition = Vector3((float)positions[i * 3], (float)positions[i * 3 + 1], (float)positions[i * 3 + 2]);
 					Positions.push_back(vPosition);
 				}
 			} break;
@@ -355,7 +355,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 				.data[normalAccessor.byteOffset + normalView.byteOffset]);
 
 			for (size_t i = 0; i < normalAccessor.count; i++) {
-				Normals.push_back(Vec3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]));
+				Normals.push_back(Vector3(normalData[i * 3], normalData[i * 3 + 1], normalData[i * 3 + 2]));
 			}
 		}
 
@@ -368,7 +368,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 				.data[texCoordAccessor.byteOffset + texCoordView.byteOffset]);
 
 			for (size_t i = 0; i < texCoordAccessor.count; i++) {
-				Texcoords.push_back(Vec2(texCoordData[i * 2], texCoordData[i * 2 + 1]));
+				Texcoords.push_back(Vector2f(texCoordData[i * 2], texCoordData[i * 2 + 1]));
 			}
 		}
 
@@ -382,7 +382,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 
 			for (size_t i = 0; i < tangentAccessor.count; i++) {
 				// TODO: 使用切线数据
-				Tangents.push_back(Vec3(tangentData[i * 2], tangentData[i * 2 + 1], tangentData[i * 2 + 2]));
+				Tangents.push_back(Vector3(tangentData[i * 2], tangentData[i * 2 + 1], tangentData[i * 2 + 2]));
 			}
 		}
 
@@ -399,10 +399,10 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 		GroupData.Faces.clear();
 	}
 
-	std::vector<Vec3>().swap(Positions);
-	std::vector<Vec3>().swap(Normals);
-	std::vector<Vec2>().swap(Texcoords);
-	std::vector<Vec3>().swap(Tangents);
+	std::vector<Vector3>().swap(Positions);
+	std::vector<Vector3>().swap(Normals);
+	std::vector<Vector2f>().swap(Texcoords);
+	std::vector<Vector3>().swap(Tangents);
 	std::vector<uint32_t>().swap(Indices);
 
 	return true;

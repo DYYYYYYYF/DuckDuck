@@ -152,7 +152,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 	return true;
 }
 
-void IRenderer::SetViewport(Vec4 rect) {
+void IRenderer::SetViewport(Vector4 rect) {
 	Backend->SetViewport(rect);
 }
 
@@ -160,7 +160,7 @@ void IRenderer::ResetViewport() {
 	Backend->ResetViewport();
 }
 
-void IRenderer::SetScissor(Vec4 rect) {
+void IRenderer::SetScissor(Vector4 rect) {
 	Backend->SetScissor(rect);
 }
 

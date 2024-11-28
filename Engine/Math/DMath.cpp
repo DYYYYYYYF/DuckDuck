@@ -13,39 +13,6 @@ static std::mt19937 m_mt19937 = std::mt19937(m_seed());
 static std::mt19937 m_mt19937;
 #endif
 
-float DSin(float x) {
-	return sinf(x);
-}
-
-float DCos(float x) {
-	return cosf(x);
-}
-
-float DTan(float x) {
-	return tanf(x);
-}
-
-float DArcTan(float x) {
-	return atan(x);
-}
-
-float DArcTan2(float x, float y) {
-	return atan2(x, y);
-}
-
-float DAcos(float x) {
-	return acosf(x);
-}
-
-float Dabs(float x) {
-	return fabs(x);
-}
-
-float Dsqrt(float x) {
-	return sqrtf(x);
-}
-
-
 int DRandom() {
 	return DRandom(-INT_MAX, INT_MAX);
 }
@@ -60,14 +27,7 @@ float DRandom(float min, float max) {
 	return static_cast<float>(distribution(m_mt19937));
 }
 
-void RGB2Vec(unsigned int r, unsigned int g, unsigned int b, struct Vec3* rgb) {
-	rgb->r = r / 255.0f;
-	rgb->g = g / 255.0f;
-	rgb->b = b / 255.0f;
-}
-
-void Vec2RGB(struct Vec3 rgb, unsigned int* r, unsigned int* g, unsigned int* b) {
-	*r = static_cast<int>(rgb.r * 255);
-	*g = static_cast<int>(rgb.g * 255);
-	*b = static_cast<int>(rgb.b * 255);
+double DRandom(double min, double max) {
+	std::uniform_real_distribution<double> distribution(min, max);
+	return static_cast<double>(distribution(m_mt19937));
 }

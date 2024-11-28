@@ -153,7 +153,7 @@ bool DebugConsole::Load() {
 		return false;
 	}
 
-	TextControl->SetPosition(Vec3(0.7f * Renderer->GetWidth(), 100, 0));
+	TextControl->SetPosition(Vector3(0.7f * Renderer->GetWidth(), 100, 0));
 
 	// Create another ui text control for rendering typed text.
 	EntryControl = NewObject<UIText>();
@@ -162,7 +162,7 @@ bool DebugConsole::Load() {
 		return false;
 	}
 
-	EntryControl->SetPosition(Vec3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
+	EntryControl->SetPosition(Vector3(0.7f * Renderer->GetWidth(), 100 + (31.0f * DisplayLineCount), 0.0f));
 
 	EngineEvent::Register(eEventCode::Key_Pressed, nullptr,
 		std::bind(

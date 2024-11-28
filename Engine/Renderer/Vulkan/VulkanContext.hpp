@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <vulkan/vulkan.hpp>
 
 #include "Defines.hpp"
@@ -62,8 +62,8 @@ public:
 	uint32_t CurrentFrame;
 	bool RecreatingSwapchain;
 
-	Vec4 ViewportRect;
-	Vec4 ScissorRect;
+	Vector4 ViewportRect;
+	Vector4 ScissorRect;
 
 	vk::Instance Instance;
 	vk::AllocationCallbacks* Allocator;

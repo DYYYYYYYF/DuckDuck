@@ -118,15 +118,15 @@ bool GameInstance::Initialize() {
 	WorldCamera = CameraSystem::GetDefault();
 	/*WorldCamera->SetPosition(Vec3(-60.0f, 43.0f, -19.0f));
 	WorldCamera->SetEulerAngles(Vec3(-19.0f, -100.0f, 0.0f));*/
-	WorldCamera->SetPosition(Vec3(0.0f, 0.0f, 60.0f));
-	WorldCamera->SetEulerAngles(Vec3(0.0f, 0.0f, 0.0f));
+	WorldCamera->SetPosition(Vector3(0.0f, 0.0f, 60.0f));
+	WorldCamera->SetEulerAngles(Vector3(0.0f, 0.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
 		LOG_ERROR("Failed to load basic ui bitmap text.");
 		return false;
 	}
-	TestText.SetPosition(Vec3(150, 450, 0));
+	TestText.SetPosition(Vector3(150, 450, 0));
 	TestText.SetName("Render information window.");
 
 	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
@@ -143,7 +143,7 @@ bool GameInstance::Initialize() {
 		LOG_ERROR("Failed to load basic ui system text.");
 		return false;
 	}
-	TestSysText.SetPosition(Vec3(100, 200, 0));
+	TestSysText.SetPosition(Vector3(100, 200, 0));
 	TestSysText.SetName("Keyboard map texts.");
 
 	// Load console
@@ -173,7 +173,7 @@ bool GameInstance::Initialize() {
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
-	CubeMesh2->Transform = Transform(Vec3(10.0f, 0.0f, 1.0f));
+	CubeMesh2->Transform = Transform(Vector3(10.0f, 0.0f, 1.0f));
 	CubeMesh2->Generation = 0;
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
@@ -185,7 +185,7 @@ bool GameInstance::Initialize() {
 	CubeMesh3->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh3->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig3 = GeometrySystem::GenerateCubeConfig(2.0f, 2.0f, 2.0f, 1.0f, 1.0f, "TestCube3", "Material.World");
 	CubeMesh3->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig3, true);
-	CubeMesh3->Transform = Transform(Vec3(5.0f, 0.0f, 1.0f));
+	CubeMesh3->Transform = Transform(Vector3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Generation = 0;
 	CubeMesh3->UniqueID = Identifier::AcquireNewID(CubeMesh3);
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
@@ -312,8 +312,8 @@ bool GameInstance::Update(float delta_time) {
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
-	Vec3 Pos = WorldCamera->GetPosition();
-	Vec3 Rot = WorldCamera->GetEulerAngles();
+	Vector3 Pos = WorldCamera->GetPosition();
+	Vector3 Rot = WorldCamera->GetEulerAngles();
 
 	// Mouse state
 	bool LeftDown =Controller::IsButtonDown(eButtons::Left);
@@ -329,9 +329,9 @@ bool GameInstance::Update(float delta_time) {
 	Metrics::Frame(&FPS, &FrameTime);
 
 	// Update the frustum.
-	Vec3 Forward = WorldCamera->Forward();
-	Vec3 Right = WorldCamera->Right();
-	Vec3 Up = WorldCamera->Up();
+	Vector3 Forward = WorldCamera->Forward();
+	Vector3 Right = WorldCamera->Right();
+	Vector3 Up = WorldCamera->Up();
 	// TODO: Get camera fov, aspect etc.
 	CameraFrustum = Frustum(WorldCamera->GetPosition(), Forward, Right, Up, (float)Width / (float)Height, Deg2Rad(45.0f), 0.1f, 1000.0f);
 
@@ -358,8 +358,8 @@ bool GameInstance::Update(float delta_time) {
 				// Bounding sphere calculation
 				case FrustumCullMode::eSphere_Cull:
 				{
-					Vec3 ExtensMin = g->Extents.min.Transform(Model);
-					Vec3 ExtensMax = g->Extents.max.Transform(Model);
+					Vector3 ExtensMin = g->Extents.min.Transform(Model);
+					Vector3 ExtensMax = g->Extents.max.Transform(Model);
 
 					float Min = DMIN(DMIN(ExtensMin.x, ExtensMin.y), ExtensMin.z);
 					float Max = DMIN(DMIN(ExtensMax.x, ExtensMax.y), ExtensMax.z);
@@ -367,7 +367,7 @@ bool GameInstance::Update(float delta_time) {
 					float Radius = Diff / 2.0f;
 
 					// Translate/scale the center.
-					Vec3 Center = g->Center.Transform(Model);
+					Vector3 Center = g->Center.Transform(Model);
 
 					if (CameraFrustum.IntersectsSphere(Center, Radius)) {
 						// Add it to the list to be rendered.
@@ -383,11 +383,11 @@ bool GameInstance::Update(float delta_time) {
 				case FrustumCullMode::eAABB_Cull:
 				{
 					// Translate/scale the extents.
-					Vec3 ExtentsMax = g->Extents.max.Transform(Model);
+					Vector3 ExtentsMax = g->Extents.max.Transform(Model);
 
 					// Translate/scale the center.
-					Vec3 Center = g->Center.Transform(Model);
-					Vec3 HalfExtents = {
+					Vector3 Center = g->Center.Transform(Model);
+					Vector3 HalfExtents = {
 						Dabs(ExtentsMax.x - Center.x),
 						Dabs(ExtentsMax.y - Center.y),
 						Dabs(ExtentsMax.z - Center.z)
@@ -551,8 +551,8 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	Width = width;
 	Height = height;
 
-	TestText.SetPosition(Vec3(180, (float)height - 150, 0));
-	TestSysText.SetPosition(Vec3(100, (float)height - 400, 0));
+	TestText.SetPosition(Vector3(180, (float)height - 150, 0));
+	TestSysText.SetPosition(Vector3(100, (float)height - 400, 0));
 
 	// TODO: Temp
 	SGeometryConfig UIConfig;
@@ -610,8 +610,8 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config.
 	std::vector<RenderpassConfig> SkyboxPasses(1);
 	SkyboxPasses[0].name = "Renderpass.Builtin.Skybox";
-	SkyboxPasses[0].render_area = Vec4(0, 0, 1280, 720);
-	SkyboxPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
+	SkyboxPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	SkyboxPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
 	SkyboxPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer;
 	SkyboxPasses[0].depth = 1.0f;
 	SkyboxPasses[0].stencil = 0;
@@ -643,8 +643,8 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config.
 	std::vector<RenderpassConfig> WorldPasses(1);
 	WorldPasses[0].name = "Renderpass.Builtin.World";
-	WorldPasses[0].render_area = Vec4(0, 0, 1280, 720);
-	WorldPasses[0].clear_color = Vec4(0, 0.2f, 0, 1.0f);
+	WorldPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	WorldPasses[0].clear_color = Vector4(0, 0.2f, 0, 1.0f);
 	WorldPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Stencil_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
 	WorldPasses[0].depth = 1.0f;
 	WorldPasses[0].stencil = 0;
@@ -683,8 +683,8 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	// Renderpass config
 	std::vector<RenderpassConfig> UIPasses(1);
 	UIPasses[0].name = "Renderpass.Builtin.UI";
-	UIPasses[0].render_area = Vec4(0, 0, 1280, 720);
-	UIPasses[0].clear_color = Vec4(0, 0, 0.2f, 1.0f);
+	UIPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	UIPasses[0].clear_color = Vector4(0, 0, 0.2f, 1.0f);
 	UIPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 	UIPasses[0].depth = 1.0f;
 	UIPasses[0].stencil = 0;
@@ -717,8 +717,8 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 	std::vector<RenderpassConfig>PickPasses(2);
 	// World pick pass
 	PickPasses[0].name = "Renderpass.Builtin.WorldPick";
-	PickPasses[0].render_area = Vec4(0, 0, 1280, 720);
-	PickPasses[0].clear_color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	PickPasses[0].render_area = Vector4(0, 0, 1280, 720);
+	PickPasses[0].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PickPasses[0].clear_flags = RenderpassClearFlags::eRenderpass_Clear_Color_Buffer | RenderpassClearFlags::eRenderpass_Clear_Depth_Buffer;
 	PickPasses[0].depth = 1.0f;
 	PickPasses[0].stencil = 0;
@@ -743,8 +743,8 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 
 	// UI pick pass
 	PickPasses[1].name = "Renderpass.Builtin.UIPick";
-	PickPasses[1].render_area = Vec4(0, 0, 1280, 720);
-	PickPasses[1].clear_color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	PickPasses[1].render_area = Vector4(0, 0, 1280, 720);
+	PickPasses[1].clear_color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PickPasses[1].clear_flags = RenderpassClearFlags::eRenderpass_Clear_None;
 	PickPasses[1].depth = 1.0f;
 	PickPasses[1].stencil = 0;
@@ -777,7 +777,7 @@ void LoadScene1(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("mountain_part");	// It always return true.
-	Model->Transform = Transform(Vec3(300.0f, -50.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(50.f));
+	Model->Transform = Transform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(50.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.push_back(Model);
 }
@@ -792,19 +792,19 @@ void LoadScene2(GameInstance* GameInst) {
 
 	Mesh* Model1 = NewObject<Mesh>();
 	Model1->LoadFromResource("sponza");	// It always return true.
-	Model1->Transform = Transform(Vec3(0.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 90.0f, 0.0f)), Vec3(0.1f));
+	Model1->Transform = Transform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
 	Model1->UniqueID = Identifier::AcquireNewID(Model1);
 	GameInst->Meshes.push_back(Model1);
 
 	Mesh* Model2 = NewObject<Mesh>();
 	Model2->LoadFromResource("bunny");	// It always return true.
-	Model2->Transform = Transform(Vec3(30.0f, 0.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(5.0f));
+	Model2->Transform = Transform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
 	Model2->UniqueID = Identifier::AcquireNewID(Model2);
 	GameInst->Meshes.push_back(Model2);
 
 	Mesh* Model3 = NewObject<Mesh>();
 	Model3->LoadFromResource("falcon");	// It always return true.
-	Model3->Transform = Transform(Vec3(-30.0f, -10.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)));
+	Model3->Transform = Transform(Vector3(-30.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
 	Model3->UniqueID = Identifier::AcquireNewID(Model3);
 	GameInst->Meshes.push_back(Model3);
 }
@@ -819,7 +819,7 @@ void LoadScene3(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("Buggy");	
-	Model->Transform = Transform(Vec3(300.0f, -50.0f, 0.0f), Quaternion(Vec3(0.0f, 0.0f, 0.0f)), Vec3(1.f));
+	Model->Transform = Transform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(1.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.push_back(Model);
 }
@@ -834,7 +834,7 @@ void LoadScene4(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("Duck");	
-	Model->Transform = Transform(Vec3(0.0f, 50.0f, 0.0f), Quaternion(Vec3(0.0f, 180.0f, 0.0f)), Vec3(0.1f));
+	Model->Transform = Transform(Vector3(0.0f, 50.0f, 0.0f), Quaternion(Vector3(0.0f, 180.0f, 0.0f)), Vector3(0.1f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.push_back(Model);
 }

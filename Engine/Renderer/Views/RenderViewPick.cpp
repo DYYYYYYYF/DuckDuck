@@ -200,7 +200,7 @@ void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
 	WorldShaderInfo.ProjectionMatrix = Matrix4::Perspective(WorldShaderInfo.Fov, Aspect, WorldShaderInfo.NearClip, WorldShaderInfo.FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -385,7 +385,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
-			Vec3 IDColor;
+			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
@@ -438,7 +438,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
-			Vec3 IDColor;
+			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
@@ -467,7 +467,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
-			Vec3 IDColor;
+			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Text->UniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);

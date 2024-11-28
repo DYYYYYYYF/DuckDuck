@@ -17,5 +17,18 @@ int main() {
 
 	TestMatrix();
 
+	if (is_sse_supported()) {
+		std::cout << "SSE is supported.\n";
+	}
+	if (is_sse2_supported()) {
+		std::cout << "SSE2 is supported.\n";
+	}
+	if (is_avx_supported()) {
+		std::cout << "AVX is supported.\n";
+	}
+	if (is_avx2_supported()) {
+		std::cout << "AVX2 is supported.\n";
+	}
+
 	return 0;
 }

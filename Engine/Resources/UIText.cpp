@@ -116,7 +116,7 @@ void UIText::Destroy() {
 	Renderer = nullptr;
 }
 	
-void UIText::SetPosition(Vec3 position) {
+void UIText::SetPosition(Vector3 position) {
 	Trans.SetPosition(position);
 }
 
@@ -256,10 +256,10 @@ void UIText::RegenerateGeometry() {
 				tMaxY = 1.0f - tMaxY;
 			}
 
-			Vertex2D p0 = Vertex2D(Vec2(MinX, MinY), Vec2(tMinX, tMinY));
-			Vertex2D p2 = Vertex2D(Vec2(MaxX, MinY), Vec2(tMaxX, tMinY));
-			Vertex2D p1 = Vertex2D(Vec2(MaxX, MaxY), Vec2(tMaxX, tMaxY));
-			Vertex2D p3 = Vertex2D(Vec2(MinX, MaxY), Vec2(tMinX, tMaxY));
+			Vertex2D p0 = Vertex2D(Vector2f(MinX, MinY), Vector2f(tMinX, tMinY));
+			Vertex2D p2 = Vertex2D(Vector2f(MaxX, MinY), Vector2f(tMaxX, tMinY));
+			Vertex2D p1 = Vertex2D(Vector2f(MaxX, MaxY), Vector2f(tMaxX, tMaxY));
+			Vertex2D p3 = Vertex2D(Vector2f(MinX, MaxY), Vector2f(tMinX, tMaxY));
 
 			VertexBufferData[(uc * 4) + 0] = p0;	// 0		2
 			VertexBufferData[(uc * 4) + 1] = p1;	//

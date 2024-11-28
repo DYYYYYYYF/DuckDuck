@@ -27,28 +27,28 @@ public:
 	 * 
 	 * @param pos The position of the camera.
 	 */
-	void SetPosition(Vec3 pos);
+	void SetPosition(Vector3 pos);
 
 	/**
 	 * @brief Get a copy of camera's position.
 	 *
 	 * @return The position of the camera.
 	 */
-	Vec3 GetPosition();
+	Vector3 GetPosition();
 
 	/**
 	 * @brief Set camera's rotation in Eular angles.
 	 *
 	 * @param pos The rotation of the camera.
 	 */
-	void SetEulerAngles(Vec3 eular);
+	void SetEulerAngles(Vector3 eular);
 
 	/**
 	 * @brief Get a copy of camera's rotation.
 	 *
 	 * @return The rotation of the camera.
 	 */
-	Vec3 GetEulerAngles();
+	Vector3 GetEulerAngles();
 
 	/**
 	 * @brief Obtains a copy of the camera's view matrix. If camera is dirty,
@@ -101,7 +101,7 @@ public:
 	/**
 	 * @brief Get forward vector of view.
 	 */
-	Vec3 Forward() { 
+	Vector3 Forward() { 
 		const Matrix4& View = GetViewMatrix();
 		return View.Forward();
 	}
@@ -109,7 +109,7 @@ public:
 	/**
 	 * @brief Get backward vector of view.
 	 */
-	Vec3 Backward() { 
+	Vector3 Backward() { 
 		const Matrix4& View = GetViewMatrix();
 		return View.Backward();
 	}
@@ -117,7 +117,7 @@ public:
 	/**
 	 * @brief Get left vector of view.
 	 */
-	Vec3 Left() {
+	Vector3 Left() {
 		const Matrix4& View = GetViewMatrix();
 		return View.Left();
 	}
@@ -125,7 +125,7 @@ public:
 	/**
 	 * @brief Get right vector of view.
 	 */
-	Vec3 Right() {
+	Vector3 Right() {
 		const Matrix4& View = GetViewMatrix();
 		return View.Right();
 	}
@@ -135,7 +135,7 @@ public:
 	 *
 	 * @return A copy of the camera's up vector.
 	 */
-	Vec3 Up() {
+	Vector3 Up() {
 		const Matrix4& View = GetViewMatrix();
 		return View.Up();
 	}
@@ -165,14 +165,14 @@ private:
 	 * NOTE: Do not set this directly. Use SetPosition() instead so the view
 	 * matrix will be recalculated when needed.
 	 */
-	Vec3 Position;
+	Vector3 Position;
 
 	/**
 	 * @brief The rotation of this camera using Euler angles (pitch, yaw, roll).
 	 * NOTO: Do not set this directly. Use SetEulerAngles() instead so the view
 	 * matrix will be recalculated when needed.
 	 */
-	Vec3 EulerRotation;
+	Vector3 EulerRotation;
 
 	/** @brief Internal flag used to determine when the view matrix needs to be rebuilt. */
 	bool IsDirty;

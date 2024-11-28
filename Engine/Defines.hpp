@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
@@ -47,6 +47,14 @@
 #ifdef DPLATFORM_MACOS
 #include <stddef.h>
 #endif
+
+// __cpuid
+#if defined(_MSC_VER)
+#include <intrin.h>  
+#elif defined(__GUNC__) || definded(__clang__)
+
+#endif
+
 
 #ifdef DEXPORT
 // Export

@@ -1,7 +1,7 @@
 ﻿#include "Transform.hpp"
 
 Transform::Transform() {
-	SetPRS(Vec3(0.0f), Quaternion(), Vec3(1.0f));
+	SetPRS(Vector3(0.0f), Quaternion(), Vector3(1.0f));
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
@@ -12,31 +12,31 @@ Transform::Transform(const Transform& trans) {
 	Parent = trans.Parent;
 }
 
-Transform::Transform(const Vec3& position) {
-	SetPRS(position, Quaternion(), Vec3(1.0f));
+Transform::Transform(const Vector3& position) {
+	SetPRS(position, Quaternion(), Vector3(1.0f));
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
 
 Transform::Transform(const Quaternion& rotation) {
-	SetPRS(Vec3(0.0f), rotation, Vec3(1.0f));
+	SetPRS(Vector3(0.0f), rotation, Vector3(1.0f));
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
 
-Transform::Transform(const Vec3& position, const Quaternion& rotation) {
-	SetPRS(position, rotation, Vec3(1.0f));
+Transform::Transform(const Vector3& position, const Quaternion& rotation) {
+	SetPRS(position, rotation, Vector3(1.0f));
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
 
-Transform::Transform(const Vec3& position, const Quaternion& rotation, const Vec3& scale) {
+Transform::Transform(const Vector3& position, const Quaternion& rotation, const Vector3& scale) {
 	SetPRS(position, rotation, scale);
 	Local = Matrix4::Identity();
 	Parent = nullptr;
 }
 
-void Transform::Translate(const Vec3& translation) {
+void Transform::Translate(const Vector3& translation) {
 	vPosition = vPosition + translation;
 	IsDirty = true;
 }
@@ -47,25 +47,25 @@ void Transform::Rotate(const Quaternion& rotation) {
 	IsDirty = true;
 }
 
-void Transform::Scale(const Vec3& scale) {
+void Transform::Scale(const Vector3& scale) {
 	vScale = vScale * scale;
 	IsDirty = true;
 }
 
-void Transform::SetPR(const Vec3& pos, const Quaternion& rotation) {
+void Transform::SetPR(const Vector3& pos, const Quaternion& rotation) {
 	vPosition = pos;
 	vRotation = rotation;
 	IsDirty = true;
 }
 
-void Transform::SetPRS(const Vec3& pos, const Quaternion& rotation, const Vec3& scale) {
+void Transform::SetPRS(const Vector3& pos, const Quaternion& rotation, const Vector3& scale) {
 	vPosition = pos;
 	vRotation = rotation;
 	vScale = scale;
 	IsDirty = true;
 }
 
-void Transform::TransformRotate(const Vec3& translation, const Quaternion& rotation) {
+void Transform::TransformRotate(const Vector3& translation, const Quaternion& rotation) {
 	vPosition = vPosition + translation;
 	Quaternion r = rotation;
 	vRotation = r.Multiply(vRotation);
@@ -81,7 +81,7 @@ Matrix4 Transform::GetLocal() {
 }
 
 void Transform::UpdateLocal() {
-	Matrix4 R = QuatToMatrix(vRotation);
+	Matrix4 R = QuatToMatrix<float>(vRotation);
 	Matrix4 T = Matrix4::FromTranslation(vPosition);
 	Matrix4 S = Matrix4::FromScale(vScale);
 
