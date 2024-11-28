@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Vector.hpp"
 
 //-----------------------------------------------
@@ -10,10 +10,10 @@ struct TQuaternion {
 	{
 #if defined(SIMD_SUPPORTED)
 		// Used for SIMD operations
-		/*alignas(16) */__m128 data;
+		alignas(16) __m128 data;
 #endif
 		// An array of x, y, z, w
-		/*alignas(16) */T elements[4] = { 0.0f };
+		alignas(16) T elements[4] = { 0.0f };
 		struct
 		{
 			union

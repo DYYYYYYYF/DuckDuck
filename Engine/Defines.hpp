@@ -126,6 +126,16 @@ inline bool is_avx2_supported() {
 #endif
 #endif
 
+#if defined(SIMD_SUPPORTED)
+#if defined(DPLATFORM_MACOS)
+#include <arm_neon.h>
+#define __m128 float32x4_t
+#define __m256 float32x8_t
+#define _mm_add_ps vaddq_f32
+#define _mm_mul_ps vmulq_f32
+#endif
+#endif
+
 // Deprecated macros
 #define DEPRECATED(msg) [[deprecated(msg)]]
 
