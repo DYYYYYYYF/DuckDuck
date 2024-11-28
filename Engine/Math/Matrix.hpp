@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Vector.hpp"
 
 /**
@@ -522,7 +522,7 @@ public:
 	TVector4<T> GetRow(int i) const {
 		if (i < 1 || i > 4) {
 			LOG_WARN("Invalid matrix boundings. Return Vec4().")
-				return TVector4();
+				return TVector4<T>(0.0f);
 		}
 
 		int Row = i - 1;

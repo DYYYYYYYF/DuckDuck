@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
@@ -28,6 +28,7 @@
 
 #elif __APPLE__
 #define DPLATFORM_APPLE 1
+#include <sys/sysctl.h>
 #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
 #include <TargetConditionals.h>
 #if TARGET_IPHONE_SIMULATOR
@@ -51,8 +52,6 @@
 // __cpuid
 #if defined(_MSC_VER)
 #include <intrin.h>  
-#elif defined(__GUNC__) || definded(__clang__)
-
 #endif
 
 
@@ -98,7 +97,11 @@
 
 #include <filesystem>
 #ifndef ROOT_PATH
+#if defined(DPLATFORM_MACOS)
+#define ROOT_PATH std::filesystem::current_path().generic_string() + "/../.."
+#else
 #define ROOT_PATH std::filesystem::current_path().generic_string() + "/.."
+#endif
 #endif
 
 struct Range {

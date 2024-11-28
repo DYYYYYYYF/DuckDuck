@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Defines.hpp"
 #include "DMath.hpp"
@@ -9,42 +9,21 @@
 #include "Frustum.hpp"
 #include "Quaternion.hpp"
 
-inline void cpuid(int info[4], int function_id) {
-#if defined(_MSC_VER)													
-	__cpuid(info, function_id);
-#elif defined(__GUNC__) || defined(__clang__)							
-	__asm__ __volatile__("cpuid"
-		: "=a"(info[0]), "=b"(info[1]), "=c"(info[2]), "=d"(info[3])
-		: "a"(function_id), "c"(0));
-#endif																	
-}
-
-inline bool is_sse_supported() {
-	int info[4];
-	cpuid(info, 1);
-	return (info[3] & (1 << 25)) != 0;  // SSE bit
-}
-
-inline bool is_sse2_supported() {
-	int info[4];
-	cpuid(info, 1);
-	return (info[3] & (1 << 26)) != 0;  // SSE2 bit
-}
-
-inline bool is_avx_supported() {
-	int info[4];
-	cpuid(info, 1);
-	return (info[2] & (1 << 28)) != 0;  // AVX bit
-}
-
-inline bool is_avx2_supported() {
-	int info[4];
-	cpuid(info, 7);
-	return (info[1] & (1 << 5)) != 0;  // AVX2 bit
-}
-
+#if defined(__AVX2__)
 #ifndef SIMD_SUPPORTED
-#define SIMD_SUPPORTED is_avx2_supported()
+#define SIMD_SUPPORTED
+#endif
+#define SIMD_SUPPORTED_AVX2
+#elif defined(__ARM_NEON)
+#ifndef SIMD_SUPPORTED
+#define SIMD_SUPPORTED
+#endif
+#define SIMD_SUPPORTED_NEON
+#elif defined(__SSE__)
+#ifndef SIMD_SUPPORTED
+#define SIMD_SUPPORTED
+#endif
+#define SIMD_SUPPORTED_SSE
 #endif
 
 struct DAPI Axis {
@@ -52,7 +31,6 @@ struct DAPI Axis {
 	inline static TVector3<float> Y = TVector3<float>{ 0.0f, 1.0f, 0.0f };
 	inline static TVector3<float> Z = TVector3<float>{ 0.0f, 0.0f, 1.0f };
 };
-
 
 template<typename T>
 inline T RangeConvertfloat(T value, T old_min, T old_max, T new_min, T new_max) {
@@ -149,7 +127,7 @@ inline TMatrix4<Type> QuatToMatrix(const TQuaternion<Type>& q) {
 template<typename Type>
 inline TMatrix4<Type> QuatToRotationMatrix(const TQuaternion<Type>& q, const TVector3<Type>& center) {
 	TMatrix4<Type> Matrix;
-	T* o = Matrix.data;
+	Type* o = Matrix.data;
 
 	o[0] = (q.x * q.x) - (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
 	o[1] = 2.0f * ((q.x * q.y) + (q.z * q.w));

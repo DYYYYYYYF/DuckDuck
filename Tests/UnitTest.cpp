@@ -1,4 +1,4 @@
-﻿#include "HashTable/TestHashtable.cpp"
+#include "HashTable/TestHashtable.cpp"
 #include "Freelist/TestFreelist.cpp"
 #include "String/TestString.cpp"
 #include "Audio/TestAudio.cpp"
@@ -17,18 +17,15 @@ int main() {
 
 	TestMatrix();
 
-	if (is_sse_supported()) {
-		std::cout << "SSE is supported.\n";
-	}
-	if (is_sse2_supported()) {
-		std::cout << "SSE2 is supported.\n";
-	}
-	if (is_avx_supported()) {
-		std::cout << "AVX is supported.\n";
-	}
-	if (is_avx2_supported()) {
-		std::cout << "AVX2 is supported.\n";
-	}
+#if defined(SIMD_SUPPORTED_NEON)
+		std::cout << "arm NEON is supported.\n";
+#endif
+#if defined(SIMD_SUPPORTED_AVX2)
+    std::cout << "AVX2 is supported.\n";
+#endif
+#if defined(SIMD_SUPPORTED_SSE)
+    std::cout << "SSE2 is supported.\n";
+#endif
 
 	return 0;
 }
