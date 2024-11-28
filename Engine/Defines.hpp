@@ -49,12 +49,6 @@
 #include <stddef.h>
 #endif
 
-// __cpuid
-#if defined(_MSC_VER)
-#include <intrin.h>  
-#endif
-
-
 #ifdef DEXPORT
 // Export
 #ifdef _MSC_VER
@@ -73,24 +67,56 @@
 
 #endif	// #ifdef DEXPORT
 
+
+// __cpuid
+#if defined(_MSC_VER)
+#include <intrin.h>  
+inline void cpuid(int info[4], int function_id) {
+	__cpuid(info, function_id);
+}
+
+inline bool is_sse_supported() {
+	int info[4];
+	cpuid(info, 1);
+	return (info[3] & (1 << 25)) != 0;  // SSE bit
+}
+
+inline bool is_sse2_supported() {
+	int info[4];
+	cpuid(info, 1);
+	return (info[3] & (1 << 26)) != 0;  // SSE2 bit
+}
+
+inline bool is_avx_supported() {
+	int info[4];
+	cpuid(info, 1);
+	return (info[2] & (1 << 28)) != 0;  // AVX bit
+}
+
+inline bool is_avx2_supported() {
+	int info[4];
+	cpuid(info, 7);
+	return (info[1] & (1 << 5)) != 0;  // AVX2 bit
+}
+#endif
+
 // SIMD Macros
 #ifdef _MSC_VER
-#if defined(_AVX)
-#define SIMD_SUPPORTED_AVX
-#elif defined(_AVX2)
-#define SIMD_SUPPORTED_AVX2
-#elif defined(_SSE2)
-#define SIMD_SUPPORTED_SSE2
-#endif
+#define SIMD_SUPPORTED_AVX		is_avx_supported()
+#define SIMD_SUPPORTED_AVX2		is_avx2_supported()
+#define SIMD_SUPPORTED_SSE		is_avx2_supported()
+#define SIMD_SUPPORTED_SSE2		is_sse2_supported()
 #else
 #if defined(__AVX2__)
 #define SIMD_SUPPORTED_AVX2
-#elif defined(__ARM_NEON)
-#define SIMD_SUPPORTED_NEON
 #elif defined(__SSE2__)
 #define SIMD_SUPPORTED_SSE2
+#elif defined(__SSE__)
+#define SIMD_SUPPORTED_SSE
 #elif defined(__AVX__)
 #define SIMD_SUPPORTED_AVX
+#elif defined(__ARM_NEON)
+#define SIMD_SUPPORTED_NEON
 #endif
 #endif
 

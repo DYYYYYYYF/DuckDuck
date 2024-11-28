@@ -18,12 +18,18 @@ int main() {
 	TestMatrix();
 
 #if defined(SIMD_SUPPORTED_NEON)
-		std::cout << "arm NEON is supported.\n";
+	std::cout << "arm NEON is supported.\n";
+#endif
+#if defined(SIMD_SUPPORTED_AVX)
+	std::cout << "AVX is supported.\n";
 #endif
 #if defined(SIMD_SUPPORTED_AVX2)
     std::cout << "AVX2 is supported.\n";
 #endif
 #if defined(SIMD_SUPPORTED_SSE)
+	std::cout << "SSE is supported.\n";
+#endif
+#if defined(SIMD_SUPPORTED_SSE2)
     std::cout << "SSE2 is supported.\n";
 #endif
 
