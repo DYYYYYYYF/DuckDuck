@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "RendererTypes.hpp"
 #include "Resources/ResourceTypes.hpp"
@@ -197,9 +197,9 @@ public:
 	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
 	
 	// Render target
-	virtual void SetViewport(Vec4 rect);
+	virtual void SetViewport(Vector4 rect);
 	virtual void ResetViewport();
-	virtual void SetScissor(Vec4 rect);
+	virtual void SetScissor(Vector4 rect);
 	virtual void ResetScissor();
 
 	// Renderpass
@@ -216,6 +216,8 @@ public:
 
 public:
 	RendererBackendType GetBackendType() const { return BackendType; }
+	uint32_t GetWidth() const { return FramebufferWidth; }
+	uint32_t GetHeight() const { return FramebufferHeight; }
 
 protected:
 	RendererBackendType BackendType;

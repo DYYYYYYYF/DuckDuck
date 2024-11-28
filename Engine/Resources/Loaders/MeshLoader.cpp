@@ -14,7 +14,6 @@
 
 MeshLoader::MeshLoader() {
 	Type = ResourceType::eResource_type_Static_Mesh;
-	CustomType = nullptr;
 	TypePath = "Models";
 }
 
@@ -123,18 +122,14 @@ void MeshLoader::Unload(Resource* resource) {
 
 bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 	// Positions
-	std::vector<Vec3> Positions;
-	Positions.reserve(65535);
+	std::vector<Vector3> Positions;
 	// Normals
-	std::vector<Vec3> Normals;
-	Normals.reserve(65535);
+	std::vector<Vector3> Normals;
 	// Texcoords
-	std::vector<Vec2> Texcoords;
-	Texcoords.reserve(65535);
+	std::vector<Vector2f> Texcoords;
 
 	//Groups
 	std::vector<MeshGroupData> Groups;
-	Groups.reserve(10);
 
 	// Default name is filename.
 	char name[512] = "";
@@ -172,7 +167,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			{
 			case ' ':{
 				// Vertex position
-				Vec3 Pos;
+				Vector3 Pos;
 				char t[2];
 				int Result = sscanf(LineBuf, "%s %f %f %f", t, &Pos.x, &Pos.y, &Pos.z);
 				if (Result == -1) {
@@ -183,7 +178,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			}break;
 			case 'n': {
 				// Vertex normal
-				Vec3 Norm;
+				Vector3 Norm;
 				char t[3];
 				int Result = sscanf(LineBuf, "%s %f %f %f", t, &Norm.x, &Norm.y, &Norm.z);
 				if (Result == -1) {
@@ -194,7 +189,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 			}break;
 			case 't': {
 				// Vertex texcoords
-				Vec2 Texcoord;
+				Vector2f Texcoord;
 				char t[3];
 				int Result = sscanf(LineBuf, "%s %f %f", t, &Texcoord.x, &Texcoord.y);
 				if (Result == -1) {
@@ -306,9 +301,9 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 		case 'u': {
 			// Any time there is a usemtl, assume a new group.
 			// New named group or smoothing group, all faces coming after should be added to it.
-			MeshGroupData NewGroup;
+			/*MeshGroupData NewGroup;
 			NewGroup.Faces.reserve(16384);
-			Groups.push_back(NewGroup);
+			Groups.push_back(NewGroup);*/
 
 			// usemtl
 			// Read the material name.
@@ -399,24 +394,24 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	// De-duplicate geometry.
 	DeduplicateGeometry(out_geometries);
 
-	std::vector<Vec3>().swap(Positions);
-	std::vector<Vec3>().swap(Normals);
-	std::vector<Vec2>().swap(Texcoords);
+	std::vector<Vector3>().swap(Positions);
+	std::vector<Vector3>().swap(Normals);
+	std::vector<Vector2f>().swap(Texcoords);
 	std::vector<MeshGroupData>().swap(Groups);
 
 	// Output a .dsm file, which will be loaded in the future.
 	return WriteDsmFile(out_dsm_filename, name, out_geometries);
 }
 
-void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3>& normals, std::vector<Vec2>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
+void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
 	std::vector<uint32_t> Indices;
 	std::vector<Vertex> Vertices;
 	Indices.reserve(65535);
 	Vertices.reserve(65535);
 	
 	bool ExtentSet = false;
-	Memory::Zero(&out_data->min_extents, sizeof(Vec3));
-	Memory::Zero(&out_data->max_extents, sizeof(Vec3));
+	Memory::Zero(&out_data->min_extents, sizeof(Vector3));
+	Memory::Zero(&out_data->max_extents, sizeof(Vector3));
 	
 	size_t FaceCount = faces.size();
 	size_t NormalCount = normals.size();
@@ -437,18 +432,18 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 
 	for (size_t f = 0; f < FaceCount; f++) {
 		// 确保法线存在
-		Vec3 DefaultNormal = Vec3(0, 0, 1);
+		Vector3 DefaultNormal = Vector3(0, 0, 1);
 		if (SkipNormal) {
 			MeshVertexIndexData IndexData1 = faces[f].vertices[0];
 			MeshVertexIndexData IndexData2 = faces[f].vertices[1];
 			MeshVertexIndexData IndexData3 = faces[f].vertices[2];
 
-			Vec3 Pos1 = positions[IndexData1.position_index];
-			Vec3 Pos2 = positions[IndexData2.position_index];
-			Vec3 Pos3 = positions[IndexData3.position_index];
+			Vector3 Pos1 = positions[IndexData1.position_index];
+			Vector3 Pos2 = positions[IndexData2.position_index];
+			Vector3 Pos3 = positions[IndexData3.position_index];
 
-			Vec3 Edge1 = Pos2 - Pos1;
-			Vec3 Edge2 = Pos3 - Pos2;
+			Vector3 Edge1 = Pos2 - Pos1;
+			Vector3 Edge2 = Pos3 - Pos2;
 
 			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
 		}
@@ -459,7 +454,7 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 			Indices.push_back((uint32_t)(i + (f * 3)));
 
 			Vertex Vert;
-			Vec3 Pos = positions[IndexData.position_index];
+			Vector3 Pos = positions[IndexData.position_index];
 			Vert.position = Pos;
 
 			// Check extents - min
@@ -494,14 +489,14 @@ void MeshLoader::ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3
 			}
 
 			if (SkipTexcoord) {
-				Vert.texcoord = Vec2(0, 0);
+				Vert.texcoord = Vector2f(0, 0);
 			}
 			else {
 				Vert.texcoord = texcoords[IndexData.texcoord_index];
 			}
 
 			// TODO: Color
-			Vert.color = Vec4(1, 1, 1, 1);
+			Vert.color = Vector4(1, 1, 1, 1);
 			Vertices.push_back(Vert);
 		}
 	}
@@ -819,11 +814,11 @@ bool MeshLoader::LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>&
 		Memory::Free(mn, sizeof(char) * MNameLength, MemoryType::eMemory_Type_String);
 
 		// Center
-		FileSystemRead(dsm_file, sizeof(Vec3), &g.center, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(Vector3), &g.center, &BytesRead);
 
 		// Extents (min/max)
-		FileSystemRead(dsm_file, sizeof(Vec3), &g.min_extents, &BytesRead);
-		FileSystemRead(dsm_file, sizeof(Vec3), &g.max_extents, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(Vector3), &g.min_extents, &BytesRead);
+		FileSystemRead(dsm_file, sizeof(Vector3), &g.max_extents, &BytesRead);
 
 		// Add to the output array.
 		out_geometries.push_back(g);
@@ -885,11 +880,11 @@ bool MeshLoader::WriteDsmFile(const char* path, const char* name, std::vector<SG
 		FileSystemWrite(&f, sizeof(char) * MNameLength, (void*)g->material_name.c_str(), &Written);
 
 		// Center
-		FileSystemWrite(&f, sizeof(Vec3), &g->center, &Written);
+		FileSystemWrite(&f, sizeof(Vector3), &g->center, &Written);
 
 		// Extents (min/ max)
-		FileSystemWrite(&f, sizeof(Vec3), &g->min_extents, &Written);
-		FileSystemWrite(&f, sizeof(Vec3), &g->max_extents, &Written);
+		FileSystemWrite(&f, sizeof(Vector3), &g->min_extents, &Written);
+		FileSystemWrite(&f, sizeof(Vector3), &g->max_extents, &Written);
 	}
 
 	FileSystemClose(&f);

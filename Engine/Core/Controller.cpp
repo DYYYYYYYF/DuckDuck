@@ -1,6 +1,7 @@
-#include "Input.hpp"
+﻿#include "Controller.hpp"
 #include "Event.hpp"
 #include "DMemory.hpp"
+#include "Keymap.hpp"
 #include "EngineLogger.hpp"
 
 bool Controller::Initialized = false;
@@ -9,6 +10,16 @@ Controller::SKeyboardState Controller::keyboard_previous;
 
 Controller::SMouseState Controller::mouse_current;
 Controller::SMouseState Controller::mouse_previous;
+
+std::vector<Keymap*> Controller::KeymapStack;
+
+Controller::~Controller() {
+	for (size_t i = 0; i < KeymapStack.size(); ++i) {
+		if (KeymapStack[i] != nullptr) {
+			DeleteObject(KeymapStack[i]);
+		}
+	}
+}
 
 void Controller::Initialize() {
 	Initialized = true;
@@ -25,6 +36,40 @@ void Controller::Update(double delta_time) {
 		return;
 	}
 
+	// Handle hold bindings.
+	for (size_t i = 0; i < (size_t)eKeys::Max; ++i) {
+		eKeys Key = eKeys(i);
+		if (IsKeyDown(Key) && WasKeyDown(Key)) {
+			int MapCount = (int)KeymapStack.size();
+			for (int m = MapCount - 1; m >= 0; m--) {
+				Keymap* Map = KeymapStack[m];
+				if (Map == nullptr) continue;
+
+				Keymap::Binding* Bind = &Map->Entries[i].Bindings[0];
+				bool Unset = false;
+				while (Bind) {
+					// If an unset is detected, stop processing.
+					if (Bind->Type == KeymapEntryBindType::eUnset) {
+						Unset = true;
+						break;
+					}
+					else if (Bind->Type == KeymapEntryBindType::eHold) {
+						if (Bind->Callback && CheckModifiers(Bind->Modifiers)) {
+							Bind->Callback(Key, Bind->Type, Bind->Modifiers, Bind->UserData);
+						}
+					}
+
+					Bind = Bind->Next;
+				}
+
+				// If an unset is detected or the map is marked to override all, stop processing.
+				if (Unset || Map->OverrideAll) {
+					break;
+				}
+			}
+		}
+	}
+
 	// Copy states
 	Memory::Copy(&keyboard_previous, &keyboard_current, sizeof(SKeyboardState));
 	Memory::Copy(&mouse_previous, &mouse_current, sizeof(SMouseState));
@@ -33,6 +78,38 @@ void Controller::Update(double delta_time) {
 void Controller::ProcessKey(eKeys key, bool pressed) {
 	if (keyboard_current.keys[(unsigned int)key] != pressed) {
 		keyboard_current.keys[(unsigned int)key] = pressed;
+
+		// Check key for key bindings.
+		int MapCount = (int)KeymapStack.size();
+		for (int m = MapCount - 1; m >= 0; m--) {
+			Keymap* Map = KeymapStack[m];
+			if (Map == nullptr) continue;
+
+			Keymap::Binding* Bind = Map->Entries[(int)key].Bindings;
+			bool Unset = false;
+			while (Bind) {
+				if (Bind->Type == KeymapEntryBindType::eUnset) {
+					Unset = true;
+					break;
+				}
+				else if (pressed && Bind->Type == KeymapEntryBindType::ePress) {
+					if (Bind->Callback && CheckModifiers(Bind->Modifiers)) {
+						Bind->Callback(key, Bind->Type, Bind->Modifiers, Bind->UserData);
+					}
+				}
+				else if (!pressed && Bind->Type == KeymapEntryBindType::eRelease) {
+					if (Bind->Callback && CheckModifiers(Bind->Modifiers)) {
+						Bind->Callback(key, Bind->Type, Bind->Modifiers, Bind->UserData);
+					}
+				}
+
+				Bind = Bind->Next;
+			}
+
+			if (Unset || Map->OverrideAll) {
+				break;
+			}
+		}
 
 		SEventContext context;
 		context.data.u16[0] = (unsigned int)key;
@@ -156,4 +233,32 @@ void Controller::GetPreviousMousePosition(int& x, int& y) {
 
 	x = mouse_previous.x;
 	y = mouse_previous.y;
+}
+
+void Controller::PushKeymap(Keymap* map) {
+	KeymapStack.push_back(map);
+}
+
+void Controller::PopKeymap() {
+	KeymapStack.erase(KeymapStack.end() - 1);
+}
+
+bool Controller::CheckModifiers(uint32_t modifiers) {
+	if (modifiers & (uint32_t)KeymapModifierFlagBits::eShitf) {
+		if (!IsKeyDown(eKeys::Shift) && !IsKeyDown(eKeys::LShift) && !IsKeyDown(eKeys::RShift)) {
+			return false;
+		}
+	}
+	if(modifiers & (uint32_t)KeymapModifierFlagBits::eControl) {
+		if (!IsKeyDown(eKeys::Control) && !IsKeyDown(eKeys::LControl) && !IsKeyDown(eKeys::RControl)) {
+			return false;
+		}
+	}
+	if (modifiers & (uint32_t)KeymapModifierFlagBits::eAlt) {
+		if (!IsKeyDown(eKeys::Alt)) {
+			return false;
+		}
+	}
+
+	return true;
 }

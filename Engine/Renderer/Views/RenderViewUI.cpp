@@ -1,4 +1,4 @@
-#include "RenderViewUI.hpp"
+﻿#include "RenderViewUI.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
@@ -70,7 +70,7 @@ bool RenderViewUI::OnCreate(const RenderViewConfig& config) {
 	FarClip = 100.0f;
 
 	// Default
-	ProjectionMatrix = Matrix4::Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
+	ProjectionMatrix = Matrix4::Orthographic(0, 1280.0f, 720.0f, 0.0f, NearClip, FarClip);
 	ViewMatrix = Matrix4::Identity();
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewUIOnEvent)) {
@@ -97,11 +97,11 @@ void RenderViewUI::OnResize(uint32_t width, uint32_t height) {
 	ProjectionMatrix = Matrix4::Orthographic(0.0f, (float)Width, (float)Height, 0.0f, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 
-bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
@@ -115,8 +115,7 @@ bool RenderViewUI::OnBuildPacket(void* data, struct RenderViewPacket* out_packet
 	out_packet->view_matrix = ViewMatrix;
 
 	// TODO: Temp set extended data to the test text objects for now.
-	out_packet->extended_data = Memory::Allocate(sizeof(UIPacketData), MemoryType::eMemory_Type_Renderer);
-	Memory::Copy(out_packet->extended_data, PacketData, sizeof(UIPacketData));
+	out_packet->extended_data = NewObject<UIPacketData>(*PacketData);
 
 	// Obtain all geometries from the current scene.
 	// Iterate all meshes and them to the packet's geometries collection.
@@ -142,14 +141,16 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
 		UIPacketData* PacketData = (UIPacketData*)packet->extended_data;
 		if (PacketData->Textes != nullptr) {
-			Memory::Free(PacketData->Textes, sizeof(UIText) * 2, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->Textes, sizeof(UIText) * PacketData->textCount, MemoryType::eMemory_Type_Array);
+			PacketData->Textes = nullptr;
 		}
 
 		if (PacketData->meshData.meshes != nullptr) {
-			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);
+			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * PacketData->meshData.mesh_count, MemoryType::eMemory_Type_Array);
+			PacketData->meshData.meshes = nullptr;
 		}
 
-		Memory::Free(packet->extended_data, sizeof(UIPacketData), eMemory_Type_Renderer);
+		DeleteObject(packet->extended_data);
 		packet->extended_data = nullptr;
 	}
 
@@ -172,7 +173,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vec4(0), Vec3(0), render_mode)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), render_mode)) {
 			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
@@ -217,7 +218,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			}
 
 			// TODO: font color
-			static Vec4 WhiteColor = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+			static Vector4 WhiteColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &WhiteColor)) {
 				LOG_ERROR("Failed to apply bitmap font diffuse color uniform.");
 				return false;

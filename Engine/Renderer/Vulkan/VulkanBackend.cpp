@@ -415,9 +415,9 @@ bool VulkanBackend::BeginFrame(double delta_time){
 	CommandBuffer->BeginCommand(false, false, false);
 
 	// Dynamic state
-	Context.ViewportRect = Vec4(0.0f, (float)Context.FrameBufferHeight, (float)Context.FrameBufferWidth, -(float)Context.FrameBufferHeight);
+	Context.ViewportRect = Vector4(0.0f, (float)Context.FrameBufferHeight, (float)Context.FrameBufferWidth, -(float)Context.FrameBufferHeight);
 	SetViewport(Context.ViewportRect);
-	Context.ScissorRect = Vec4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight);
+	Context.ScissorRect = Vector4(0.0f, 0.0f, (float)Context.FrameBufferWidth, (float)Context.FrameBufferHeight);
 	SetScissor(Context.ScissorRect);
 
 	return true;
@@ -484,7 +484,7 @@ bool VulkanBackend::EndFrame(double delta_time) {
 	return true;
 }
 
-void VulkanBackend::SetViewport(Vec4 rect) {
+void VulkanBackend::SetViewport(Vector4 rect) {
 	// Dynamic state
 	vk::Viewport Viewport;
 	Viewport.x = rect.x;
@@ -503,7 +503,7 @@ void VulkanBackend::ResetViewport() {
 	SetViewport(Context.ViewportRect);
 }
 
-void VulkanBackend::SetScissor(Vec4 rect) {
+void VulkanBackend::SetScissor(Vector4 rect) {
 	vk::Rect2D Scissor;
 	Scissor.offset.x = (uint32_t)rect.x;
 	Scissor.offset.y = (uint32_t)rect.y;

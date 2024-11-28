@@ -13,7 +13,7 @@ set(STB_DIR ${PROJECT_SOURCE_DIR}/3rd/stb)
 
 # Plugins
 option(ENABLE_PLUGINS_AUDIO "Enable audio module" OFF)
-option(GENERATE_TEST_PROGRAME "Generate test module" OFF)
+option(GENERATE_TEST_PROGRAME "Generate test module" ON)
 
 ## Set build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -29,7 +29,6 @@ if (NOT LOG_LEVEL)
     endif()
 endif()
 
-add_definitions(-DROOT_PATH="${CMAKE_SOURCE_DIR}")
 if(${LOG_LEVEL} STREQUAL "INFO")
     add_definitions(-DLEVEL_INFO -DLEVEL_DEBUG -DLEVEL_WARN -DLEVEL_FATAL -DLEVEL_ERROR)
 elseif(${LOG_LEVEL}  STREQUAL "DEBUG")

@@ -1,4 +1,4 @@
-#include "RenderViewWorld.hpp"
+﻿#include "RenderViewWorld.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/Event.hpp"
@@ -134,7 +134,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	WorldCamera = CameraSystem::GetDefault();
 
 	// TODO: Obtain from scene.
-	AmbientColor = Vec4(0.7f, 0.7f, 0.7f, 1.0f);
+	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
@@ -170,17 +170,18 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 
-bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
 	}
 
-	const std::vector<GeometryRenderData>* GeometryData = (std::vector<GeometryRenderData>*)data;
+	WorldPacketData* Data = (WorldPacketData*)data;
+	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
 	out_packet->view = this;
 
 	// Set matrix, etc.
@@ -191,9 +192,9 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 
 	// Obtain all geometries from the current scene.
 	std::vector<GeometryDistance> GeometryDistances;
-	uint32_t GeometryDataCount = (uint32_t)GeometryData->size();
+	uint32_t GeometryDataCount = (uint32_t)GeometryData.size();
 	for (uint32_t i = 0; i < GeometryDataCount; ++i) {
-		const GeometryRenderData& GData = (*GeometryData)[i];
+		const GeometryRenderData& GData = GeometryData[i];
 		if (GData.geometry == nullptr) {
 			continue;
 		}
@@ -201,7 +202,7 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 		// TODO: Add something to material to check for transparency.
 		if ((GData.geometry->Material->DiffuseMap.texture->Flags & TextureFlagBits::eTexture_Flag_Has_Transparency) == 0) {
 			// Only add meshes with _no_ transparency.
-			out_packet->geometries.push_back((*GeometryData)[i]);
+			out_packet->geometries.push_back(GeometryData[i]);
 			out_packet->geometry_count++;
 		}
 		else {
@@ -209,12 +210,12 @@ bool RenderViewWorld::OnBuildPacket(void* data, struct RenderViewPacket* out_pac
 			// Get the center, extract the global position from the model matrix and add it to the center,
 			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
 			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
-			Vec3 Center = (*GeometryData)[i].geometry->Center.Transform(GData.model);
+			Vector3 Center = GeometryData[i].geometry->Center.Transform(GData.model);
 			float Distance = Center.Distance(WorldCamera->GetPosition());
 
 			GeometryDistance gDist;
 			gDist.distance = Dabs(Distance);
-			gDist.g = (*GeometryData)[i];
+			gDist.g = GeometryData[i];
 
 			GeometryDistances.push_back(gDist);
 		}

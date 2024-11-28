@@ -1,7 +1,7 @@
-#include "Core/Application.hpp"
+﻿#include "Core/Application.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
-#include "GameType.hpp"
+#include "IGame.hpp"
 
 // Init logger
 static EngineLogger* GlobalLogger = new EngineLogger();

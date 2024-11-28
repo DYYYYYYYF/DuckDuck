@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vulkan/vulkan.hpp>
 #include "Renderer/RendererTypes.hpp"
@@ -28,8 +28,8 @@ struct RenderpassConfig {
 	float depth = 1.0f;
 	uint32_t stencil = 1;
 
-	Vec4 render_area;
-	Vec4 clear_color;
+	Vector4 render_area;
+	Vector4 clear_color;
 
 	unsigned char clear_flags = 0;
 
@@ -46,11 +46,11 @@ public:
 	virtual void End() = 0;
 
 public:
-	void SetRenderArea(const Vec4& area) { RenderArea = area; }
-	const Vec4& GetRenderArea() const { return RenderArea; }
+	void SetRenderArea(const Vector4& area) { RenderArea = area; }
+	const Vector4& GetRenderArea() const { return RenderArea; }
 
-	void SetClearColor(const Vec4& col) { ClearColor = col; }
-	const Vec4& GetClearColor() const { return ClearColor; }
+	void SetClearColor(const Vector4& col) { ClearColor = col; }
+	const Vector4& GetClearColor() const { return ClearColor; }
 
 	void SetClearFlags(unsigned char val) { ClearFlags = val; }
 	unsigned char GetClearFlags() const { return ClearFlags; }
@@ -65,8 +65,8 @@ public:
 
 protected:
 	unsigned short ID = INVALID_ID_U16;
-	Vec4 RenderArea;
-	Vec4 ClearColor;
+	Vector4 RenderArea;
+	Vector4 ClearColor;
 	unsigned char ClearFlags = 0;
 
 };

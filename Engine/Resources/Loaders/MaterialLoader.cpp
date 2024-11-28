@@ -9,7 +9,6 @@
 
 MaterialLoader::MaterialLoader() {
 	Type = eResource_type_Material;
-	CustomType = nullptr;
 	TypePath = "Materials";
 }
 
@@ -33,7 +32,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 	// Set defaults.
 	ResourceData->auto_release = true;
 	ResourceData->shader_name = "Shader.Builtin.World";
-	ResourceData->diffuse_color = Vec4(1.0f);	// White
+	ResourceData->diffuse_color = Vector4(1.0f);	// White
 	ResourceData->diffuse_map_name[0] = '\0';
 	ResourceData->shininess = 32.0f;
 	ResourceData->Metallic = 1.0f;
@@ -105,7 +104,7 @@ bool MaterialLoader::Load(const std::string& name, void* params, Resource* resou
 		}
 		else if (strcmp(TrimmedVarName, "diffuse_color") == 0) {
 			// Parse the color
-			ResourceData->diffuse_color = Vec4::StringToVec4(TrimmedValue);
+			ResourceData->diffuse_color = Vector4::StringToVec4(TrimmedValue);
 		}
 		else if (strcmp(TrimmedVarName, "shader") == 0) {
 			ResourceData->shader_name = std::string(TrimmedValue);

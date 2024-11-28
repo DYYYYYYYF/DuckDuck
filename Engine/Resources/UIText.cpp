@@ -1,4 +1,4 @@
-#include "UIText.hpp"
+﻿#include "UIText.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -116,11 +116,15 @@ void UIText::Destroy() {
 	Renderer = nullptr;
 }
 	
-void UIText::SetPosition(Vec3 position) {
+void UIText::SetPosition(Vector3 position) {
 	Trans.SetPosition(position);
 }
 
 void UIText::SetText(const char* text) {
+	if (text == nullptr || text[0] == '\0') {
+		return;
+	}
+
 	if (Text) {
 		// If strings are already equal, don't do anything.
 		if (StringEqual(Text, text)) {
@@ -143,14 +147,16 @@ void UIText::SetText(const char* text) {
 void UIText::Draw() {
 	// TODO: utf8 length.
 	uint32_t TextLength = (uint32_t)strlen(Text);
-	static const size_t QuadVertCount = 4;
-	if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
-		LOG_ERROR("Failed to draw ui font vertex buffer.");
-	}
+	if (TextLength > 0) {
+		static const size_t QuadVertCount = 4;
+		if (!Renderer->DrawRenderbuffer(VertexBuffer, 0, TextLength * QuadVertCount, true)) {
+			LOG_ERROR("Failed to draw ui font vertex buffer.");
+		}
 
-	static const unsigned char QuadIndexCount = 6;
-	if (!Renderer->DrawRenderbuffer(IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
-		LOG_ERROR("Failed to draw ui font index buffer.");
+		static const unsigned char QuadIndexCount = 6;
+		if (!Renderer->DrawRenderbuffer(IndexBuffer, 0, TextLength * QuadIndexCount, false)) {
+			LOG_ERROR("Failed to draw ui font index buffer.");
+		}
 	}
 }
 
@@ -250,10 +256,10 @@ void UIText::RegenerateGeometry() {
 				tMaxY = 1.0f - tMaxY;
 			}
 
-			Vertex2D p0 = Vertex2D(Vec2(MinX, MinY), Vec2(tMinX, tMinY));
-			Vertex2D p2 = Vertex2D(Vec2(MaxX, MinY), Vec2(tMaxX, tMinY));
-			Vertex2D p1 = Vertex2D(Vec2(MaxX, MaxY), Vec2(tMaxX, tMaxY));
-			Vertex2D p3 = Vertex2D(Vec2(MinX, MaxY), Vec2(tMinX, tMaxY));
+			Vertex2D p0 = Vertex2D(Vector2f(MinX, MinY), Vector2f(tMinX, tMinY));
+			Vertex2D p2 = Vertex2D(Vector2f(MaxX, MinY), Vector2f(tMaxX, tMinY));
+			Vertex2D p1 = Vertex2D(Vector2f(MaxX, MaxY), Vector2f(tMaxX, tMaxY));
+			Vertex2D p3 = Vertex2D(Vector2f(MinX, MaxY), Vector2f(tMinX, tMaxY));
 
 			VertexBufferData[(uc * 4) + 0] = p0;	// 0		2
 			VertexBufferData[(uc * 4) + 1] = p1;	//

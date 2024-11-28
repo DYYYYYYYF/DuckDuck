@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/MathTypes.hpp"
 #include "Renderer/Vulkan/VulkanRenderpass.hpp"
 
@@ -44,7 +44,7 @@ public:
 	virtual bool OnCreate(const RenderViewConfig& config) = 0;
 	virtual void OnDestroy() = 0;
 	virtual void OnResize(uint32_t width, uint32_t height) = 0;
-	virtual bool OnBuildPacket(void* data, struct RenderViewPacket* out_packet) = 0;
+	virtual bool OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) = 0;
 	virtual void OnDestroyPacket(struct RenderViewPacket* packet) = 0;
 	virtual bool OnRender(struct RenderViewPacket* packet, class IRendererBackend* back_renderer, size_t frame_number, size_t render_target_index) = 0;
 	virtual bool RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) = 0;
@@ -73,10 +73,10 @@ struct RenderViewPacket {
 	IRenderView* view = nullptr;
 	Matrix4 view_matrix;
 	Matrix4 projection_matrix;
-	Vec3 view_position;
-	Vec4 ambient_color;
+	Vector3 view_position;
+	Vector4 ambient_color;
 	uint32_t geometry_count = 0;
 	std::vector<struct GeometryRenderData> geometries;
 	const char* custom_shader_name = nullptr;
-	void* extended_data = nullptr;
+	IRenderviewPacketData* extended_data = nullptr;
 };

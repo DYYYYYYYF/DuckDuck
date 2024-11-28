@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Application.hpp"
 
@@ -25,6 +25,7 @@ public:
 	virtual void OnResize(unsigned int width, unsigned int height) = 0;
 
 public:
+	float DeltaTime;
 	Application::SConfig AppConfig;
 	GameFrameData FrameData;
 };

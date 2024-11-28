@@ -1,6 +1,6 @@
 #include "CPython.hpp"
-
 #include "Core/EngineLogger.hpp"
+
 #include <Python.h>
 
 CPythonModule::CPythonModule(const char* pyFileName) {
@@ -11,11 +11,8 @@ void CPythonModule::ExecuteFunc(const char* funcName, const char* shaderLanguage
 	Py_Initialize();
 
 	PyRun_SimpleString("import sys");
-#ifdef DPLATFORM_WINDOWS
-    PyRun_SimpleString("sys.path.append('../Scripts')");
-#elif DPLATFORM_MACOS
-    PyRun_SimpleString("sys.path.append('../../Scripts')");
-#endif
+	std::string Header = std::string("sys.path.append('") + ROOT_PATH + "/Scripts')";
+    PyRun_SimpleString(Header.c_str());
 
 	PyObject* PyMoudle = PyImport_ImportModule(FileName);
 	if (PyMoudle == nullptr) {

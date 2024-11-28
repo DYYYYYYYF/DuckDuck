@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
+#include "ForwardDeclarations.hpp"
 
 #define D_PI 3.14159265358979323846f
 #define D_PI_2 2.0f * D_PI
@@ -29,12 +30,45 @@
 //------------------------------------------------------------
 // General math functions
 //------------------------------------------------------------
-DAPI float DSin(float x);
-DAPI float DCos(float x);
-DAPI float DTan(float x);
-DAPI float DAcos(float x);
-DAPI float Dabs(float x);
-DAPI float Dsqrt(float x);
+template<typename T>
+inline DAPI T DSin(T x) {
+	return sin(x);
+}
+
+template<typename T>
+inline DAPI T DCos(T x) {
+	return cos(x);
+}
+
+template<typename T>
+inline DAPI T DTan(T x) {
+	return tan(x);
+}
+
+template<typename T>
+inline DAPI T DArcTan(T x) {
+	return atan(x);
+}
+
+template<typename T>
+inline DAPI T DArcTan2(T x, T y) {
+	return atan2(x, y);
+}
+
+template<typename T>
+inline DAPI T DAcos(T x) {
+	return acos(x);
+}
+
+template<typename T>
+inline DAPI T Dabs(T x) {
+	return abs(x);
+}
+
+template<typename T>
+inline DAPI T Dsqrt(T x) {
+	return sqrt(x);
+}
 
 /*
 *  Indicates if the value is a power of 2. 0 is considered not a power of 2.
@@ -55,8 +89,9 @@ DAPI float DRandom(float min, float max);
 * @param degrees The degrees to be converted.
 * @return The amount in radians.
 */
-inline float Deg2Rad(float degress) {
-	return degress * D_DEG2RAD_MULTIPLIER;
+template<typename T>
+inline T Deg2Rad(T degress) {
+	return static_cast<T>(std::fmod(degress * D_DEG2RAD_MULTIPLIER, D_PI_2));
 }
 
 /*
@@ -65,23 +100,7 @@ inline float Deg2Rad(float degress) {
 * @param radians The radians to be converted.
 * @return The amount in degress.
 */
-inline float Rad2Deg(float radians) {
-	return radians * D_RAD2DEG_MULTIPLIER;
+template<typename T>
+inline T Rad2Deg(T radians) {
+	return static_cast<T>(std::fmod(radians * D_RAD2DEG_MULTIPLIER, 360.0));
 }
-
-inline float RangeConvertfloat(float value, float old_min, float old_max, float new_min, float new_max) {
-	return (((value - old_min) * (new_max - new_min)) / (old_max - old_min)) + new_min;
-}
-
-inline void RGB2Uint(unsigned int r, unsigned int g, unsigned int b, unsigned int* rgb) {
-	*rgb = (((r & 0x0FF) << 16) | ((g & 0x0FF) << 8) | (b & 0xFF));
-}
-
-inline void UInt2RGB(unsigned int rgb, unsigned int* r, unsigned int* g, unsigned int* b) {
-	*r = (rgb >> 16) & 0x0FF;
-	*g = (rgb >> 8) & 0x0FF;
-	*b = (rgb) & 0x0FF;
-}
-
-void RGB2Vec(unsigned int r, unsigned int g, unsigned int b, struct Vec3* rgb);
-void Vec2RGB(struct Vec3 rgb, unsigned int* r, unsigned int* g, unsigned int* b);

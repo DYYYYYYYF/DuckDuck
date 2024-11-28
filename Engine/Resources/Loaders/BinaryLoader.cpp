@@ -9,7 +9,6 @@
 
 BinaryLoader::BinaryLoader() {
 	Type = eResource_type_Binary;
-	CustomType = nullptr;
 	TypePath = "";
 }
 

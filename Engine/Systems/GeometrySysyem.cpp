@@ -94,6 +94,7 @@ void GeometrySystem::Release(Geometry* geometry) {
 
 		// Take a copy of id.
 		if (Ref->geometry.ID == geometry->ID) {
+
 			if (Ref->reference_count > 0) {
 				Ref->reference_count--;
 			}
@@ -438,88 +439,88 @@ SGeometryConfig GeometrySystem::GenerateCubeConfig(float width, float height,
 		Vertex Verts[24];
 
 		// Front face
-		Verts[(0 * 4) + 0].position = Vec3(MinX, MinY, MaxZ);
-		Verts[(0 * 4) + 1].position = Vec3(MaxX, MaxY, MaxZ);
-		Verts[(0 * 4) + 2].position = Vec3(MinX, MaxY, MaxZ);
-		Verts[(0 * 4) + 3].position = Vec3(MaxX, MinY, MaxZ);
-		Verts[(0 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
-		Verts[(0 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
-		Verts[(0 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
-		Verts[(0 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
-		Verts[(0 * 4) + 0].normal = Vec3(0.0f, 0.0f, 1.0f);
-		Verts[(0 * 4) + 1].normal = Vec3(0.0f, 0.0f, 1.0f);
-		Verts[(0 * 4) + 2].normal = Vec3(0.0f, 0.0f, 1.0f);
-		Verts[(0 * 4) + 3].normal = Vec3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 0].position = Vector3(MinX, MinY, MaxZ);
+		Verts[(0 * 4) + 1].position = Vector3(MaxX, MaxY, MaxZ);
+		Verts[(0 * 4) + 2].position = Vector3(MinX, MaxY, MaxZ);
+		Verts[(0 * 4) + 3].position = Vector3(MaxX, MinY, MaxZ);
+		Verts[(0 * 4) + 0].texcoord = Vector2f(MinUVX, MinUVY);
+		Verts[(0 * 4) + 1].texcoord = Vector2f(MaxUVX, MaxUVY);
+		Verts[(0 * 4) + 2].texcoord = Vector2f(MinUVX, MaxUVY);
+		Verts[(0 * 4) + 3].texcoord = Vector2f(MaxUVX, MinUVY);
+		Verts[(0 * 4) + 0].normal = Vector3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 1].normal = Vector3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 2].normal = Vector3(0.0f, 0.0f, 1.0f);
+		Verts[(0 * 4) + 3].normal = Vector3(0.0f, 0.0f, 1.0f);
 
 		// Back face
-		Verts[(1 * 4) + 0].position = Vec3(MaxX, MinY, MinZ);
-		Verts[(1 * 4) + 1].position = Vec3(MinX, MaxY, MinZ);
-		Verts[(1 * 4) + 2].position = Vec3(MaxX, MaxY, MinZ);
-		Verts[(1 * 4) + 3].position = Vec3(MinX, MinY, MinZ);
-		Verts[(1 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
-		Verts[(1 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
-		Verts[(1 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
-		Verts[(1 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
-		Verts[(1 * 4) + 0].normal = Vec3(0.0f, 0.0f, -1.0f);
-		Verts[(1 * 4) + 1].normal = Vec3(0.0f, 0.0f, -1.0f);
-		Verts[(1 * 4) + 2].normal = Vec3(0.0f, 0.0f, -1.0f);
-		Verts[(1 * 4) + 3].normal = Vec3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 0].position = Vector3(MaxX, MinY, MinZ);
+		Verts[(1 * 4) + 1].position = Vector3(MinX, MaxY, MinZ);
+		Verts[(1 * 4) + 2].position = Vector3(MaxX, MaxY, MinZ);
+		Verts[(1 * 4) + 3].position = Vector3(MinX, MinY, MinZ);
+		Verts[(1 * 4) + 0].texcoord = Vector2f(MinUVX, MinUVY);
+		Verts[(1 * 4) + 1].texcoord = Vector2f(MaxUVX, MaxUVY);
+		Verts[(1 * 4) + 2].texcoord = Vector2f(MinUVX, MaxUVY);
+		Verts[(1 * 4) + 3].texcoord = Vector2f(MaxUVX, MinUVY);
+		Verts[(1 * 4) + 0].normal = Vector3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 1].normal = Vector3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 2].normal = Vector3(0.0f, 0.0f, -1.0f);
+		Verts[(1 * 4) + 3].normal = Vector3(0.0f, 0.0f, -1.0f);
 
 		// Left face
-		Verts[(2 * 4) + 0].position = Vec3(MinX, MinY, MinZ);
-		Verts[(2 * 4) + 1].position = Vec3(MinX, MaxY, MaxZ);
-		Verts[(2 * 4) + 2].position = Vec3(MinX, MaxY, MinZ);
-		Verts[(2 * 4) + 3].position = Vec3(MinX, MinY, MaxZ);
-		Verts[(2 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
-		Verts[(2 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
-		Verts[(2 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
-		Verts[(2 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
-		Verts[(2 * 4) + 0].normal = Vec3(-1.0f, 0.0f, 0.0f);
-		Verts[(2 * 4) + 1].normal = Vec3(-1.0f, 0.0f, 0.0f);
-		Verts[(2 * 4) + 2].normal = Vec3(-1.0f, 0.0f, 0.0f);
-		Verts[(2 * 4) + 3].normal = Vec3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 0].position = Vector3(MinX, MinY, MinZ);
+		Verts[(2 * 4) + 1].position = Vector3(MinX, MaxY, MaxZ);
+		Verts[(2 * 4) + 2].position = Vector3(MinX, MaxY, MinZ);
+		Verts[(2 * 4) + 3].position = Vector3(MinX, MinY, MaxZ);
+		Verts[(2 * 4) + 0].texcoord = Vector2f(MinUVX, MinUVY);
+		Verts[(2 * 4) + 1].texcoord = Vector2f(MaxUVX, MaxUVY);
+		Verts[(2 * 4) + 2].texcoord = Vector2f(MinUVX, MaxUVY);
+		Verts[(2 * 4) + 3].texcoord = Vector2f(MaxUVX, MinUVY);
+		Verts[(2 * 4) + 0].normal = Vector3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 1].normal = Vector3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 2].normal = Vector3(-1.0f, 0.0f, 0.0f);
+		Verts[(2 * 4) + 3].normal = Vector3(-1.0f, 0.0f, 0.0f);
 
 		// Right face
-		Verts[(3 * 4) + 0].position = Vec3(MaxX, MinY, MaxZ);
-		Verts[(3 * 4) + 1].position = Vec3(MaxX, MaxY, MinZ);
-		Verts[(3 * 4) + 2].position = Vec3(MaxX, MaxY, MaxZ);
-		Verts[(3 * 4) + 3].position = Vec3(MaxX, MinY, MinZ);
-		Verts[(3 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
-		Verts[(3 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
-		Verts[(3 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
-		Verts[(3 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
-		Verts[(3 * 4) + 0].normal = Vec3(1.0f, 0.0f, 0.0f);
-		Verts[(3 * 4) + 1].normal = Vec3(1.0f, 0.0f, 0.0f);
-		Verts[(3 * 4) + 2].normal = Vec3(1.0f, 0.0f, 0.0f);
-		Verts[(3 * 4) + 3].normal = Vec3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 0].position = Vector3(MaxX, MinY, MaxZ);
+		Verts[(3 * 4) + 1].position = Vector3(MaxX, MaxY, MinZ);
+		Verts[(3 * 4) + 2].position = Vector3(MaxX, MaxY, MaxZ);
+		Verts[(3 * 4) + 3].position = Vector3(MaxX, MinY, MinZ);
+		Verts[(3 * 4) + 0].texcoord = Vector2f(MinUVX, MinUVY);
+		Verts[(3 * 4) + 1].texcoord = Vector2f(MaxUVX, MaxUVY);
+		Verts[(3 * 4) + 2].texcoord = Vector2f(MinUVX, MaxUVY);
+		Verts[(3 * 4) + 3].texcoord = Vector2f(MaxUVX, MinUVY);
+		Verts[(3 * 4) + 0].normal = Vector3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 1].normal = Vector3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 2].normal = Vector3(1.0f, 0.0f, 0.0f);
+		Verts[(3 * 4) + 3].normal = Vector3(1.0f, 0.0f, 0.0f);
 
 		// Bottom face
-		Verts[(4 * 4) + 0].position = Vec3(MaxX, MinY, MaxZ);
-		Verts[(4 * 4) + 1].position = Vec3(MinX, MinY, MinZ);
-		Verts[(4 * 4) + 2].position = Vec3(MaxX, MinY, MinZ);
-		Verts[(4 * 4) + 3].position = Vec3(MinX, MinY, MaxZ);
-		Verts[(4 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
-		Verts[(4 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
-		Verts[(4 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
-		Verts[(4 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
-		Verts[(4 * 4) + 0].normal = Vec3(0.0f, -1.0f, 0.0f);
-		Verts[(4 * 4) + 1].normal = Vec3(0.0f, -1.0f, 0.0f);
-		Verts[(4 * 4) + 2].normal = Vec3(0.0f, -1.0f, 0.0f);
-		Verts[(4 * 4) + 3].normal = Vec3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 0].position = Vector3(MaxX, MinY, MaxZ);
+		Verts[(4 * 4) + 1].position = Vector3(MinX, MinY, MinZ);
+		Verts[(4 * 4) + 2].position = Vector3(MaxX, MinY, MinZ);
+		Verts[(4 * 4) + 3].position = Vector3(MinX, MinY, MaxZ);
+		Verts[(4 * 4) + 0].texcoord = Vector2f(MinUVX, MinUVY);
+		Verts[(4 * 4) + 1].texcoord = Vector2f(MaxUVX, MaxUVY);
+		Verts[(4 * 4) + 2].texcoord = Vector2f(MinUVX, MaxUVY);
+		Verts[(4 * 4) + 3].texcoord = Vector2f(MaxUVX, MinUVY);
+		Verts[(4 * 4) + 0].normal = Vector3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 1].normal = Vector3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 2].normal = Vector3(0.0f, -1.0f, 0.0f);
+		Verts[(4 * 4) + 3].normal = Vector3(0.0f, -1.0f, 0.0f);
 
 		// Top face
-		Verts[(5 * 4) + 0].position = Vec3(MinX, MaxY, MaxZ);
-		Verts[(5 * 4) + 1].position = Vec3(MaxX, MaxY, MinZ);
-		Verts[(5 * 4) + 2].position = Vec3(MinX, MaxY, MinZ);
-		Verts[(5 * 4) + 3].position = Vec3(MaxX, MaxY, MaxZ);
-		Verts[(5 * 4) + 0].texcoord = Vec2(MinUVX, MinUVY);
-		Verts[(5 * 4) + 1].texcoord = Vec2(MaxUVX, MaxUVY);
-		Verts[(5 * 4) + 2].texcoord = Vec2(MinUVX, MaxUVY);
-		Verts[(5 * 4) + 3].texcoord = Vec2(MaxUVX, MinUVY);
-		Verts[(5 * 4) + 0].normal = Vec3(0.0f, 1.0f, 0.0f);
-		Verts[(5 * 4) + 1].normal = Vec3(0.0f, 1.0f, 0.0f);
-		Verts[(5 * 4) + 2].normal = Vec3(0.0f, 1.0f, 0.0f);
-		Verts[(5 * 4) + 3].normal = Vec3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 0].position = Vector3(MinX, MaxY, MaxZ);
+		Verts[(5 * 4) + 1].position = Vector3(MaxX, MaxY, MinZ);
+		Verts[(5 * 4) + 2].position = Vector3(MinX, MaxY, MinZ);
+		Verts[(5 * 4) + 3].position = Vector3(MaxX, MaxY, MaxZ);
+		Verts[(5 * 4) + 0].texcoord = Vector2f(MinUVX, MinUVY);
+		Verts[(5 * 4) + 1].texcoord = Vector2f(MaxUVX, MaxUVY);
+		Verts[(5 * 4) + 2].texcoord = Vector2f(MinUVX, MaxUVY);
+		Verts[(5 * 4) + 3].texcoord = Vector2f(MaxUVX, MinUVY);
+		Verts[(5 * 4) + 0].normal = Vector3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 1].normal = Vector3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 2].normal = Vector3(0.0f, 1.0f, 0.0f);
+		Verts[(5 * 4) + 3].normal = Vector3(0.0f, 1.0f, 0.0f);
 
 		Memory::Copy(Config.vertices, Verts, Config.vertex_size* Config.vertex_count);
 

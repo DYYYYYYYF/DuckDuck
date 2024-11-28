@@ -200,11 +200,11 @@ void RenderViewPick::OnResize(uint32_t width, uint32_t height) {
 	WorldShaderInfo.ProjectionMatrix = Matrix4::Perspective(WorldShaderInfo.Fov, Aspect, WorldShaderInfo.NearClip, WorldShaderInfo.FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 
-bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewUI::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
@@ -219,8 +219,6 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 
 	// Set the pick packet data to extended data.
 	PacketData->UIGeometryCount = 0;
-	out_packet->extended_data = Memory::Allocate(sizeof(PickPacketData), MemoryType::eMemory_Type_Renderer);
-
 	uint32_t WorldGeometryCount = (uint32_t)PacketData->WorldMeshData.size();
 
 	uint32_t HighestInstanceID = 0;
@@ -271,7 +269,7 @@ bool RenderViewPick::OnBuildPacket(void* data, struct RenderViewPacket* out_pack
 	}
 
 	// Copy over the packet data.
-	Memory::Copy(out_packet->extended_data, PacketData, sizeof(PickPacketData));
+	out_packet->extended_data = NewObject<PickPacketData>(*PacketData);
 
 	return true;
 }
@@ -287,12 +285,11 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
 		PickPacketData* PacketData = (PickPacketData*)packet->extended_data;
 		if (!PacketData->WorldMeshData.empty()) {
-			/*Memory::Free(PacketData->WorldMeshData.meshes, sizeof(Mesh) * 10, MemoryType::eMemory_Type_Array);*/
-			/*PacketData->WorldMeshData.clear();
-			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);*/
+			PacketData->WorldMeshData.clear();
+			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);
 		}
 
-		Memory::Free(packet->extended_data, sizeof(PickPacketData), eMemory_Type_Renderer);
+		DeleteObject(packet->extended_data);
 		packet->extended_data = nullptr;
 	}
 
@@ -388,7 +385,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
-			Vec3 IDColor;
+			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
@@ -441,7 +438,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
-			Vec3 IDColor;
+			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Geo->uniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);
@@ -470,7 +467,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::BindInstance(CurrentInstanceID);
 
 			// Get color based on id
-			Vec3 IDColor;
+			Vector3 IDColor;
 			uint32_t R, G, B;
 			UInt2RGB(Text->UniqueID, &R, &G, &B);
 			RGB2Vec(R, G, B, &IDColor);

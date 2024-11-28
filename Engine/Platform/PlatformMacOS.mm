@@ -2,7 +2,7 @@
 
 #if defined(DPLATFORM_MACOS)
 
-#include "Core/Input.hpp"
+#include "Core/Controller.hpp"
 #include "Core/Event.hpp"
 #include "Core/DThread.hpp"
 #include "Core/DMutex.hpp"
@@ -845,7 +845,7 @@ enum class eKeys TranslateKeyCode(uint32_t ns_keycode) {
 	case 0x25:
 		return eKeys::L;
 	case 0x2E:
-		return eKeys::I;
+		return eKeys::M;
 	case 0x2D:
 		return eKeys::N;
 	case 0x1F:

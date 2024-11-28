@@ -12,26 +12,26 @@ Camera::Camera(unsigned short id) {
 void Camera::Reset() {
 	ID = INVALID_ID_U16;
 	ReferenceCount = 0;
-	EulerRotation = Vec3(0);
-	Position = Vec3(0);
+	EulerRotation = Vector3(0);
+	Position = Vector3(0);
 	IsDirty = false;
 	ViewMatrix = Matrix4::Identity();
 }
 
-Vec3 Camera::GetPosition() {
+Vector3 Camera::GetPosition() {
 	return Position;
 }
 
-void Camera::SetPosition(Vec3 pos) {
+void Camera::SetPosition(Vector3 pos) {
 	Position = pos;
 	IsDirty = true;
 }
 
-Vec3 Camera::GetEulerAngles() {
-	return EulerRotation;
+Vector3 Camera::GetEulerAngles() {
+	return Vector3(Rad2Deg(EulerRotation.x), Rad2Deg(EulerRotation.y), Rad2Deg(EulerRotation.z));
 }
 
-void Camera::SetEulerAngles(Vec3 eular) {
+void Camera::SetEulerAngles(Vector3 eular) {
 	EulerRotation.x = Deg2Rad(eular.x);
 	EulerRotation.y = Deg2Rad(eular.y);
 	EulerRotation.z = Deg2Rad(eular.z);
@@ -53,42 +53,42 @@ Matrix4 Camera::GetViewMatrix() {
 }
 
 void Camera::MoveForward(float amount) {
-	Vec3 Direction = Forward();
+	Vector3 Direction = Forward();
 	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveBackward(float amount) {
-	Vec3 Direction = Backward();
+	Vector3 Direction = Backward();
 	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveLeft(float amount) {
-	Vec3 Direction = Left();
+	Vector3 Direction = Left();
 	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveRight(float amount) {
-	Vec3 Direction = Right();
+	Vector3 Direction = Right();
 	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveUp(float amount) {
-	Vec3 Direction = Vec3::Up();
+	Vector3 Direction = Vector3::Up();
 	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;
 }
 
 void Camera::MoveDown(float amount) {
-	Vec3 Direction = Vec3::Down();
+	Vector3 Direction = Vector3::Down();
 	Direction = Direction * amount;
 	Position = Position + Direction;
 	IsDirty = true;

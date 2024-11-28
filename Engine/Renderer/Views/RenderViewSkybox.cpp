@@ -1,4 +1,4 @@
-#include "RenderViewSkybox.hpp"
+﻿#include "RenderViewSkybox.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/DMemory.hpp"
@@ -103,11 +103,11 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 
-bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_packet) {
+bool RenderViewSkybox::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewPacket* out_packet) {
 	if (data == nullptr || out_packet == nullptr) {
 		LOG_WARN("RenderViewSkybox::OnBuildPacke() Requires valid pointer to packet and data.");
 		return false;
@@ -122,16 +122,14 @@ bool RenderViewSkybox::OnBuildPacket(void* data, struct RenderViewPacket* out_pa
 	out_packet->view_position = WorldCamera->GetPosition();
 
 	// Just set the extended data to the skybox data.
-	out_packet->extended_data = Memory::Allocate(sizeof(SkyboxPacketData), MemoryType::eMemory_Type_Renderer);
-	// Copy over the packet data.
-	Memory::Copy(out_packet->extended_data, SkyboxData, sizeof(SkyboxPacketData));
+	out_packet->extended_data = NewObject<SkyboxPacketData>(*SkyboxData);
 
 	return true;
 }
 
 void RenderViewSkybox::OnDestroyPacket(struct RenderViewPacket* packet) {
 	if (packet->extended_data) {
-		Memory::Free(packet->extended_data, sizeof(SkyboxPacketData), eMemory_Type_Renderer);
+		DeleteObject(packet->extended_data);
 		packet->extended_data = nullptr;
 	}
 

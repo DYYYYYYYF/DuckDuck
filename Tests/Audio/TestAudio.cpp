@@ -14,7 +14,7 @@ bool UnitTestAudio() {
 #endif
 
 		// 加载并播放
-		LOG_INFO("Start play sound %s", "Footsteps.wav");
+		LOG_INFO("Start play sound %s", "sample1.wav");
 		Engine.GetManager()->LoadSound(AssetPath);
 		Engine.GetManager()->PlaySound(AssetPath);
 

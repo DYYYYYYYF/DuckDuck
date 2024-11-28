@@ -21,7 +21,7 @@ public:
 
 private:
 	virtual bool ImportObjFile(FileHandle* obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
-	virtual void ProcessSubobject(std::vector<Vec3>& positions, std::vector<Vec3>& normals, std::vector<Vec2>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data);
+	virtual void ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data);
 	virtual bool ImportObjMaterialLibraryFile(const char* mtl_file_path);
 
 	virtual bool LoadDsmFile(FileHandle* dsm_file, std::vector<SGeometryConfig>& out_geometries);

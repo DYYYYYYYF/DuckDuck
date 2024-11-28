@@ -22,7 +22,7 @@ public:
 
 	DAPI static IRenderView* Get(const std::string& name);
 
-	DAPI static bool BuildPacket(IRenderView* view, void* data, struct RenderViewPacket* out_packet);
+	DAPI static bool BuildPacket(IRenderView* view, IRenderviewPacketData* data, struct RenderViewPacket* out_packet);
 	static bool OnRender(IRenderView* view, RenderViewPacket* packet, size_t frame_number, size_t render_target_index);
 
 	static void RegenerateRendertargets(IRenderView* view);

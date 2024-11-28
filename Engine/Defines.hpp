@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
@@ -48,6 +48,14 @@
 #include <stddef.h>
 #endif
 
+// __cpuid
+#if defined(_MSC_VER)
+#include <intrin.h>  
+#elif defined(__GUNC__) || definded(__clang__)
+
+#endif
+
+
 #ifdef DEXPORT
 // Export
 #ifdef _MSC_VER
@@ -87,6 +95,11 @@
 #define GIGABYTES(amount) (amount * 1000 * 1000 * 1000)
 #define MEGABYTES(amount) (amount * 1000 * 1000)
 #define KIGABYTES(amount) (amount * 1000)
+
+#include <filesystem>
+#ifndef ROOT_PATH
+#define ROOT_PATH std::filesystem::current_path().generic_string() + "/.."
+#endif
 
 struct Range {
 	size_t offset = 0;

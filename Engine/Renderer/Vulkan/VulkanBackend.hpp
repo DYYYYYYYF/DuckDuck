@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Renderer/Interface/IRendererBackend.hpp"
 #include "Core/DMemory.hpp"
@@ -63,9 +63,9 @@ public:
 	virtual bool FreeRenderbuffer(IRenderbuffer* buffer, size_t size, size_t offset);
 
 	// Render target
-	virtual void SetViewport(Vec4 rect) override;
+	virtual void SetViewport(Vector4 rect) override;
 	virtual void ResetViewport() override;
-	virtual void SetScissor(Vec4 rect) override;
+	virtual void SetScissor(Vector4 rect) override;
 	virtual void ResetScissor() override;
 
 	// Shaders.
