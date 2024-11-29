@@ -129,7 +129,7 @@ inline bool is_avx2_supported() {
 
 #ifndef SIMD_SUPPORTED
 #if defined(SIMD_SUPPORTED_AVX) || defined(SIMD_SUPPORTED_AVX2) || defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_NEON)
-//#define SIMD_SUPPORTED
+#define SIMD_SUPPORTED
 #endif
 #endif
 
