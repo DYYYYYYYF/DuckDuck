@@ -378,18 +378,32 @@ public:
 };
 
 template<typename T>
-struct TVector4 {
+struct alignas(16) TVector4 {
 	static_assert(std::is_floating_point<T>::value);
+	using DataType = std::conditional_t<std::is_same_v<T, float>, __m128, __m256d>;
+private:
+	void InitSIMDData() {
+#if defined(SIMD_SUPPORTED)
+		if constexpr (std::is_same_v<T, float>) {
+			// For float: Use _mm256_set_ps and _mm256_add_ps
+			data = _mm_set_ps(w, z, y, x);  // Load x, y, z, w into v1
+		}
+		else {
+			// For double: Use _mm256_set_pd and _mm256_add_pd
+			data = _mm256_set_pd(w, z, y, x);  // Load x, y, z, w into v1
+		}
+#endif
+	}
 
 public:
 	union
 	{
-#if defined(DUSE_SIMD)
+#if defined(SIMD_SUPPORTED)
 		// Used for SIMD operations
-		/*alignas(16) */__m128 data;
+		DataType data;
 #endif
 		// An array of x, y, z, w
-		/*alignas(16) */T elements[4] = { 0.0f };
+		T elements[4] = { 0.0f };
 		struct
 		{
 			union
@@ -412,17 +426,17 @@ public:
 	};
 
 public:
-	TVector4() { Zero(); }
+	TVector4() { 
+		Zero(); 
+		InitSIMDData();
+	}
 
 	TVector4(TVector3<T> vec, float w = 1.0f) {
-#if defined(DUSE_SIMD)
-		data = _mm_setr_ps(x, y, z, w);
-#else
 		r = vec.x;
 		g = vec.y;
 		b = vec.z;
 		a = w;
-#endif
+		InitSIMDData();
 	}
 
 	TVector4(T x) {
@@ -430,6 +444,7 @@ public:
 		g = x;
 		b = x;
 		a = x;
+		InitSIMDData();
 	}
 
 	TVector4(T x, T y, T z, T w) {
@@ -437,6 +452,7 @@ public:
 		g = y;
 		b = z;
 		a = w;
+		InitSIMDData();
 	}
 
 	TVector4(const TVector4& v) {
@@ -444,6 +460,7 @@ public:
 		g = v.y;
 		b = v.z;
 		a = v.w;
+		InitSIMDData();
 	}
 
 	void Zero() {
@@ -451,6 +468,7 @@ public:
 		y = 0.0f;
 		z = 0.0f;
 		w = 0.0f;
+		InitSIMDData();
 	}
 
 	void One() {
@@ -458,6 +476,7 @@ public:
 		y = 1.0f;
 		z = 1.0f;
 		w = 1.0f;
+		InitSIMDData();
 	}
 
 	/*
@@ -466,7 +485,16 @@ public:
 	* @param vector The vector to retrieve the squared length of.
 	* @return The squared length.
 	*/
-	T LengthSquared() const { return x * x + y * y + z * z + w * w; }
+	T LengthSquared() const { 
+#if defined(SIMD_SUPPORTED)
+		DataType Result = _mm_mul_ps(data, data);
+		Result = _mm_hadd_ps(Result, Result);
+		Result = _mm_hadd_ps(Result, Result);
+		return _mm_cvtss_f32(Result);
+#else
+		return x * x + y * y + z * z + w * w; 
+#endif
+	}
 
 	/*
 	* @brief Returns the length of the provided vector.
@@ -480,11 +508,16 @@ public:
 	* @brief Normalizes vector
 	*/
 	TVector4 Normalize() {
+#if defined(SIMD_SUPPORTED)
+		DataType divd = _mm_set1_ps(Length());
+		data = _mm_div_ps(data, divd);
+		_mm_store_ps(elements, data);
+#else
 		x /= Length();
 		y /= Length();
 		z /= Length();
 		w /= Length();
-
+#endif
 		return *this;
 	}
 
@@ -522,7 +555,28 @@ public:
 	* @return The distance between this vector and the other.
 	*/
 	T Dot(const TVector4& vec) const {
+#if defined(SIMD_SUPPORTED)
+		TVector4 res;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+			res.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&res.data), res.data);
+	}
+		else {
+			//__m256d v = _mm256_set1_pd(a);  // Load scalar a into all elements of a __m256d
+			//res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
+			//_mm256_store_pd(reinterpret_cast<double*>(&res.data), res.data);
+			LOG_FATAL("Engine not support double type SIMD yet!");
+			ASSERT(false);
+		}
+		res.x = reinterpret_cast<T*>(&res.data)[0];
+		res.y = reinterpret_cast<T*>(&res.data)[1];
+		res.z = reinterpret_cast<T*>(&res.data)[2];
+		res.w = reinterpret_cast<T*>(&res.data)[3];
+		return res;
+#else
 		return x * vec.x + y * vec.y + z * vec.z + w * vec.w;
+#endif
 	}
 
 	/*
@@ -532,7 +586,27 @@ public:
 	* @return The distance between this vector and the other.
 	*/
 	T Distance(const TVector4& vec) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+			d.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			//__m256d v = _mm256_set1_pd(a);  // Load scalar a into all elements of a __m256d
+			//res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
+			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+			LOG_FATAL("Engine not support double type SIMD yet!");
+			ASSERT(false);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
+#else
 		TVector4 d{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
+#endif
 		return d.Length();
 	}
 
@@ -561,39 +635,173 @@ public:
 
 public:
 	// Add
-	TVector4 operator+(const TVector4& v) {
+	TVector4 operator+(const TVector4& vec) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+			d.data = _mm_add_ps(data, v);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			//__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
+			//res.data = _mm256_add_pd(data, v);  // Perform SIMD multiplication
+			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+			LOG_FATAL("Engine not support double type SIMD yet!");
+			ASSERT(false);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
+
+		return d;
+#else
 		return TVector4{ x + v.x, y + v.y, z + v.z, w + v.w };
+#endif
 	}
 
 	// Sub
-	TVector4 operator-(const TVector4& v) {
-		return TVector4{ x - v.x, y - v.y, z - v.z, w - v.w };
+	TVector4 operator-(const TVector4& vec) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+			d.data = _mm_sub_ps(data, v);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			//__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
+			//res.data = _mm256_sub_pd(data, v);  // Perform SIMD multiplication
+			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+			LOG_FATAL("Engine not support double type SIMD yet!");
+			ASSERT(false);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
+
+		return d;
+#else
+		return TVector4{ x + v.x, y + v.y, z + v.z, w + v.w };
+#endif
 	}
 
-	// Mut
-	TVector4 operator*(const TVector4& v) {
+	// Multiply
+	TVector4 operator*(const TVector4& vec) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+			d.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
+			res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
+			_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
+
+		return d;
+#else
 		return TVector4{ x * v.x, y * v.y, z * v.z, w * v.w };
+#endif
 	}
 
-	TVector4 operator*(int num) {
-		return TVector4{ x * num, y * num, z * num, w * num };
-	}
+	// Divide
+	TVector4 operator*(T num) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set1_ps(num);  
+			d.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			__m256d v = _mm256_set1_pd(num);  
+			res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
+			_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
 
-	TVector4 operator*(float num) {
+		return d;
+#else
 		return TVector4{ x * num, y * num, z * num, w * num };
+#endif
 	}
 
 	// Div
-	TVector4 operator/(int num) {
+	TVector4 operator/(T num) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set1_ps(num);  // Load scalar a into all elements of a __m256
+
+			// 检查除数是否为 0
+			__m128 mask = _mm_cmpeq_ps(v, _mm_setzero_ps());  // 如果 denom == 0, 设置掩码
+			__m128 safeDenom = _mm_blendv_ps(v, _mm_set1_ps(FLT_MIN), mask); // 如果为零，则使用一个极小的数
+
+			d.data = _mm_div_ps(data, safeDenom);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			//__m256d v = _mm256_set1_pd(num);  // Load scalar a into all elements of a __m256d
+			//res.data = _mm256_div_pd(data, v);  // Perform SIMD multiplication
+			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+			LOG_FATAL("Engine not support double type SIMD yet!");
+			ASSERT(false);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
+
+		return d;
+#else
 		return TVector4{ x / num, y / num, y / num, w / num };
+#endif
 	}
 
-	TVector4 operator/(float num) {
-		return TVector4{ x / num, y / num, y / num, w / num };
-	}
+	TVector4 operator/(const TVector4& vec) {
+#if defined(SIMD_SUPPORTED)
+		TVector4 d;
+		if constexpr (std::is_same_v<T, float>) {
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x); 
+			
+			// 除数检查，为0则替换
+			__m128 mask = _mm_cmpeq_ps(v, _mm_setzero_ps());
+			__m128 safeDenom = _mm_blendv_ps(v, _mm_set1_ps(FLT_MIN), mask);
 
-	TVector4 operator/(const TVector4& v) {
+			d.data = _mm_div_ps(data, safeDenom);  // Perform SIMD multiplication
+			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
+		}
+		else {
+			//__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
+			//// 除数检查，为0则替换
+			//__m256d mask = _mm_cmpeq_pd(v, _mm_setzero_ps());
+			//__m256d safeDenom = _mm256_blendv_ps(v, _mm_set1_ps(FLT_MIN), mask);
+			//res.data = _mm256_div_pd(data, v);  // Perform SIMD multiplication
+			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+			LOG_FATAL("Engine not support double type SIMD yet!");
+			ASSERT(false);
+		}
+		d.x = reinterpret_cast<T*>(&d.data)[0];
+		d.y = reinterpret_cast<T*>(&d.data)[1];
+		d.z = reinterpret_cast<T*>(&d.data)[2];
+		d.w = reinterpret_cast<T*>(&d.data)[3];
+
+		return d;
+#else
 		return TVector4{ x / v.x, y / v.y, z / v.z, w / v.w };
+#endif
 	}
 
 	// Negative

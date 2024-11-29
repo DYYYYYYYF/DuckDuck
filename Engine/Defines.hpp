@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
@@ -71,6 +71,13 @@
 // __cpuid
 #if defined(_MSC_VER)
 #include <intrin.h>  
+#include <immintrin.h>
+
+#ifdef __AVX__
+
+#elif defined(__AVX2__)
+static A = 0;
+#endif
 inline void cpuid(int info[4], int function_id) {
 	__cpuid(info, function_id);
 }
@@ -122,7 +129,7 @@ inline bool is_avx2_supported() {
 
 #ifndef SIMD_SUPPORTED
 #if defined(SIMD_SUPPORTED_AVX) || defined(SIMD_SUPPORTED_AVX2) || defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_NEON)
-#define SIMD_SUPPORTED
+//#define SIMD_SUPPORTED
 #endif
 #endif
 
@@ -131,8 +138,14 @@ inline bool is_avx2_supported() {
 #include <arm_neon.h>
 #define __m128 float32x4_t
 #define __m256 float32x8_t
+#define __m128d float64x2_t
+#define __m256d float64x4_t
 #define _mm_add_ps vaddq_f32
 #define _mm_mul_ps vmulq_f32
+
+#define _mm256_set_pd vld1q_f64		 // NEON 最高支持2个64bit浮点运算
+#define _mm256_add_pd vaddq_f64		 // NEON 最高支持2个64bit浮点运算
+#define _mm256_mul_pd vmulq_f64		 // NEON 最高支持2个64bit浮点运算
 #endif
 #endif
 

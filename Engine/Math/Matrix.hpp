@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector.hpp"
 
 /**
@@ -16,6 +16,8 @@
  */
 template<typename T>
 struct alignas(16) TMatrix4 {
+	using DataType = std::conditional_t<std::is_same_v<T, float>, __m128, __m256d>;
+
 public:
 	union {
 		alignas(16) T data[16] = { 0.0f };
@@ -35,6 +37,16 @@ public:
 		ASSERT(d.size() == 16);
 	}
 
+	TMatrix4(T d1,  T d2,  T d3,  T d4, 
+			 T d5,  T d6,  T d7,  T d8, 
+			 T d9,  T d10, T d11, T d12, 
+			 T d13, T d14, T d15, T d16) {
+		data[0]  = d1;  data[1]  = d2;  data[2]  = d3;  data[3]  = d4;
+		data[4]  = d5;  data[5]  = d6;  data[6]  = d7;  data[7]  = d8;
+		data[8]  = d9;  data[9]  = d10; data[10] = d11; data[11] = d12;
+		data[12] = d13; data[13] = d14; data[14] = d15; data[15] = d16;
+	}
+
 	/*
 	* @brief Returns the result of multiplying
 	*
@@ -42,12 +54,31 @@ public:
 	* @return The result of the matrix multiplication.
 	*/
 	TMatrix4 Multiply(const TMatrix4& mat) {
-		const float* MatPtr1 = data;
-		const float* MatPtr2 = mat.data;
+		const T* MatPtr1 = data;
+		const T* MatPtr2 = mat.data;
 
 		TMatrix4 NewMat = TMatrix4::Identity();
-		float* DstPtr = NewMat.data;
+		T* DstPtr = NewMat.data;
 
+#if defined(SIMD_SUPPORTED)
+		for (int i = 0; i < 4; ++i) {
+			// 加载Mat1的第i列（按列主序，逐列访问）
+			DataType row1 = _mm_set_ps(MatPtr1[i * 4 + 3], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 0]);
+			for (int j = 0; j < 4; j++) {
+				// 加载Mat2的第j列（按列主序，逐列访问）
+				DataType col2 = _mm_set_ps(MatPtr2[12 + j], MatPtr2[8 + j], MatPtr2[4 + j], MatPtr2[0 + j]);
+
+				// 执行乘法并累加
+				DataType result = _mm_mul_ps(row1, col2);
+				result = _mm_hadd_ps(result, result);  // 水平加法：先加前两对元素，再加后两对元素
+				result = _mm_hadd_ps(result, result);  // 再加一次
+
+				// 将结果存储回目标矩阵
+				T FinalRest = _mm_cvtss_f32(result);		// result[0]
+				DstPtr[i * 4 + j] = FinalRest;
+			}
+		}
+#else
 		for (int i = 0; i < 4; ++i) {
 			for (int j = 0; j < 4; j++) {
 				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
@@ -57,8 +88,18 @@ public:
 				DstPtr++;
 			}
 		}
+#endif
 
 		return NewMat;
+	}
+
+	TMatrix4 Transpose() {
+		for (int row = 0; row < 4; ++row) {
+			for (int col = row + 1; col < 4; ++col) {
+				Swap(&data[row * 4 + col], &data[col * 4 + row]);
+			}
+		} 
+		return *this;
 	}
 
 	/*
@@ -431,11 +472,13 @@ public:
 		return *this;
 	}
 
-	float& operator[](int i) {
+	template<typename TypeInex>
+	T& operator[](TypeInex i) {
 		return data[i];
 	}
 
-	const float& operator[](int i) const {
+	template<typename TypeInex>
+	const T& operator[](TypeInex i) const {
 		return data[i];
 	}
 
@@ -455,11 +498,36 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
+#if defined(SIMD_SUPPORTED)
+		DataType row1 = _mm_load_ps(&m.data[0]);
+		DataType row2 = _mm_load_ps(&m.data[4]);
+		DataType row3 = _mm_load_ps(&m.data[8]);
+
+		DataType v1 = _mm_set_ps(1.0f, v.z, v.y, v.x);
+		DataType result1 = _mm_mul_ps(v1, row1);
+		result1 = _mm_hadd_ps(result1, result1);
+		result1 = _mm_hadd_ps(result1, result1);
+
+		DataType result2 = _mm_mul_ps(v1, row2);
+		result2 = _mm_hadd_ps(result2, result2);
+		result2 = _mm_hadd_ps(result2, result2);
+
+		DataType result3 = _mm_mul_ps(v1, row3);
+		result3 = _mm_hadd_ps(result3, result3);
+		result3 = _mm_hadd_ps(result3, result3);
+
+		return TVector3<T>(
+			_mm_cvtss_f32(result1),
+			_mm_cvtss_f32(result2),
+			_mm_cvtss_f32(result3)
+		);
+#else
 		return TVector3<T>(
 			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + m.data[3],
 			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + m.data[7],
 			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + m.data[11]
 		);
+#endif
 	}
 
 	/**
@@ -470,11 +538,36 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
+#if defined(SIMD_SUPPORTED)
+		DataType row1 = _mm_set_ps(m.data[12], m.data[8],  m.data[4], m.data[0]);
+		DataType row2 = _mm_set_ps(m.data[13], m.data[9],  m.data[5], m.data[1]);
+		DataType row3 = _mm_set_ps(m.data[14], m.data[10], m.data[6], m.data[2]);
+
+		DataType v1 = _mm_set_ps(1.0f, v.z, v.y, v.x);
+		DataType result1 = _mm_mul_ps(v1, row1);
+		result1 = _mm_hadd_ps(result1, result1);
+		result1 = _mm_hadd_ps(result1, result1);
+
+		DataType result2 = _mm_mul_ps(v1, row2);
+		result2 = _mm_hadd_ps(result2, result2);
+		result2 = _mm_hadd_ps(result2, result2);
+
+		DataType result3 = _mm_mul_ps(v1, row3);
+		result3 = _mm_hadd_ps(result3, result3);
+		result3 = _mm_hadd_ps(result3, result3);
+
+		return TVector3<T>(
+			_mm_cvtss_f32(result1),
+			_mm_cvtss_f32(result2),
+			_mm_cvtss_f32(result3)
+		);
+#else
 		return TVector3<T>(
 			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + m.data[12],
 			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + m.data[13],
 			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + m.data[14]
 		);
+#endif
 	}
 
 	/**
@@ -485,12 +578,43 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector4<T> operator*(const TMatrix4& m, const TVector4<T>& v) {
+#if defined(SIMD_SUPPORTED)
+		DataType row1 = _mm_load_ps(&m.data[0]);
+		DataType row2 = _mm_load_ps(&m.data[4]);
+		DataType row3 = _mm_load_ps(&m.data[8]);
+		DataType row4 = _mm_load_ps(&m.data[12]);
+
+		DataType v1 = _mm_set_ps(v.w, v.z, v.y, v.x);
+		DataType result1 = _mm_mul_ps(v1, row1);
+		result1 = _mm_hadd_ps(result1, result1);
+		result1 = _mm_hadd_ps(result1, result1);
+
+		DataType result2 = _mm_mul_ps(v1, row2);
+		result2 = _mm_hadd_ps(result2, result2);
+		result2 = _mm_hadd_ps(result2, result2);
+
+		DataType result3 = _mm_mul_ps(v1, row3);
+		result3 = _mm_hadd_ps(result3, result3);
+		result3 = _mm_hadd_ps(result3, result3);
+
+		DataType result4 = _mm_mul_ps(v1, row4);
+		result4 = _mm_hadd_ps(result4, result4);
+		result4 = _mm_hadd_ps(result4, result4);
+
+		return TVector4<T>(
+			_mm_cvtss_f32(result1),
+			_mm_cvtss_f32(result2),
+			_mm_cvtss_f32(result3),
+			_mm_cvtss_f32(result4)
+		);
+#else
 		return TVector4<T>(
 			v.x * m.data[0] + v.y * m.data[1] + v.z * m.data[2] + v.w * m.data[3],
 			v.x * m.data[4] + v.y * m.data[5] + v.z * m.data[6] + v.w * m.data[7],
 			v.x * m.data[8] + v.y * m.data[9] + v.z * m.data[10] + v.w * m.data[11],
 			v.x * m.data[12] + v.y * m.data[13] + v.z * m.data[14] + v.w * m.data[15]
 		);
+#endif
 	}
 
 	/**
@@ -501,12 +625,43 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector4<T> operator*(const TVector4<T>& v, const TMatrix4& m) {
+#if defined(SIMD_SUPPORTED)
+		DataType row1 = _mm_set_ps(m.data[12], m.data[8], m.data[4], m.data[0]);
+		DataType row2 = _mm_set_ps(m.data[13], m.data[9], m.data[5], m.data[1]);
+		DataType row3 = _mm_set_ps(m.data[14], m.data[10], m.data[6], m.data[2]);
+		DataType row4 = _mm_set_ps(m.data[15], m.data[11], m.data[7], m.data[3]);
+
+		DataType v1 = _mm_set_ps(v.w, v.z, v.y, v.x);
+		DataType result1 = _mm_mul_ps(v1, row1);
+		result1 = _mm_hadd_ps(result1, result1);
+		result1 = _mm_hadd_ps(result1, result1);
+
+		DataType result2 = _mm_mul_ps(v1, row2);
+		result2 = _mm_hadd_ps(result2, result2);
+		result2 = _mm_hadd_ps(result2, result2);
+
+		DataType result3 = _mm_mul_ps(v1, row3);
+		result3 = _mm_hadd_ps(result3, result3);
+		result3 = _mm_hadd_ps(result3, result3);
+
+		DataType result4 = _mm_mul_ps(v1, row4);
+		result4 = _mm_hadd_ps(result4, result4);
+		result4 = _mm_hadd_ps(result4, result4);
+
+		return TVector4<T>(
+			_mm_cvtss_f32(result1),
+			_mm_cvtss_f32(result2),
+			_mm_cvtss_f32(result3),
+			_mm_cvtss_f32(result4)
+		);
+#else
 		return TVector4<T>(
 			v.x * m.data[0] + v.y * m.data[4] + v.z * m.data[8] + v.w * m.data[12],
 			v.x * m.data[1] + v.y * m.data[5] + v.z * m.data[9] + v.w * m.data[13],
 			v.x * m.data[2] + v.y * m.data[6] + v.z * m.data[10] + v.w * m.data[14],
 			v.x * m.data[3] + v.y * m.data[7] + v.z * m.data[11] + v.w * m.data[15]
 		);
+#endif
 	}
 
 	TVector4<T> GetColoumn(int i) const {
@@ -527,6 +682,13 @@ public:
 
 		int Row = i - 1;
 		return TVector4<T>(data[Row * 4], data[Row * 4 + 1], data[Row * 4 + 2], data[Row * 4 + 3]);
+	}
+
+private:
+	void Swap(T* a, T* b) {
+		T c = *a;
+		*a = *b;
+		*b = c;
 	}
 
 };
