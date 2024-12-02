@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
@@ -136,16 +136,9 @@ inline bool is_avx2_supported() {
 #if defined(SIMD_SUPPORTED)
 #if defined(DPLATFORM_MACOS)
 #include <arm_neon.h>
-#define __m128 float32x4_t
-#define __m256 float32x8_t
-#define __m128d float64x2_t
-#define __m256d float64x4_t
-#define _mm_add_ps vaddq_f32
-#define _mm_mul_ps vmulq_f32
-
-#define _mm256_set_pd vld1q_f64		 // NEON 最高支持2个64bit浮点运算
-#define _mm256_add_pd vaddq_f64		 // NEON 最高支持2个64bit浮点运算
-#define _mm256_mul_pd vmulq_f64		 // NEON 最高支持2个64bit浮点运算
+#ifndef FLT_MIN
+#define FLT_MIN (1.17549435e-38f)  // Smallest positive normalized float
+#endif
 #endif
 #endif
 

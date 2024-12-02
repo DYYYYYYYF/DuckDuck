@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Vector.hpp"
 
 /**
@@ -60,7 +60,27 @@ public:
 		TMatrix4 NewMat = TMatrix4::Identity();
 		T* DstPtr = NewMat.data;
 
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+    for (int i = 0; i < 4; ++i) {
+        // Load Mat1's i-th row (column-major access)
+        float32x4_t row1 = vld1q_f32(&MatPtr1[i * 4]);
+
+        for (int j = 0; j < 4; j++) {
+            // Load Mat2's j-th column (column-major access)
+            float32x4_t col2 = { MatPtr2[j], MatPtr2[4 + j], MatPtr2[8 + j], MatPtr2[12 + j] };
+
+            // Perform element-wise multiplication and horizontal addition
+            float32x4_t product = vmulq_f32(row1, col2);
+
+            // Horizontal addition to accumulate the results
+            float32x2_t sum_pair = vadd_f32(vget_low_f32(product), vget_high_f32(product)); // Add pairs
+            float32x2_t sum_final = vpadd_f32(sum_pair, sum_pair); // Final horizontal addition
+
+            // Store the resulting scalar into the matrix
+            DstPtr[i * 4 + j] = vget_lane_f32(sum_final, 0); // Extract the final sum
+        }
+    }
+#elif defined(SIMD_SUPPORTED)
 		for (int i = 0; i < 4; ++i) {
 			// 加载Mat1的第i列（按列主序，逐列访问）
 			DataType row1 = _mm_set_ps(MatPtr1[i * 4 + 3], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 0]);
@@ -77,7 +97,7 @@ public:
 				T FinalRest = _mm_cvtss_f32(result);		// result[0]
 				DstPtr[i * 4 + j] = FinalRest;
 			}
-		}
+        }
 #else
 		for (int i = 0; i < 4; ++i) {
 			for (int j = 0; j < 4; j++) {
@@ -498,7 +518,37 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+        // Load rows of the matrix
+           float32x4_t row1 = vld1q_f32(&m.data[0]);
+           float32x4_t row2 = vld1q_f32(&m.data[4]);
+           float32x4_t row3 = vld1q_f32(&m.data[8]);
+
+           // Load vector v and append 1.0f for homogeneous coordinates
+           float32x4_t vec = {v.x, v.y, v.z, 1.0f};
+
+           // Compute dot products for each row
+           float32x4_t result1 = vmulq_f32(row1, vec);
+           float32x4_t result2 = vmulq_f32(row2, vec);
+           float32x4_t result3 = vmulq_f32(row3, vec);
+
+           // Perform horizontal addition to reduce each row result to a single value
+           float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
+           sum1 = vpadd_f32(sum1, sum1); // Final horizontal addition
+
+           float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
+           sum2 = vpadd_f32(sum2, sum2); // Final horizontal addition
+
+           float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
+           sum3 = vpadd_f32(sum3, sum3); // Final horizontal addition
+
+           // Extract results and construct the output vector
+           return TVector3<T>(
+               vget_lane_f32(sum1, 0),
+               vget_lane_f32(sum2, 0),
+               vget_lane_f32(sum3, 0)
+           );
+#elif defined(SIMD_SUPPORTED)
 		DataType row1 = _mm_load_ps(&m.data[0]);
 		DataType row2 = _mm_load_ps(&m.data[4]);
 		DataType row3 = _mm_load_ps(&m.data[8]);
@@ -538,7 +588,37 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+        // Prepare matrix rows as columns (transposed layout)
+            float32x4_t col1 = {m.data[0], m.data[4], m.data[8], m.data[12]};
+            float32x4_t col2 = {m.data[1], m.data[5], m.data[9], m.data[13]};
+            float32x4_t col3 = {m.data[2], m.data[6], m.data[10], m.data[14]};
+
+            // Prepare the vector with an appended 1.0f (homogeneous coordinate)
+            float32x4_t vec = {v.x, v.y, v.z, 1.0f};
+
+            // Compute dot products for each column
+            float32x4_t result1 = vmulq_f32(vec, col1);
+            float32x4_t result2 = vmulq_f32(vec, col2);
+            float32x4_t result3 = vmulq_f32(vec, col3);
+
+            // Perform horizontal addition to reduce each result to a single scalar
+            float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
+            sum1 = vpadd_f32(sum1, sum1); // Final horizontal addition
+
+            float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
+            sum2 = vpadd_f32(sum2, sum2); // Final horizontal addition
+
+            float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
+            sum3 = vpadd_f32(sum3, sum3); // Final horizontal addition
+
+            // Extract the results and construct the resulting vector
+            return TVector3<T>(
+                vget_lane_f32(sum1, 0),
+                vget_lane_f32(sum2, 0),
+                vget_lane_f32(sum3, 0)
+            );
+#elif defined(SIMD_SUPPORTED)
 		DataType row1 = _mm_set_ps(m.data[12], m.data[8],  m.data[4], m.data[0]);
 		DataType row2 = _mm_set_ps(m.data[13], m.data[9],  m.data[5], m.data[1]);
 		DataType row3 = _mm_set_ps(m.data[14], m.data[10], m.data[6], m.data[2]);
@@ -578,7 +658,43 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector4<T> operator*(const TMatrix4& m, const TVector4<T>& v) {
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+    // Load rows of the matrix
+    float32x4_t row1 = vld1q_f32(&m.data[0]);
+    float32x4_t row2 = vld1q_f32(&m.data[4]);
+    float32x4_t row3 = vld1q_f32(&m.data[8]);
+    float32x4_t row4 = vld1q_f32(&m.data[12]);
+
+    // Load vector v into a NEON register
+    float32x4_t vec = {v.x, v.y, v.z, v.w};
+
+    // Compute dot products for each row
+    float32x4_t result1 = vmulq_f32(vec, row1);
+    float32x4_t result2 = vmulq_f32(vec, row2);
+    float32x4_t result3 = vmulq_f32(vec, row3);
+    float32x4_t result4 = vmulq_f32(vec, row4);
+
+    // Perform horizontal addition to reduce results to a single scalar
+    float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
+    sum1 = vpadd_f32(sum1, sum1); // Final horizontal addition
+
+    float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
+    sum2 = vpadd_f32(sum2, sum2); // Final horizontal addition
+
+    float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
+    sum3 = vpadd_f32(sum3, sum3); // Final horizontal addition
+
+    float32x2_t sum4 = vadd_f32(vget_low_f32(result4), vget_high_f32(result4));
+    sum4 = vpadd_f32(sum4, sum4); // Final horizontal addition
+
+    // Extract the results and construct the resulting vector
+    return TVector4<T>(
+        vget_lane_f32(sum1, 0),
+        vget_lane_f32(sum2, 0),
+        vget_lane_f32(sum3, 0),
+        vget_lane_f32(sum4, 0)
+    );
+#elif defined(SIMD_SUPPORTED)
 		DataType row1 = _mm_load_ps(&m.data[0]);
 		DataType row2 = _mm_load_ps(&m.data[4]);
 		DataType row3 = _mm_load_ps(&m.data[8]);
@@ -625,7 +741,42 @@ public:
 	 * @return The transformed vector.
 	 */
 	friend TVector4<T> operator*(const TVector4<T>& v, const TMatrix4& m) {
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+    // Prepare matrix rows for multiplication
+    float32x4_t row1 = {m.data[0], m.data[4], m.data[8], m.data[12]};
+    float32x4_t row2 = {m.data[1], m.data[5], m.data[9], m.data[13]};
+    float32x4_t row3 = {m.data[2], m.data[6], m.data[10], m.data[14]};
+    float32x4_t row4 = {m.data[3], m.data[7], m.data[11], m.data[15]};
+
+    // Prepare the vector
+    float32x4_t vec = {v.x, v.y, v.z, v.w};
+
+    // Perform element-wise multiplication for each row and reduce with horizontal addition
+    float32x4_t result1 = vmulq_f32(vec, row1);
+    float32x4_t result2 = vmulq_f32(vec, row2);
+    float32x4_t result3 = vmulq_f32(vec, row3);
+    float32x4_t result4 = vmulq_f32(vec, row4);
+
+    float32x2_t sum1 = vadd_f32(vget_low_f32(result1), vget_high_f32(result1));
+    sum1 = vpadd_f32(sum1, sum1);
+
+    float32x2_t sum2 = vadd_f32(vget_low_f32(result2), vget_high_f32(result2));
+    sum2 = vpadd_f32(sum2, sum2);
+
+    float32x2_t sum3 = vadd_f32(vget_low_f32(result3), vget_high_f32(result3));
+    sum3 = vpadd_f32(sum3, sum3);
+
+    float32x2_t sum4 = vadd_f32(vget_low_f32(result4), vget_high_f32(result4));
+    sum4 = vpadd_f32(sum4, sum4);
+
+    // Return the result as a TVector4
+    return TVector4<T>(
+        vget_lane_f32(sum1, 0),
+        vget_lane_f32(sum2, 0),
+        vget_lane_f32(sum3, 0),
+        vget_lane_f32(sum4, 0)
+    );
+#elif defined(SIMD_SUPPORTED)
 		DataType row1 = _mm_set_ps(m.data[12], m.data[8], m.data[4], m.data[0]);
 		DataType row2 = _mm_set_ps(m.data[13], m.data[9], m.data[5], m.data[1]);
 		DataType row3 = _mm_set_ps(m.data[14], m.data[10], m.data[6], m.data[2]);

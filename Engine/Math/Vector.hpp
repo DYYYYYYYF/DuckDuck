@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "DMath.hpp"
 #include "Core/DMemory.hpp"
 
@@ -380,17 +380,25 @@ public:
 template<typename T>
 struct alignas(16) TVector4 {
 	static_assert(std::is_floating_point<T>::value);
-	using DataType = std::conditional_t<std::is_same_v<T, float>, __m128, __m256d>;
+#if defined(SIMD_SUPPORTED_NEON)
+    using DataType = std::conditional_t<std::is_same_v<T, float>, float32x4_t, float64x1x4_t>;
+#elif defined(SIMD_SUPPORTED)
+    using DataType = std::conditional_t<std::is_same_v<T, float>, __m128, __m256d>;
+#endif
+    
 private:
 	void InitSIMDData() {
 #if defined(SIMD_SUPPORTED)
 		if constexpr (std::is_same_v<T, float>) {
+            #if defined(SIMD_SUPPORTED_NEON)
 			// For float: Use _mm256_set_ps and _mm256_add_ps
-			data = _mm_set_ps(w, z, y, x);  // Load x, y, z, w into v1
+            data = vld1q_f32(&elements[0]); // Load x, y, z, w into v1
+            #else
+            data = _mm_set_ps(w, z, y, x);
+            #endif
 		}
 		else {
-			// For double: Use _mm256_set_pd and _mm256_add_pd
-			data = _mm256_set_pd(w, z, y, x);  // Load x, y, z, w into v1
+            LOG_FATAL("Can not support 256bit SIMD yet!");
 		}
 #endif
 	}
@@ -486,7 +494,12 @@ public:
 	* @return The squared length.
 	*/
 	T LengthSquared() const { 
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+        float32x4_t Result = vmulq_f32(data, data);  // Element-wise multiplication
+        float32x2_t sum = vadd_f32(vget_low_f32(Result), vget_high_f32(Result));  // Horizontal add for the lower and upper halves
+        sum = vpadd_f32(sum, sum);  // Final horizontal add to reduce to a single value
+        return vget_lane_f32(sum, 0);  // Extract the scalar value from the result
+#elif defined(SIMD_SUPPORTED)
 		DataType Result = _mm_mul_ps(data, data);
 		Result = _mm_hadd_ps(Result, Result);
 		Result = _mm_hadd_ps(Result, Result);
@@ -508,7 +521,11 @@ public:
 	* @brief Normalizes vector
 	*/
 	TVector4 Normalize() {
-#if defined(SIMD_SUPPORTED)
+#if defined(SIMD_SUPPORTED_NEON)
+        float32x4_t divd = vdupq_n_f32(Length());  // Load scalar Length() into all elements of a NEON register
+        float32x4_t result = vdivq_f32(data, divd);  // Perform element-wise division
+        vst1q_f32(elements, result);  // Store the result back into memory
+#elif defined(SIMD_SUPPORTED)
 		DataType divd = _mm_set1_ps(Length());
 		data = _mm_div_ps(data, divd);
 		_mm_store_ps(elements, data);
@@ -557,15 +574,21 @@ public:
 	T Dot(const TVector4& vec) const {
 #if defined(SIMD_SUPPORTED)
 		TVector4 res;
-		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
-			res.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
-			_mm_store_ps(reinterpret_cast<float*>(&res.data), res.data);
-	}
+        if constexpr (std::is_same_v<T, float>) {
+#if defined(SIMD_SUPPORTED_NEON)
+            // Load the components of `vec` into a NEON register
+            float32x4_t v = vld1q_f32(&vec.x);  // Load vec.x, vec.y, vec.z, vec.w into a NEON 128-bit vector
+            // Perform element-wise multiplication with `data`
+            float32x4_t result = vmulq_f32(data, v);  // Multiply data and vec element-wise
+            // Store the result back into the `res.data` variable
+            vst1q_f32(reinterpret_cast<float*>(&res.data), result);
+#elif defined(SIMD_SUPPORTED)
+            __m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+            res.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
+            _mm_store_ps(reinterpret_cast<float*>(&res.data), res.data);
+#endif
+        }
 		else {
-			//__m256d v = _mm256_set1_pd(a);  // Load scalar a into all elements of a __m256d
-			//res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
-			//_mm256_store_pd(reinterpret_cast<double*>(&res.data), res.data);
 			LOG_FATAL("Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
@@ -589,14 +612,20 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+#if defined(SIMD_SUPPORTED_NEON)
+           // Load vec.x, vec.y, vec.z, vec.w into a NEON 128-bit register
+           float32x4_t v = vld1q_f32(&vec.x);  // Load values into vector
+           // Perform element-wise multiplication with 'data'
+           float32x4_t result = vmulq_f32(data, v);  // Multiply data with vec element-wise
+           // Store the result into d.data
+           vst1q_f32(reinterpret_cast<float*>(&d.data), result);  // Store back to memory
+#else
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m128
 			d.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
+#endif
+        }
 		else {
-			//__m256d v = _mm256_set1_pd(a);  // Load scalar a into all elements of a __m256d
-			//res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
-			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
 			LOG_FATAL("Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
@@ -639,14 +668,20 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+#if defined(SIMD_SUPPORTED_NEON)
+            // Load vec.x, vec.y, vec.z, vec.w into a NEON 128-bit register
+            float32x4_t v = vld1q_f32(&vec.x);  // Load values into vector
+            // Perform element-wise addition with 'data'
+            float32x4_t result = vaddq_f32(data, v);  // Add data with vec element-wise
+            // Store the result into d.data
+            vst1q_f32(reinterpret_cast<float*>(&d.data), result);  // Store result back into memory
+#elif defined(SIMD_SUPPORTED)
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m128
 			d.data = _mm_add_ps(data, v);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
+#endif
+        }
 		else {
-			//__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
-			//res.data = _mm256_add_pd(data, v);  // Perform SIMD multiplication
-			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
 			LOG_FATAL("Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
@@ -666,14 +701,18 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+#if defined(SIMD_SUPPORTED_NEON)
+            float32x4_t v = {vec.x, vec.y, vec.z, vec.w};       // Load scalar values into a NEON register
+            d.data = vsubq_f32(data, v);                        // Perform SIMD subtraction
+            vst1q_f32(reinterpret_cast<float*>(&d.data), d.data);  // Store the result
+
+#else
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m128
 			d.data = _mm_sub_ps(data, v);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
+#endif
+        }
 		else {
-			//__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
-			//res.data = _mm256_sub_pd(data, v);  // Perform SIMD multiplication
-			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
 			LOG_FATAL("Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
@@ -693,14 +732,22 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256
+#if defined(SIMD_SUPPORTED_NEON)
+            // Load vec.x, vec.y, vec.z, vec.w into a NEON 128-bit register
+            float32x4_t v = vld1q_f32(&vec.x);  // Load values into vector
+            // Perform element-wise multiplication with 'data'
+            float32x4_t result = vmulq_f32(data, v);  // Multiply data with vec element-wise
+            // Store the result into d.data
+            vst1q_f32(reinterpret_cast<float*>(&d.data), result);  // Store result back into memory
+#else
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);
 			d.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
+#endif
+        }
 		else {
-			__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
-			res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
-			_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
+            LOG_ERROR("Not support 256bit SIMD yet.");
+            ASSERT(false);
 		}
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
@@ -718,15 +765,20 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set1_ps(num);  
+#if defined(SIMD_SUPPORTED_NEON)
+            float32x4_t v = vdupq_n_f32(num);  // Load 'num' into all elements of a NEON register
+            d.data = vmulq_f32(data, v);       // Perform SIMD multiplication
+            vst1q_f32(reinterpret_cast<float*>(&d.data), d.data);  // Store result back to memory
+#else
+			__m128 v = _mm_set1_ps(num);
 			d.data = _mm_mul_ps(data, v);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
-		else {
-			__m256d v = _mm256_set1_pd(num);  
-			res.data = _mm256_mul_pd(data, v);  // Perform SIMD multiplication
-			_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
-		}
+#endif
+        }
+        else {
+            LOG_ERROR("Can not support 256bit SIMD yet.");
+            ASSERT(false);
+        }
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
 		d.z = reinterpret_cast<T*>(&d.data)[2];
@@ -743,22 +795,27 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
+#if defined(SIMD_SUPPORTED_NEON)
+            float32x4_t v = vdupq_n_f32(num);  // Load scalar into all elements of the NEON vector
+            // 检查除数是否为 0
+            float32x4_t zero = vdupq_n_f32(0.0f);  // Create a vector of zero
+            uint32x4_t mask = vceqq_f32(v, zero);  // Check if num is zero (mask with 1 where true)
+            // If divisor is zero, we use a very small value (FLT_MIN) to avoid divide-by-zero
+            float32x4_t safeDenom = vbslq_f32(mask, vdupq_n_f32(FLT_MIN), v);  // Blend to choose between num and FLT_MIN
+            d.data = vdivq_f32(data, safeDenom);  // Perform SIMD division
+            vst1q_f32(reinterpret_cast<float*>(&d.data), d.data);
+#elif defined(SIMD_SUPPORTED)
 			__m128 v = _mm_set1_ps(num);  // Load scalar a into all elements of a __m256
-
 			// 检查除数是否为 0
 			__m128 mask = _mm_cmpeq_ps(v, _mm_setzero_ps());  // 如果 denom == 0, 设置掩码
 			__m128 safeDenom = _mm_blendv_ps(v, _mm_set1_ps(FLT_MIN), mask); // 如果为零，则使用一个极小的数
-
 			d.data = _mm_div_ps(data, safeDenom);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
-		else {
-			//__m256d v = _mm256_set1_pd(num);  // Load scalar a into all elements of a __m256d
-			//res.data = _mm256_div_pd(data, v);  // Perform SIMD multiplication
-			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
-			LOG_FATAL("Engine not support double type SIMD yet!");
-			ASSERT(false);
-		}
+#else
+            LOG_FATAL("Engine not support double type SIMD yet!");
+            ASSERT(false);
+#endif
+        }
 		d.x = reinterpret_cast<T*>(&d.data)[0];
 		d.y = reinterpret_cast<T*>(&d.data)[1];
 		d.z = reinterpret_cast<T*>(&d.data)[2];
@@ -774,22 +831,28 @@ public:
 #if defined(SIMD_SUPPORTED)
 		TVector4 d;
 		if constexpr (std::is_same_v<T, float>) {
-			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x); 
-			
+#if defined(SIMD_SUPPORTED_NEON)
+            // Load vec.x, vec.y, vec.z, vec.w into a NEON 128-bit register
+            float32x4_t v = vld1q_f32(reinterpret_cast<const float*>(&vec.x));  // Ensure correct alignment
+            // Check if any element of 'v' is zero (division by zero check)
+            float32x4_t zero = vdupq_n_f32(0.0f);  // Create a vector of zeros
+            uint32x4_t mask = vceqq_f32(v, zero);  // Create a mask where 'v' == 0
+            // If zero is detected, replace with FLT_MIN
+            float32x4_t safeDenom = vbslq_f32(mask, vdupq_n_f32(FLT_MIN), v);  // Blend to choose between v and FLT_MIN
+            // Perform element-wise division (safe division)
+            float32x4_t result = vdivq_f32(data, safeDenom);  // Divide data by safeDenom
+            // Store the result into d.data
+            vst1q_f32(reinterpret_cast<float*>(&d.data), result);  // Store result back into memory
+#else
+			__m128 v = _mm_set_ps(vec.w, vec.z, vec.y, vec.x);
 			// 除数检查，为0则替换
 			__m128 mask = _mm_cmpeq_ps(v, _mm_setzero_ps());
 			__m128 safeDenom = _mm_blendv_ps(v, _mm_set1_ps(FLT_MIN), mask);
-
 			d.data = _mm_div_ps(data, safeDenom);  // Perform SIMD multiplication
 			_mm_store_ps(reinterpret_cast<float*>(&d.data), d.data);
-		}
+#endif
+        }
 		else {
-			//__m256d v = _mm256_set_pd(vec.w, vec.z, vec.y, vec.x);  // Load scalar a into all elements of a __m256d
-			//// 除数检查，为0则替换
-			//__m256d mask = _mm_cmpeq_pd(v, _mm_setzero_ps());
-			//__m256d safeDenom = _mm256_blendv_ps(v, _mm_set1_ps(FLT_MIN), mask);
-			//res.data = _mm256_div_pd(data, v);  // Perform SIMD multiplication
-			//_mm256_store_pd(reinterpret_cast<double*>(&d.data), d.data);
 			LOG_FATAL("Engine not support double type SIMD yet!");
 			ASSERT(false);
 		}
