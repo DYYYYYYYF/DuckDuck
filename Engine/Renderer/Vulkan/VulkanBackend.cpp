@@ -1,4 +1,4 @@
-﻿#include "VulkanBackend.hpp"
+#include "VulkanBackend.hpp"
 #include "VulkanPlatform.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanImage.hpp"
@@ -774,8 +774,6 @@ void VulkanBackend::ReadTextureData(Texture* tex, uint32_t offset, uint32_t size
 
 void VulkanBackend::ReadTexturePixel(Texture* tex, uint32_t x, uint32_t y, unsigned char** outRGBA) {
 	VulkanImage* Image = (VulkanImage*)tex->InternalData;
-
-	vk::Format ImageFormat = ChannelCountToFormat(tex->ChannelCount, vk::Format::eR8G8B8A8Unorm);
 
 	// TODO: creating a buffer every time isn't great. Could optimize this by creating a buffer once
 	// and just reusing it.
