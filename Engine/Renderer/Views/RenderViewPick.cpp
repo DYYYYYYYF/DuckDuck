@@ -289,7 +289,7 @@ void RenderViewPick::OnDestroyPacket(struct RenderViewPacket* packet) {
 			std::vector<GeometryRenderData>().swap(PacketData->WorldMeshData);
 		}
 
-		DeleteObject(packet->extended_data);
+		DeleteObject(PacketData);
 		packet->extended_data = nullptr;
 	}
 

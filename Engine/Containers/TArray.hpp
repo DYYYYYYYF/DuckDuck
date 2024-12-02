@@ -61,22 +61,7 @@ public:
 	}
 
 	virtual ~TArray() {
-		if (ArrayMemory != nullptr) {
-			if constexpr (std::is_pointer<ElementType>::value) {
-				Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
-			}
-			else {
-				for (size_t i = 0; i < Length; ++i) {
-					reinterpret_cast<ElementType*>(ArrayMemory)[i].~ElementType();
-				}
-				Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
-			}
-			ArrayMemory = nullptr;
-		}
-
-		Capacity = 0;
-		Stride = 0;
-		Length = 0;
+		Destroy();
 	}
 
 	ElementType* begin() {
@@ -200,14 +185,38 @@ public:
 
 	void Clear() {
 		if (ArrayMemory != nullptr) {
-			size_t MemorySize = Capacity * Stride;
-			Memory::Free(ArrayMemory, MemorySize, MemoryType::eMemory_Type_Array);
+			if constexpr (std::is_pointer<ElementType>::value) {
+				size_t MemorySize = Capacity * Stride;
+				Memory::Zero(ArrayMemory, MemorySize);
+			}
+			else {
+				for (size_t i = 0; i < Length; ++i) {
+					reinterpret_cast<ElementType*>(ArrayMemory)[i].~ElementType();
+				}
+			}
 
-			ArrayMemory = nullptr;
 			Length = 0;
 		}
 	}
 
+	void Destroy() {
+		if (ArrayMemory != nullptr) {
+			if constexpr (std::is_pointer<ElementType>::value) {
+				Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
+			}
+			else {
+				for (size_t i = 0; i < Length; ++i) {
+					reinterpret_cast<ElementType*>(ArrayMemory)[i].~ElementType();
+				}
+				Memory::Free(ArrayMemory, Capacity * Stride, MemoryType::eMemory_Type_Array);
+			}
+			ArrayMemory = nullptr;
+		}
+
+		Capacity = 0;
+		Stride = 0;
+		Length = 0;
+	}
 
 	const ElementType& Pop() const { return Pop(); }
 	const ElementType& PopAt(size_t index) const { return PopAt(index); }
@@ -231,6 +240,8 @@ public:
 				new(reinterpret_cast<ElementType*>(ArrayMemory) + i) ElementType(other[i]); // 使用拷贝构造函数
 			}
 		}
+
+		return *this;
 	}
 
 	template<typename IntegerType>

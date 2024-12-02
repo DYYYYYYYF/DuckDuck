@@ -165,7 +165,7 @@ bool GameInstance::Initialize() {
 	CubeMesh->Generation = 0;
 	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
 	CubeMesh->Transform = Transform();
-	Meshes.push_back(CubeMesh);
+	Meshes.Push(CubeMesh);
 
 	Mesh* CubeMesh2 = NewObject<Mesh>();
 	CubeMesh2->Name = "TestCube2";
@@ -177,7 +177,7 @@ bool GameInstance::Initialize() {
 	CubeMesh2->Generation = 0;
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
-	Meshes.push_back(CubeMesh2);
+	Meshes.Push(CubeMesh2);
 
 	Mesh* CubeMesh3 = NewObject<Mesh>();
 	CubeMesh3->Name = "TestCube3";
@@ -189,7 +189,7 @@ bool GameInstance::Initialize() {
 	CubeMesh3->Generation = 0;
 	CubeMesh3->UniqueID = Identifier::AcquireNewID(CubeMesh3);
 	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
-	Meshes.push_back(CubeMesh3);
+	Meshes.Push(CubeMesh3);
 
 	// Clean up the allocations for the geometry config.
 	GeometrySystem::ConfigDispose(&GeoConfig);
@@ -244,7 +244,7 @@ bool GameInstance::Initialize() {
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 	UIMesh->Generation = 0;
 	UIMesh->UniqueID = Identifier::AcquireNewID(UIMesh);
-	UIMeshes.push_back(UIMesh);
+	UIMeshes.Push(UIMesh);
 
 	// TODO: TEMP
 	EngineEvent::Register(eEventCode::Debug_0, this, GameOnDebugEvent);
@@ -337,8 +337,7 @@ bool GameInstance::Update(float delta_time) {
 
 	// NOTE: starting at a reasonable default to avoid too many realloc.
 	uint32_t DrawCount = 0;
-	FrameData.WorldGeometries.reserve(512);
-	for (uint32_t i = 0; i < (uint32_t)Meshes.size(); ++i) {
+	for (uint32_t i = 0; i < (uint32_t)Meshes.Size(); ++i) {
 		Mesh* m = Meshes[i];
 		if (m == nullptr) {
 			continue;
@@ -471,9 +470,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 
 	// TODO: Read from config.
 	packet->view_count = 4;
-	std::vector<RenderViewPacket> Views;
-	Views.resize(packet->view_count);
-	packet->views = Views;
+	packet->views.resize(packet->view_count);
 	uint32_t ViewCounter = 0;
 
 	// Skybox
@@ -500,9 +497,9 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	
 	// UI
 	uint32_t UIMeshCount = 0;
-	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
+	TArray<Mesh*> TempUIMeshes(10);
 	// TODO: Flexible size array.
-	for (uint32_t i = 0; i < (uint32_t)UIMeshes.size(); ++i) {
+	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
 			TempUIMeshes[UIMeshCount] = UIMeshes[i];
 			UIMeshCount++;
@@ -768,73 +765,73 @@ bool ConfigureRenderviews(Application::SConfig* config) {
 
 
 void LoadScene1(GameInstance* GameInst) {
-	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
 		Mesh* M = GameInst->Meshes[i];
 		DeleteObject(M);
 		GameInst->Meshes[i] = nullptr;
+		GameInst->Meshes.Pop();
 	}
-	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("mountain_part");	// It always return true.
 	Model->Transform = Transform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(50.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
-	GameInst->Meshes.push_back(Model);
+	GameInst->Meshes.Push(Model);
 }
 
 void LoadScene2(GameInstance* GameInst) {
-	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
 		Mesh* M = GameInst->Meshes[i];
 		DeleteObject(M);
 		GameInst->Meshes[i] = nullptr;
+		GameInst->Meshes.Pop();
 	}
-	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
 
 	Mesh* Model1 = NewObject<Mesh>();
 	Model1->LoadFromResource("sponza");	// It always return true.
 	Model1->Transform = Transform(Vector3(0.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 90.0f, 0.0f)), Vector3(0.1f));
 	Model1->UniqueID = Identifier::AcquireNewID(Model1);
-	GameInst->Meshes.push_back(Model1);
+	GameInst->Meshes.Push(Model1);
 
 	Mesh* Model2 = NewObject<Mesh>();
 	Model2->LoadFromResource("bunny");	// It always return true.
 	Model2->Transform = Transform(Vector3(30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(5.0f));
 	Model2->UniqueID = Identifier::AcquireNewID(Model2);
-	GameInst->Meshes.push_back(Model2);
+	GameInst->Meshes.Push(Model2);
 
 	Mesh* Model3 = NewObject<Mesh>();
 	Model3->LoadFromResource("falcon");	// It always return true.
 	Model3->Transform = Transform(Vector3(-30.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
 	Model3->UniqueID = Identifier::AcquireNewID(Model3);
-	GameInst->Meshes.push_back(Model3);
+	GameInst->Meshes.Push(Model3);
 }
 
 void LoadScene3(GameInstance* GameInst) {
-	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
 		Mesh* M = GameInst->Meshes[i];
 		DeleteObject(M);
 		GameInst->Meshes[i] = nullptr;
+		GameInst->Meshes.Pop();
 	}
-	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("Buggy");	
 	Model->Transform = Transform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(1.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
-	GameInst->Meshes.push_back(Model);
+	GameInst->Meshes.Push(Model);
 }
 
 void LoadScene4(GameInstance* GameInst) {
-	for (size_t i = 3; i < GameInst->Meshes.size(); ++i) {
+	for (size_t i = GameInst->Meshes.Size() - 1; i >= 3; --i) {
 		Mesh* M = GameInst->Meshes[i];
 		DeleteObject(M);
 		GameInst->Meshes[i] = nullptr;
+		GameInst->Meshes.Pop();
 	}
-	GameInst->Meshes.assign(GameInst->Meshes.begin(), GameInst->Meshes.begin() + 3);
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("Duck");	
 	Model->Transform = Transform(Vector3(0.0f, 50.0f, 0.0f), Quaternion(Vector3(0.0f, 180.0f, 0.0f)), Vector3(0.1f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
-	GameInst->Meshes.push_back(Model);
+	GameInst->Meshes.Push(Model);
 }

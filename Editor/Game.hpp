@@ -6,6 +6,7 @@
 #include <Math/MathTypes.hpp>
 #include <Core/CPython.hpp>
 #include <Core/Keymap.hpp>
+#include <Containers/TArray.hpp>
 
 class Camera;
 
@@ -32,8 +33,8 @@ public:
 	Keymap* ConsoleKeymap;
 	DebugConsole* GameConsole = nullptr;
 
-	std::vector<Mesh*> Meshes;
-	std::vector<Mesh*> UIMeshes;
+	TArray<Mesh*> Meshes;
+	TArray<Mesh*> UIMeshes;
 	UIText TestText;
 	UIText TestSysText;
 

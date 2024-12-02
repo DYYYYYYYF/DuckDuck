@@ -278,10 +278,12 @@ bool Application::Run() {
 			Renderer->DrawFrame(&Packet);
 
 			// Cleanup the packet.
-			for (uint32_t i = 0; i < Packet.view_count; ++i) {
+			for (uint32_t i = 0; i < (uint32_t)Packet.views.size(); ++i) {
 				IRenderView* RenderView = Packet.views[i].view;
 				RenderView->OnDestroyPacket(&Packet.views[i]);
 			}
+			Packet.views.clear();
+			std::vector<struct RenderViewPacket>().swap(Packet.views);
 
 			double FrameEndTime = Platform::PlatformGetAbsoluteTime();
 			FrameElapsedTime = FrameEndTime - FrameStartTime;

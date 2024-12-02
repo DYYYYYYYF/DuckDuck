@@ -181,7 +181,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 	}
 
 	WorldPacketData* Data = (WorldPacketData*)data;
-	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
+	const std::vector<GeometryRenderData>& GeometryData = Data->Meshes;
 	out_packet->view = this;
 
 	// Set matrix, etc.
@@ -242,8 +242,6 @@ void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
 	std::vector<GeometryRenderData>().swap(packet->geometries);
-
-	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
 bool RenderViewWorld::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {

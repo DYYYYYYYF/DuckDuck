@@ -2,6 +2,7 @@
 
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
+#include "Containers/TArray.hpp"
 #include "Resources/Shader.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
 
@@ -92,12 +93,19 @@ public:
 		Meshes = data.Meshes;
 	}
 
+	virtual ~WorldPacketData() {
+		if (!Meshes.empty()) {
+			Meshes.clear();
+			std::vector<GeometryRenderData>().swap(Meshes);
+		}
+	}
+
 	std::vector<GeometryRenderData> Meshes;
 };
 
 struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
-	Mesh** meshes = nullptr;
+	TArray<Mesh*> meshes;
 };
 
 struct UIPacketData : public IRenderviewPacketData {
@@ -124,6 +132,13 @@ public:
 		UIGeometryCount = data.UIGeometryCount;
 		TextCount = data.TextCount;
 		Texts = data.Texts;
+	}
+
+	virtual ~PickPacketData() {
+		if (!WorldMeshData.empty()) {
+			WorldMeshData.clear();
+			std::vector<GeometryRenderData>().swap(WorldMeshData);
+		}
 	}
 
 	std::vector<GeometryRenderData> WorldMeshData;

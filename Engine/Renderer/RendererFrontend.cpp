@@ -132,7 +132,7 @@ bool IRenderer::DrawFrame(SRenderPacket* packet) {
 		unsigned char AttachmentIndex = Backend->GetWindowAttachmentIndex();
 
 		// Render each view.
-		for (uint32_t i = 0; i < packet->view_count; ++i) {
+		for (uint32_t i = 0; (uint32_t)i < packet->views.size(); ++i) {
 			if (!RenderViewSystem::OnRender(packet->views[i].view, &packet->views[i], Backend->GetFrameNum(), AttachmentIndex)) {
 				LOG_ERROR("Error rendering view index '%i'.", i);
 				return false;
