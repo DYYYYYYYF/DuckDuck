@@ -103,7 +103,7 @@ void RenderViewSkybox::OnResize(uint32_t width, uint32_t height) {
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 

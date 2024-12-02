@@ -107,22 +107,22 @@ public:
 
 
 template<typename T, typename ... Args>
-T* NewObject(Args ... args) {
+T* NewObject(Args&& ... args) {
 	T* _NewObject = (T*)Memory::Allocate(sizeof(T), MemoryType::eMemory_Type_Entity);
 	if (_NewObject == nullptr) {
 		LOG_FATAL("Can not create object.");
 		return nullptr;
 	}
 
-	return new(_NewObject)T(args...);
+	return new(_NewObject)T(std::forward<Args>(args)...);
 }
 
 template<typename T, typename ... Args>
-void DeleteObject(T* Obj, Args ... args) {
+void DeleteObject(T* Obj, Args&& ... args) {
 	if (Obj == nullptr) {
 		return;
 	}
 
-	Obj->~T();
+	Obj->~T(std::forward<Args>(args)...);
 	Memory::Free(Obj, sizeof(T), MemoryType::eMemory_Type_Entity);
 }

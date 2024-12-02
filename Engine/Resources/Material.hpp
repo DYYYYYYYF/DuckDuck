@@ -12,7 +12,7 @@ struct SMaterialConfig {
 	std::string name;
 	std::string shader_name;
 	bool auto_release;
-	Vec4 diffuse_color = Vec4(1.0f);
+	Vector4 diffuse_color = Vector4(1.0f);
 	float shininess = 16.0f;
 	char diffuse_map_name[TEXTURE_NAME_MAX_LENGTH] = "";
 	char specular_map_name[TEXTURE_NAME_MAX_LENGTH] = "";
@@ -22,7 +22,7 @@ struct SMaterialConfig {
 	float Metallic = 0.1f;					// 金属度
 	float Roughness = 0.5f;					// 粗糙度
 	float AmbientOcclusion = 1.0f;			// 环境光遮蔽
-	Vec4 EmissiveColor;						// 自发光
+	Vector4 EmissiveColor;						// 自发光
 	std::string MetallicRoughnessTexName;	// 金属度/粗糙度Texture
 	std::string EmissiveFactorTexName;		// 自发光Texture
 };
@@ -35,7 +35,7 @@ public:
 		ID = INVALID_ID;
 		Generation = INVALID_ID;
 		InternalId = INVALID_ID;
-		DiffuseColor = Vec4(1.0f);
+		DiffuseColor = Vector4(1.0f);
 		Shininess = 32.0f;
 		ShaderID = INVALID_ID;
 		RenderFrameNumer = 0;
@@ -50,7 +50,7 @@ public:
 		ID = INVALID_ID;
 		Generation = INVALID_ID;
 		InternalId = INVALID_ID;
-		DiffuseColor = Vec4(1.0f);
+		DiffuseColor = Vector4(1.0f);
 		Shininess = 32.0f;
 		ShaderID = INVALID_ID;
 		RenderFrameNumer = 0;
@@ -80,7 +80,7 @@ public:
 	uint32_t Generation;
 	uint32_t InternalId;
 	std::string Name;
-	Vec4 DiffuseColor;
+	Vector4 DiffuseColor;
 	TextureMap DiffuseMap;
 	TextureMap SpecularMap;
 	TextureMap NormalMap;

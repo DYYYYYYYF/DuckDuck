@@ -134,7 +134,7 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	WorldCamera = CameraSystem::GetDefault();
 
 	// TODO: Obtain from scene.
-	AmbientColor = Vec4(0.7f, 0.7f, 0.7f, 1.0f);
+	AmbientColor = Vector4(0.7f, 0.7f, 0.7f, 1.0f);
 
 	if (!EngineEvent::Register(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
@@ -170,7 +170,7 @@ void RenderViewWorld::OnResize(uint32_t width, uint32_t height) {
 	ProjectionMatrix = Matrix4::Perspective(Fov, (float)Width / (float)Height, NearClip, FarClip);
 
 	for (uint32_t i = 0; i < RenderpassCount; ++i) {
-		Passes[i].SetRenderArea(Vec4(0, 0, (float)Width, (float)Height));
+		Passes[i].SetRenderArea(Vector4(0, 0, (float)Width, (float)Height));
 	}
 }
 
@@ -181,7 +181,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 	}
 
 	WorldPacketData* Data = (WorldPacketData*)data;
-	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
+	const std::vector<GeometryRenderData>& GeometryData = Data->Meshes;
 	out_packet->view = this;
 
 	// Set matrix, etc.
@@ -210,7 +210,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 			// Get the center, extract the global position from the model matrix and add it to the center,
 			// then calculate the distance between it and the camera, and finally save it to a list to be sorted.
 			// NOTE: This isn't perfect for translucent meshes that intersect, but is enough for our purposes now.
-			Vec3 Center = GeometryData[i].geometry->Center.Transform(GData.model);
+			Vector3 Center = GeometryData[i].geometry->Center.Transform(GData.model);
 			float Distance = Center.Distance(WorldCamera->GetPosition());
 
 			GeometryDistance gDist;
@@ -242,8 +242,6 @@ void RenderViewWorld::OnDestroyPacket(struct RenderViewPacket* packet) {
 	// No much to do here, just zero mem.
 	packet->geometries.clear();
 	std::vector<GeometryRenderData>().swap(packet->geometries);
-
-	Memory::Zero(packet, sizeof(RenderViewPacket));
 }
 
 bool RenderViewWorld::RegenerateAttachmentTarget(uint32_t passIndex, RenderTargetAttachment* attachment) {

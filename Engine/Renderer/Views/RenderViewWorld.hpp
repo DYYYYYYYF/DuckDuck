@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Defines.hpp"
 #include "Renderer/Interface/IRenderView.hpp"
@@ -39,5 +39,5 @@ private:
 	float Fov;
 	Matrix4 ProjectionMatrix;
 	Camera* WorldCamera = nullptr;
-	Vec4 AmbientColor;
+	Vector4 AmbientColor;
 };

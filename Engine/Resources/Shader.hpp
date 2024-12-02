@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define GlobalShaderType ShaderType::eGLSL
 
@@ -168,10 +168,10 @@ struct MaterialShaderGlobalUbo {
 
 // Object Material
 struct MaterialShaderInstanceUbo {
-	Vec4 diffuse_color;	// 16 Bytes
-	Vec4 v_reserved0;	// 16 Bytes,reserved for future use
-	Vec4 v_reserved1;	// 16 Bytes,reserved for future use
-	Vec4 v_reserved2;	// 16 Bytes,reserved for future use
+	Vector4 diffuse_color;	// 16 Bytes
+	Vector4 v_reserved0;	// 16 Bytes,reserved for future use
+	Vector4 v_reserved1;	// 16 Bytes,reserved for future use
+	Vector4 v_reserved2;	// 16 Bytes,reserved for future use
 };
 
 struct ShaderConfig {

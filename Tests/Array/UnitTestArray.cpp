@@ -61,6 +61,31 @@ TArray<CA*> TPointer() {
 
 	return Arr1;
 }
+static int aa = 0;
+
+class TCopy {
+public:
+	TCopy() {}
+	TCopy(const TCopy& c) { 
+		ss = c.ss; 
+	}
+
+	TCopy(TCopy&& c) {
+		ss = c.ss;
+	}
+
+	virtual ~TCopy() {
+		Shutdown();
+	}
+
+private:
+	void Shutdown() {
+		std::cout << "Shutdown" << aa << "\n";
+	}
+
+public:
+	std::string ss;
+};
 
 void TestArray(){
 	TArray<TArray<CA>> Arr1;
@@ -78,4 +103,8 @@ void TestArray(){
 			cout << b->Str << endl;
 		}
 	}
+
+	TCopy T;
+	TCopy* Test1 = new TCopy(T);
+	TCopy* Test2 = NewObject<TCopy>(T);
 }

@@ -2,6 +2,7 @@
 
 #include "Defines.hpp"
 #include "Math/MathTypes.hpp"
+#include "Containers/TArray.hpp"
 #include "Resources/Shader.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
 
@@ -97,7 +98,7 @@ public:
 
 struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
-	Mesh** meshes = nullptr;
+	TArray<Mesh*> meshes;
 };
 
 struct UIPacketData : public IRenderviewPacketData {

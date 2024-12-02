@@ -4,6 +4,7 @@
 #include "Audio/TestAudio.cpp"
 #include "Array/UnitTestArray.cpp"
 #include "Matrix/TestMatrix.cpp"
+#include "SIMD/TestSIMD.cpp"
 
 int main() {
 
@@ -14,8 +15,8 @@ int main() {
 	TestFreelist();
 	TestString();
 	UnitTestAudio();
-
 	TestMatrix();
+	TestSIMD();
 
 	return 0;
 }

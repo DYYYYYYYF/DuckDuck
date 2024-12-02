@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 * @brief Any id set to this should be considered invalid,
@@ -28,6 +28,7 @@
 
 #elif __APPLE__
 #define DPLATFORM_APPLE 1
+#include <sys/sysctl.h>
 #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
 #include <TargetConditionals.h>
 #if TARGET_IPHONE_SIMULATOR
@@ -66,6 +67,88 @@
 
 #endif	// #ifdef DEXPORT
 
+
+// __cpuid
+#if defined(_MSC_VER)
+#include <intrin.h>  
+#include <immintrin.h>
+
+#ifdef __AVX__
+
+#elif defined(__AVX2__)
+static A = 0;
+#endif
+inline void cpuid(int info[4], int function_id) {
+	__cpuid(info, function_id);
+}
+
+inline bool is_sse_supported() {
+	int info[4];
+	cpuid(info, 1);
+	return (info[3] & (1 << 25)) != 0;  // SSE bit
+}
+
+inline bool is_sse2_supported() {
+	int info[4];
+	cpuid(info, 1);
+	return (info[3] & (1 << 26)) != 0;  // SSE2 bit
+}
+
+inline bool is_avx_supported() {
+	int info[4];
+	cpuid(info, 1);
+	return (info[2] & (1 << 28)) != 0;  // AVX bit
+}
+
+inline bool is_avx2_supported() {
+	int info[4];
+	cpuid(info, 7);
+	return (info[1] & (1 << 5)) != 0;  // AVX2 bit
+}
+#endif
+
+// SIMD Macros
+#ifdef _MSC_VER
+#define SIMD_SUPPORTED_AVX		is_avx_supported()
+#define SIMD_SUPPORTED_AVX2		is_avx2_supported()
+#define SIMD_SUPPORTED_SSE		is_avx2_supported()
+#define SIMD_SUPPORTED_SSE2		is_sse2_supported()
+#else
+#if defined(__AVX2__)
+#define SIMD_SUPPORTED_AVX2
+#elif defined(__SSE2__)
+#define SIMD_SUPPORTED_SSE2
+#elif defined(__SSE__)
+#define SIMD_SUPPORTED_SSE
+#elif defined(__AVX__)
+#define SIMD_SUPPORTED_AVX
+#elif defined(__ARM_NEON)
+#define SIMD_SUPPORTED_NEON
+#endif
+#endif
+
+#ifndef SIMD_SUPPORTED
+#if defined(SIMD_SUPPORTED_AVX) || defined(SIMD_SUPPORTED_AVX2) || defined(SIMD_SUPPORTED_SSE2) || defined(SIMD_SUPPORTED_NEON)
+#define SIMD_SUPPORTED
+#endif
+#endif
+
+#if defined(SIMD_SUPPORTED)
+#if defined(DPLATFORM_MACOS)
+#include <arm_neon.h>
+#define __m128 float32x4_t
+#define __m256 float32x8_t
+#define __m128d float64x2_t
+#define __m256d float64x4_t
+#define _mm_add_ps vaddq_f32
+#define _mm_mul_ps vmulq_f32
+
+#define _mm256_set_pd vld1q_f64		 // NEON 最高支持2个64bit浮点运算
+#define _mm256_add_pd vaddq_f64		 // NEON 最高支持2个64bit浮点运算
+#define _mm256_mul_pd vmulq_f64		 // NEON 最高支持2个64bit浮点运算
+#endif
+#endif
+
 // Deprecated macros
 #define DEPRECATED(msg) [[deprecated(msg)]]
 
@@ -90,7 +173,11 @@
 
 #include <filesystem>
 #ifndef ROOT_PATH
+#if defined(DPLATFORM_MACOS)
+#define ROOT_PATH std::filesystem::current_path().generic_string() + "/../.."
+#else
 #define ROOT_PATH std::filesystem::current_path().generic_string() + "/.."
+#endif
 #endif
 
 struct Range {

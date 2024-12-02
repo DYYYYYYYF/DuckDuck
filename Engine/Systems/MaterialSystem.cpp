@@ -414,7 +414,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 	DefaultMaterial->SetID(INVALID_ID);
 	DefaultMaterial->Generation = INVALID_ID;
 	DefaultMaterial->Name = DEFAULT_MATERIAL_NAME;
-	DefaultMaterial->DiffuseColor = Vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
+	DefaultMaterial->DiffuseColor = Vector4{ 1.0f, 1.0f, 1.0f, 1.0f };
 	DefaultMaterial->DiffuseMap.usage = TextureUsage::eTexture_Usage_Map_Diffuse;
 	DefaultMaterial->DiffuseMap.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
 	DefaultMaterial->DiffuseMap.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -494,7 +494,7 @@ bool MaterialSystem::CreateDefaultMaterial() {
 #define MATERIAL_APPLY_OR_FAIL(expr) expr
 #endif
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vec4& ambient_color, const Vec3& view_position, uint32_t render_mode) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, const Vector3& view_position, uint32_t render_mode) {
 	Shader* s = ShaderSystem::GetByID(shader_id);
 	if (s == nullptr) {
 		return false;

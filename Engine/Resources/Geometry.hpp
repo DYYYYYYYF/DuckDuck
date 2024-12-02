@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/MathTypes.hpp"
 #include "Math/Transform.hpp"
@@ -22,9 +22,9 @@ public:
 	uint32_t index_count = 0;
 	void* indices = nullptr;
 
-	Vec3 center;
-	Vec3 min_extents;
-	Vec3 max_extents;
+	Vector3 center;
+	Vector3 min_extents;
+	Vector3 max_extents;
 
 	std::string name;
 	std::string material_name;
@@ -39,7 +39,7 @@ public:
 	uint32_t ID;
 	uint32_t InternalID;
 	uint32_t Generation;
-	Vec3 Center;
+	Vector3 Center;
 	Extents3D Extents;
 	std::string name;
 	Material* Material = nullptr;

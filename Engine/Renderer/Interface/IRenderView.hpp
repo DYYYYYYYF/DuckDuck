@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/MathTypes.hpp"
 #include "Renderer/Vulkan/VulkanRenderpass.hpp"
 
@@ -73,8 +73,8 @@ struct RenderViewPacket {
 	IRenderView* view = nullptr;
 	Matrix4 view_matrix;
 	Matrix4 projection_matrix;
-	Vec3 view_position;
-	Vec4 ambient_color;
+	Vector3 view_position;
+	Vector4 ambient_color;
 	uint32_t geometry_count = 0;
 	std::vector<struct GeometryRenderData> geometries;
 	const char* custom_shader_name = nullptr;
