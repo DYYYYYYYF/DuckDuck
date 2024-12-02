@@ -16,8 +16,13 @@
  */
 template<typename T>
 struct alignas(16) TMatrix4 {
-	using DataType = std::conditional_t<std::is_same_v<T, float>, __m128, __m256d>;
-
+    static_assert(std::is_floating_point<T>::value);
+#if defined(SIMD_SUPPORTED_NEON)
+    using DataType = std::conditional_t<std::is_same_v<T, float>, float32x4_t, float64x1x4_t>;
+#elif defined(SIMD_SUPPORTED)
+    using DataType = std::conditional_t<std::is_same_v<T, float>, __m128, __m256d>;
+#endif
+    
 public:
 	union {
 		alignas(16) T data[16] = { 0.0f };
