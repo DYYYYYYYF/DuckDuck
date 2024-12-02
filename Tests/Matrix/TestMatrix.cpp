@@ -51,5 +51,19 @@ void TestMatrix() {
 	cout << "Vector4 normalized: " << Vec4.Normalize() << endl;
 	cout << "Vector4 length: " << Vec4.Length() << endl;
 
+	Matrix4 Mat3 = {
+		1, 0, 0, 2,
+		0, 1, 0, 2,
+		0, 0, 1, 2,
+		0, 0, 0, 1
+	};
 
+	Matrix4 Mat4 = {
+		1, 0, 0,  0,
+		0, 1, 0, -2,
+		0, 0, 1,  0,
+		0, 0, 0,  1
+	};
+
+	cout << "Matrix Multiply Matrix:\n" << Mat3.Multiply(Mat4) << endl;
 }
