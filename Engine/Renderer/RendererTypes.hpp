@@ -93,13 +93,6 @@ public:
 		Meshes = data.Meshes;
 	}
 
-	virtual ~WorldPacketData() {
-		if (!Meshes.empty()) {
-			Meshes.clear();
-			std::vector<GeometryRenderData>().swap(Meshes);
-		}
-	}
-
 	std::vector<GeometryRenderData> Meshes;
 };
 
@@ -132,13 +125,6 @@ public:
 		UIGeometryCount = data.UIGeometryCount;
 		TextCount = data.TextCount;
 		Texts = data.Texts;
-	}
-
-	virtual ~PickPacketData() {
-		if (!WorldMeshData.empty()) {
-			WorldMeshData.clear();
-			std::vector<GeometryRenderData>().swap(WorldMeshData);
-		}
 	}
 
 	std::vector<GeometryRenderData> WorldMeshData;
