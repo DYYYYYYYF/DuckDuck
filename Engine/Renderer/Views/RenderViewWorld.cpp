@@ -122,7 +122,6 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 	ResourceSystem::Unload(&ConfigResource);
 
 	UsedShader = ShaderSystem::Get(CustomShaderName ? CustomShaderName : ShaderName);
-	ReserveY = true;
 
 	// TODO: Set from configurable.
 	NearClip = 0.1f;
