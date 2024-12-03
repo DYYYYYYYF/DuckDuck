@@ -1,4 +1,4 @@
-﻿#include "TextureSystem.h"
+#include "TextureSystem.h"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/Application.hpp"
@@ -627,6 +627,11 @@ bool TextureSystem::ProcessTextureReference(const std::string& name, TextureType
 				break;
 			}
 		}
+        
+        if (Tex == nullptr){
+            LOG_ERROR("TextureSystem::ProcessTextureReference() There is not enough space to create new texture.");
+            return false;
+        }
 
 		// An empty slot was not found, bleat about it and boot out.
 		if (Tex->GetID() == INVALID_ID) {

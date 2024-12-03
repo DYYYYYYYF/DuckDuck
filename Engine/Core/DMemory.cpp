@@ -1,4 +1,4 @@
-﻿#include "DMemory.hpp"
+#include "DMemory.hpp"
 
 #include "EngineLogger.hpp"
 #include "Platform/Platform.hpp"
@@ -186,8 +186,7 @@ char* Memory::GetMemoryUsageStr() {
 
 		double PercentUsed = (double)UsedSpace / (double)TotalSpace;
 
-		int Length = snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%d%%%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, (int)(PercentUsed * 100));
-		offset += Length;
+		snprintf(buffer + offset, 8000, "Total memory usage: %.2f%s of %.2f%s (%d%%%%)\n", UsedAmount, UsedUnit, TotalAmount, TotalUnit, (int)(PercentUsed * 100));
 	}
 
 	char* outString = StringCopy(buffer);

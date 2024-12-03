@@ -8,8 +8,10 @@ template<typename T>
 struct TQuaternion {
 	union
 	{
-#if defined(SIMD_SUPPORTED)
-		// Used for SIMD operations
+        // Used for SIMD operations
+#if defined(SIMD_SUPPORTED_NEON)
+        alignas(16) float32x4_t data;
+#elif (SIMD_SUPPORTED)
 		alignas(16) __m128 data;
 #endif
 		// An array of x, y, z, w

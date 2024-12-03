@@ -1,4 +1,4 @@
-﻿#include "FontSystem.hpp"
+#include "FontSystem.hpp"
 
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
@@ -431,7 +431,7 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 	// with rendered glyphs at the given size.
 	stbtt_pack_context Context;
 	if (!stbtt_PackBegin(&Context, Pixels, variant->atlasSizeX, variant->atlasSizeY, 0, 1, 0)) {
-		LOG_ERROR("stbtt_PackBegin() Failed.");
+        LOG_ERROR("stbtt_PackBegin() Failed.");
 		return false;
 	}
 
@@ -443,7 +443,8 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 	Range.chardata_for_range = PackedChars;
 	Range.array_of_unicode_codepoints = InternalData->codepoints.data();
 	if (!stbtt_PackFontRanges(&Context, (unsigned char*)lookip->fontBinary, lookip->index, &Range, 1)) {
-		LOG_ERROR("stbtt_PackFontRanges() Failed.");
+        stbtt_PackEnd(&Context);
+        LOG_ERROR("stbtt_PackFontRanges() Failed.");
 		return false;
 	}
 

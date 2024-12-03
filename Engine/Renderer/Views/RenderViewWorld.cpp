@@ -1,4 +1,4 @@
-﻿#include "RenderViewWorld.hpp"
+#include "RenderViewWorld.hpp"
 
 #include "Core/EngineLogger.hpp"
 #include "Core/Event.hpp"
@@ -79,10 +79,6 @@ bool ReloadShader(eEventCode code, void* sender, void* listenerInst, SEventConte
 	if (self == nullptr) {
 		return false;
 	}
-
-	// NOTE: Assuming the first pass since that's all this view has.
-	Shader* UsedShader = self->GetShader();
-	ASSERT(UsedShader);
 
 	if (!ShaderSystem::Reload(self->GetShader())) {
 		LOG_ERROR("Failed to load builtin world shader.");

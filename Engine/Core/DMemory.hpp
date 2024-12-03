@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Defines.hpp"
 #include "EngineLogger.hpp"
@@ -118,11 +118,11 @@ T* NewObject(Args&& ... args) {
 }
 
 template<typename T, typename ... Args>
-void DeleteObject(T* Obj, Args&& ... args) {
+void DeleteObject(T* Obj) {
 	if (Obj == nullptr) {
 		return;
 	}
 
-	Obj->~T(std::forward<Args>(args)...);
+	Obj->~T();
 	Memory::Free(Obj, sizeof(T), MemoryType::eMemory_Type_Entity);
 }
