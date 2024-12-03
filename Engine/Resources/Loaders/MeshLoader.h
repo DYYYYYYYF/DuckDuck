@@ -2,6 +2,8 @@
 
 #include "Resources/Loaders/IResourceLoader.hpp"
 #include "Resources/Mesh.hpp"
+#include <vector>
+#include <unordered_map>
 
 struct FileHandle;
 struct SGeometryConfig;
@@ -29,7 +31,7 @@ private:
 	virtual bool WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config);
 
 	virtual bool ImportGltfFile(const std::string& obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries);
-	virtual bool ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model, const std::vector<SMaterialConfig>& materialConfigs, std::vector<SGeometryConfig>& out_geometries);
+	virtual bool ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model, const std::vector<SMaterialConfig>& materialConfigs, const std::unordered_map<size_t, Matrix4>& mapMeshMat, std::vector<SGeometryConfig>& out_geometries);
 	virtual bool ProcessGltfMaterial(const tinygltf::Model& model, const char* out_dsm_filename, std::vector<SMaterialConfig>& materialConfigs);
 
 	virtual bool DeduplicateGeometry(std::vector<SGeometryConfig>& out_geometries);

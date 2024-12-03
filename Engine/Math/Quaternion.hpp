@@ -11,7 +11,7 @@ struct TQuaternion {
         // Used for SIMD operations
 #if defined(SIMD_SUPPORTED_NEON)
         alignas(16) float32x4_t data;
-#elif (SIMD_SUPPORTED)
+#elif defined(SIMD_SUPPORTED)
 		alignas(16) __m128 data;
 #endif
 		// An array of x, y, z, w
