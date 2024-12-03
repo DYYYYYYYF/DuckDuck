@@ -55,12 +55,12 @@ public:
 		T EulerY = Deg2Rad(euler.y);
 		T EulerZ = Deg2Rad(euler.z);
 
-		T CosPitch = DCos(EulerX / 2);
-		T SinPitch = DSin(EulerX / 2);
-		T CosYaw = DCos(EulerY / 2);
-		T SinYaw = DSin(EulerY / 2);
-		T CosRoll = DCos(EulerZ / 2);
-		T SinRoll = DSin(EulerZ / 2);
+		T CosPitch = DCos(EulerX / 2.0f);
+		T SinPitch = DSin(EulerX / 2.0f);
+		T CosYaw = DCos(EulerY / 2.0f);
+		T SinYaw = DSin(EulerY / 2.0f);
+		T CosRoll = DCos(EulerZ / 2.0f);
+		T SinRoll = DSin(EulerZ / 2.0f);
 
 		// Calculate quaternion
 		w = CosPitch * CosYaw * CosRoll + SinPitch * SinYaw * SinRoll;
@@ -103,12 +103,12 @@ public:
 		Roll = DArcTan2(SinR_CosP, CosR_CosP);
 
 		// Yaw
-		T Sinp = 2.0 * (w * x + y * z);
-		if (Dabs(Sinp) >= 1.0) {
-			Pitch = copysign(D_PI / 2.0, Sinp);
+		T Sinp = 2.0f * (w * x + y * z);
+		if (Dabs(Sinp) >= 1.0f) {
+			Pitch = copysign(D_PI / 2.0f, Sinp);
 		}
 		else {
-			Pitch = DSin(Sinp);
+			Pitch = asin(Sinp);
 		}
 
 		// Roll
@@ -174,5 +174,9 @@ public:
 
 	float Dot(const TQuaternion<T>& v) {
 		return x * v.x + y * v.y + z * v.z + w * v.w;
+	}
+
+	friend std::ostream& operator<<(std::ostream& os, const TQuaternion<T>& q) {
+		return os << q.x << " " << q.y << " " << q.z << " " << q.w;
 	}
 };

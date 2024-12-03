@@ -41,10 +41,10 @@ public:
 			 T d5,  T d6,  T d7,  T d8, 
 			 T d9,  T d10, T d11, T d12, 
 			 T d13, T d14, T d15, T d16) {
-		data[0]  = d1;  data[1]  = d2;  data[2]  = d3;  data[3]  = d4;
-		data[4]  = d5;  data[5]  = d6;  data[6]  = d7;  data[7]  = d8;
-		data[8]  = d9;  data[9]  = d10; data[10] = d11; data[11] = d12;
-		data[12] = d13; data[13] = d14; data[14] = d15; data[15] = d16;
+		data[0]  = d1;  data[4]  = d2;  data[8]  = d3;  data[12]  = d4;
+		data[1]  = d5;  data[5]  = d6;  data[9]  = d7;  data[13]  = d8;
+		data[2]  = d9;  data[6]  = d10; data[10] = d11; data[14] = d12;
+		data[3]  = d13; data[7]  = d14; data[11] = d15; data[15] = d16;
 	}
 
 	/*
@@ -53,7 +53,7 @@ public:
 	* @param mat The matrix to be multiplied.
 	* @return The result of the matrix multiplication.
 	*/
-	TMatrix4 Multiply(const TMatrix4& mat) {
+	TMatrix4 Multiply(const TMatrix4& mat) const {
 		const T* MatPtr1 = data;
 		const T* MatPtr2 = mat.data;
 
@@ -333,9 +333,9 @@ public:
 
 		Matrix.data[0] = 1.0f / (aspect_ratio * HalfFov);
 		Matrix.data[5] = 1.0f / HalfFov;
-		Matrix.data[10] = -((far_clip + near_clip) / (far_clip - near_clip));
+		Matrix.data[10] = (near_clip + far_clip) / (near_clip - far_clip);
 		Matrix.data[11] = -1.0f;
-		Matrix.data[14] = -((2.0f * far_clip * near_clip) / (far_clip - near_clip));
+		Matrix.data[14] = (2.0f * far_clip * near_clip) / (near_clip - far_clip);
 
 		if (reverse_y) {
 			Matrix.data[5] *= -1.0f;
@@ -352,21 +352,19 @@ public:
 	* @param up The up vector.
 	* @return A matrix looking at target from the perspective of position.
 	*/
-	static TMatrix4 LookAt(TVector3<T> position, TVector3<T> target, TVector3<T> up) {
-		TMatrix4 Matrix;
+	static TMatrix4 LookAt(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
+		TMatrix4 Matrix = TMatrix4::Identity();
+		if (position.Compare(target)) {
+			return Matrix;
+		}
 
-		TVector3<T> AxisZ;
-		AxisZ.x = target.x - position.x;
-		AxisZ.y = target.y - position.y;
-		AxisZ.z = target.z - position.z;
-		AxisZ.Normalize();
-
+		TVector3<T> AxisZ = (target - position).Normalize();	// Look forward -Z
 		TVector3<T> AxisX = AxisZ.Cross(up).Normalize();
 		TVector3<T> AxisY = AxisX.Cross(AxisZ);
 
 		Matrix.data[0] = AxisX.x;
 		Matrix.data[1] = AxisY.x;
-		Matrix.data[2] = -AxisZ.x;
+		Matrix.data[2] = -AxisZ.x;	// 这里是正的 AxisZ，因为 AxisZ 已经是反向的	
 		Matrix.data[3] = 0;
 		Matrix.data[4] = AxisX.y;
 		Matrix.data[5] = AxisY.y;
@@ -470,6 +468,31 @@ public:
 		data[15] = mat.data[15];
 
 		return *this;
+	}
+
+	bool operator==(const TMatrix4& other) {
+		return	(
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+										   
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+										  	
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+											
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN)
+		);
 	}
 
 	template<typename TypeInex>

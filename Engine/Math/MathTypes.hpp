@@ -78,7 +78,7 @@ inline TQuaternion<Type> MatrixToQuat(const TMatrix4<Type>& M) {
 		}
 	}
 
-	if (q.Length() != 1.0f) {
+	if (q.Length() - 1.0f > FLT_MIN) {
 		return TQuaternion<Type>();
 	}
 
@@ -97,7 +97,7 @@ inline TMatrix4<Type> QuatToMatrix(const TQuaternion<Type>& q) {
 
 	Matrix.data[4] = 2.0f * (n.x * n.y - n.z * n.w);
 	Matrix.data[5] = 1.0f - 2.0f * (n.x * n.x + n.z * n.z);
-	Matrix.data[6] = 2.0f * (n.y * n.z - n.x * n.w);
+	Matrix.data[6] = 2.0f * (n.y * n.z + n.x * n.w);
 
 	Matrix.data[8] = 2.0f * (n.x * n.z + n.y * n.w);
 	Matrix.data[9] = 2.0f * (n.y * n.z - n.x * n.w);
@@ -110,27 +110,34 @@ inline TMatrix4<Type> QuatToMatrix(const TQuaternion<Type>& q) {
 template<typename Type>
 inline TMatrix4<Type> QuatToRotationMatrix(const TQuaternion<Type>& q, const TVector3<Type>& center) {
 	TMatrix4<Type> Matrix;
-	Type* o = Matrix.data;
 
-	o[0] = (q.x * q.x) - (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
-	o[1] = 2.0f * ((q.x * q.y) + (q.z * q.w));
-	o[2] = 2.0f * ((q.x * q.z) - (q.y + q.w));
-	o[3] = center.x - center.x * o[0] - center.y * o[1] - center.z * o[2];
+	// 归一化四元数
+	TQuaternion<Type> n = q;
+	n.Normalize();
 
-	o[4] = 2.0f * ((q.x * q.y) - (q.z * q.w));
-	o[5] = -(q.x * q.x) + (q.y * q.y) - (q.z * q.z) + (q.w * q.w);
-	o[6] = 2.0f * ((q.y * q.z) + (q.x * q.w));
-	o[7] = center.y - center.x * o[4] - center.y * o[5] - center.z * o[6];
+	// 计算旋转矩阵
+	Matrix.data[0] = 1.0f - 2.0f * (n.y * n.y + n.z * n.z);
+	Matrix.data[1] = 2.0f * (n.x * n.y + n.z * n.w);
+	Matrix.data[2] = 2.0f * (n.x * n.z - n.y * n.w);
 
-	o[8] = 2.0f * ((q.x * q.z) + (q.y * q.w));
-	o[9] = 2.0f * ((q.y * q.z) + (q.x * q.w));
-	o[10] = -(q.x * q.x) - (q.y * q.y) + (q.z * q.z) + (q.w * q.w);
-	o[11] = center.z - center.x * o[8] - center.y * o[9] - center.z * o[10];
+	Matrix.data[4] = 2.0f * (n.x * n.y - n.z * n.w);
+	Matrix.data[5] = 1.0f - 2.0f * (n.x * n.x + n.z * n.z);
+	Matrix.data[6] = 2.0f * (n.y * n.z + n.x * n.w);
 
-	o[12] = 0.0f;
-	o[13] = 0.0f;
-	o[14] = 0.0f;
-	o[15] = 1.0f;
+	Matrix.data[8] = 2.0f * (n.x * n.z + n.y * n.w);
+	Matrix.data[9] = 2.0f * (n.y * n.z - n.x * n.w);
+	Matrix.data[10] = 1.0f - 2.0f * (n.x * n.x + n.y * n.y);
+
+	// 齐次坐标的平移部分：旋转中心变换后得到的平移
+	Matrix.data[3] = -center.x * Matrix.data[0] - center.y * Matrix.data[1] - center.z * Matrix.data[2];
+	Matrix.data[7] = -center.x * Matrix.data[4] - center.y * Matrix.data[5] - center.z * Matrix.data[6];
+	Matrix.data[11] = -center.x * Matrix.data[8] - center.y * Matrix.data[9] - center.z * Matrix.data[10];
+
+	// 最后一行保持齐次坐标：0, 0, 0, 1
+	Matrix.data[12] = 0.0f;
+	Matrix.data[13] = 0.0f;
+	Matrix.data[14] = 0.0f;
+	Matrix.data[15] = 1.0f;
 
 	return Matrix;
 }

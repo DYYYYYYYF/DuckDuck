@@ -220,6 +220,14 @@ public:
 		return *this;
 	}
 
+	TVector3 Normalize() const {
+		return TVector3{
+			x / Length(),
+			y / Length(),
+			z / Length()
+		};
+	}
+
 	/*
 	* @brief Compares all elements of vector and ensures the difference is less than tolerance.
 	*
@@ -657,7 +665,7 @@ public:
 
 		return d;
 #else
-		return TVector4{ x + v.x, y + v.y, z + v.z, w + v.w };
+		return TVector4{ x + vec.x, y + vec.y, z + vec.z, w + vec.w };
 #endif
 	}
 
@@ -684,7 +692,7 @@ public:
 
 		return d;
 #else
-		return TVector4{ x + v.x, y + v.y, z + v.z, w + v.w };
+		return TVector4{ x - vec.x, y - vec.y, z - vec.z, w - vec.w };
 #endif
 	}
 
@@ -709,7 +717,7 @@ public:
 
 		return d;
 #else
-		return TVector4{ x * v.x, y * v.y, z * v.z, w * v.w };
+		return TVector4{ x * vec.x, y * vec.y, z * vec.z, w * vec.w };
 #endif
 	}
 
@@ -800,7 +808,7 @@ public:
 
 		return d;
 #else
-		return TVector4{ x / v.x, y / v.y, z / v.z, w / v.w };
+		return TVector4{ x / vec.x, y / vec.y, z / vec.z, w / vec.w };
 #endif
 	}
 
