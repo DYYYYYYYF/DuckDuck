@@ -51,6 +51,13 @@ public:
 	Vector3 GetEulerAngles();
 
 	/**
+	 * @brief Set camera's view matrix.
+	 *
+	 * @param mat The view matrix of the camera.
+	 */
+	void SetViewMatrix(const Matrix4& mat);
+
+	/**
 	 * @brief Obtains a copy of the camera's view matrix. If camera is dirty,
 	 * a new one is created, set and returned.
 	 * 

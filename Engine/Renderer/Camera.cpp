@@ -38,6 +38,14 @@ void Camera::SetEulerAngles(Vector3 eular) {
 	IsDirty = true;
 }
 
+void Camera::SetViewMatrix(const Matrix4& mat) {
+	Position = mat.GetTranslation();
+	EulerRotation = MatrixToQuat(mat).ToEuler();
+
+	ViewMatrix = mat; 
+	IsDirty = true;
+}
+
 Matrix4 Camera::GetViewMatrix() {
 	if (IsDirty) {
 		Matrix4 Rotation = Matrix4::EulerXYZ(EulerRotation.x, EulerRotation.y, EulerRotation.z);

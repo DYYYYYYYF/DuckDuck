@@ -18,7 +18,7 @@
 #include "GameCommands.hpp"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
-static bool EnableFrustumCulling = true;
+static bool EnableFrustumCulling = false;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
@@ -116,10 +116,10 @@ bool GameInstance::Initialize() {
 	TestPython.SetPythonFile("recompile_shader");
 
 	WorldCamera = CameraSystem::GetDefault();
-	/*WorldCamera->SetPosition(Vec3(-60.0f, 43.0f, -19.0f));
-	WorldCamera->SetEulerAngles(Vec3(-19.0f, -100.0f, 0.0f));*/
-	WorldCamera->SetPosition(Vector3(0.0f, 0.0f, 60.0f));
-	WorldCamera->SetEulerAngles(Vector3(0.0f, 0.0f, 0.0f));
+	Matrix4 CameraView = Matrix4::LookAt(Vector(0.0f, 0.0f, 60.0f), Vector3(0.0f, 0.0f, 0.0f), Axis::Y);
+	WorldCamera->SetViewMatrix(CameraView);
+	WorldCamera->SetPosition(Vector(0.0f, 10.0f, -60.0f));
+	WorldCamera->SetEulerAngles(Vector(0.0f, 180.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -801,7 +801,7 @@ void LoadScene2(GameInstance* GameInst) {
 
 	Mesh* Model3 = NewObject<Mesh>();
 	Model3->LoadFromResource("falcon");	// It always return true.
-	Model3->Transform = Transform(Vector3(-30.0f, -10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
+	Model3->Transform = Transform(Vector3(-30.0f, 0.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)));
 	Model3->UniqueID = Identifier::AcquireNewID(Model3);
 	GameInst->Meshes.Push(Model3);
 }
@@ -815,8 +815,8 @@ void LoadScene3(GameInstance* GameInst) {
 	}
 
 	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("Buggy");	
-	Model->Transform = Transform(Vector3(300.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(1.f));
+	Model->LoadFromResource("Rectangle");	
+	Model->Transform = Transform(Vector3(0.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(1.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.Push(Model);
 }
