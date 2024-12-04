@@ -75,7 +75,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 			if (MeshMatrixMap.find(child) == MeshMatrixMap.end()) {
 				MeshMatrixMap[child] = Matrix4::Identity();
 			}
-			MeshMatrixMap[child] = MeshMatrixMap[i].Multiply(MeshMatrixMap[child]);
+			MeshMatrixMap[child] = MeshMatrixMap[child].Multiply(MeshMatrixMap[i]);
 			NodeMeshMap[child] = i;
 		}
 	}

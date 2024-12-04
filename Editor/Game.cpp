@@ -164,7 +164,7 @@ bool GameInstance::Initialize() {
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Generation = 0;
 	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
-	CubeMesh->Transform = Transform();
+	CubeMesh->Transform = Transform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 90.0f)));
 	Meshes.Push(CubeMesh);
 
 	Mesh* CubeMesh2 = NewObject<Mesh>();
@@ -173,10 +173,10 @@ bool GameInstance::Initialize() {
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
-	CubeMesh2->Transform = Transform(Vector3(10.0f, 0.0f, 1.0f));
+	CubeMesh2->Transform = Transform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 90.0f, 0.0f)));
 	CubeMesh2->Generation = 0;
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
-	CubeMesh2->Transform.SetParentTransform(&CubeMesh->Transform);
+	CubeMesh2->AttachTo(CubeMesh);
 	Meshes.Push(CubeMesh2);
 
 	Mesh* CubeMesh3 = NewObject<Mesh>();
@@ -188,7 +188,7 @@ bool GameInstance::Initialize() {
 	CubeMesh3->Transform = Transform(Vector3(5.0f, 0.0f, 1.0f));
 	CubeMesh3->Generation = 0;
 	CubeMesh3->UniqueID = Identifier::AcquireNewID(CubeMesh3);
-	CubeMesh3->Transform.SetParentTransform(&CubeMesh2->Transform);
+	CubeMesh3->AttachTo(CubeMesh2);
 	Meshes.Push(CubeMesh3);
 
 	// Clean up the allocations for the geometry config.
@@ -306,9 +306,9 @@ bool GameInstance::Update(float delta_time) {
 	}
 
 	Quaternion Rotation = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
-	Meshes[0]->Transform.Rotate(Rotation);
+	/*Meshes[0]->Transform.Rotate(Rotation);
 	Meshes[1]->Transform.Rotate(Rotation);
-	Meshes[2]->Transform.Rotate(Rotation);
+	Meshes[2]->Transform.Rotate(Rotation);*/
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
@@ -344,7 +344,7 @@ bool GameInstance::Update(float delta_time) {
 		}
 
 		if (m->Generation != INVALID_ID_U8) {
-			Matrix4 Model = m->Transform.GetWorldTransform();
+			Matrix4 Model = m->GetWorldTransform();
 
 			for (uint32_t j = 0; j < m->geometry_count; j++) {
 				Geometry* g = m->geometries[j];

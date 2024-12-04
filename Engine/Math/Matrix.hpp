@@ -530,6 +530,66 @@ public:
 		return data[i];
 	}
 
+	TMatrix4 operator*(const TMatrix4& other) {
+		const T* MatPtr1 = data;
+		const T* MatPtr2 = other.data;
+
+		TMatrix4 NewMat = TMatrix4::Identity();
+		T* DstPtr = NewMat.data;
+
+#if defined(SIMD_SUPPORTED_NEON)
+		for (int i = 0; i < 4; ++i) {
+			// Load Mat1's i-th row (column-major access)
+			float32x4_t row1 = vld1q_f32(&MatPtr1[i * 4]);
+
+			for (int j = 0; j < 4; j++) {
+				// Load Mat2's j-th column (column-major access)
+				float32x4_t col2 = { MatPtr2[j], MatPtr2[4 + j], MatPtr2[8 + j], MatPtr2[12 + j] };
+
+				// Perform element-wise multiplication and horizontal addition
+				float32x4_t product = vmulq_f32(row1, col2);
+
+				// Horizontal addition to accumulate the results
+				float32x2_t sum_pair = vadd_f32(vget_low_f32(product), vget_high_f32(product)); // Add pairs
+				float32x2_t sum_final = vpadd_f32(sum_pair, sum_pair); // Final horizontal addition
+
+				// Store the resulting scalar into the matrix
+				DstPtr[i * 4 + j] = vget_lane_f32(sum_final, 0); // Extract the final sum
+			}
+		}
+#elif defined(SIMD_SUPPORTED)
+		for (int i = 0; i < 4; ++i) {
+			// 加载Mat1的第i列（按列主序，逐列访问）
+			DataType row1 = _mm_set_ps(MatPtr1[i * 4 + 3], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 0]);
+			for (int j = 0; j < 4; j++) {
+				// 加载Mat2的第j列（按列主序，逐列访问）
+				DataType col2 = _mm_set_ps(MatPtr2[12 + j], MatPtr2[8 + j], MatPtr2[4 + j], MatPtr2[0 + j]);
+
+				// 执行乘法并累加
+				DataType result = _mm_mul_ps(row1, col2);
+				result = _mm_hadd_ps(result, result);  // 水平加法：先加前两对元素，再加后两对元素
+				result = _mm_hadd_ps(result, result);  // 再加一次
+
+				// 将结果存储回目标矩阵
+				T FinalRest = _mm_cvtss_f32(result);		// result[0]
+				DstPtr[i * 4 + j] = FinalRest;
+			}
+		}
+#else
+		for (int i = 0; i < 4; ++i) {
+			for (int j = 0; j < 4; j++) {
+				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
+					MatPtr1[i * 4 + 1] * MatPtr2[4 + j] +
+					MatPtr1[i * 4 + 2] * MatPtr2[8 + j] +
+					MatPtr1[i * 4 + 3] * MatPtr2[12 + j];
+				DstPtr++;
+			}
+		}
+#endif
+
+		return NewMat;
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const TMatrix4& mat) {
 		return os
 			<< mat[0] << " " << mat[4] << " " << mat[8] << " " << mat[12] << "\n"

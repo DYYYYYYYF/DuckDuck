@@ -71,9 +71,6 @@ public:
 	Transform(const Vector3& position, const Quaternion& rotation, const Vector3& scale);
 
 public:
-	void SetParentTransform(Transform* t) { Parent = t; IsDirty = true; }
-	Transform* GetParentTransform() { return Parent; }
-
 	void SetPosition(Vector3 pos) { vPosition = pos; IsDirty = true; }
 	const Vector3& GetPosition() const { return vPosition; }
 
@@ -93,7 +90,6 @@ public:
 	void TransformRotate(const Vector3& translation, const Quaternion& rotation);
 
 	Matrix4 GetLocal();
-	Matrix4 GetWorldTransform();
 
 private:
 	void UpdateLocal();
@@ -104,5 +100,5 @@ private:
 	Vector3 vScale;
 	bool IsDirty;
 	Matrix4 Local;
-	class Transform* Parent;
+
 };

@@ -238,7 +238,7 @@ bool RenderViewPick::OnBuildPacket(IRenderviewPacketData* data, struct RenderVie
 		for (uint32_t j = 0; j < m->geometry_count; j++) {
 			GeometryRenderData RenderData;
 			RenderData.geometry = m->geometries[j];
-			RenderData.model = m->Transform.GetWorldTransform();
+			RenderData.model = m->GetWorldTransform();
 			RenderData.uniqueID = m->UniqueID;
 			out_packet->geometries.push_back(RenderData);
 			PacketData->UIGeometryCount++;
@@ -479,7 +479,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 			ShaderSystem::ApplyInstance(true);
 
 			// Apply the locals.
-			Matrix4 Model = Text->Trans.GetWorldTransform();
+			Matrix4 Model = Text->Trans.GetLocal();
 			if (!ShaderSystem::SetUniformByIndex(UIShaderInfo.ModelLocation, &Model)) {
 				LOG_ERROR("Failde to apply model matrix for text.");
 			}

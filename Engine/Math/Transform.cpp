@@ -3,37 +3,31 @@
 Transform::Transform() {
 	SetPRS(Vector3(0.0f), Quaternion(), Vector3(1.0f));
 	Local = Matrix4::Identity();
-	Parent = nullptr;
 }
 
 Transform::Transform(const Transform& trans) {
 	SetPRS(trans.GetPosition(), trans.GetRotation(), trans.GetScale());
 	Local = trans.Local;
-	Parent = trans.Parent;
 }
 
 Transform::Transform(const Vector3& position) {
 	SetPRS(position, Quaternion(), Vector3(1.0f));
 	Local = Matrix4::Identity();
-	Parent = nullptr;
 }
 
 Transform::Transform(const Quaternion& rotation) {
 	SetPRS(Vector3(0.0f), rotation, Vector3(1.0f));
 	Local = Matrix4::Identity();
-	Parent = nullptr;
 }
 
 Transform::Transform(const Vector3& position, const Quaternion& rotation) {
 	SetPRS(position, rotation, Vector3(1.0f));
 	Local = Matrix4::Identity();
-	Parent = nullptr;
 }
 
 Transform::Transform(const Vector3& position, const Quaternion& rotation, const Vector3& scale) {
 	SetPRS(position, rotation, scale);
 	Local = Matrix4::Identity();
-	Parent = nullptr;
 }
 
 void Transform::Translate(const Vector3& translation) {
@@ -72,14 +66,6 @@ void Transform::TransformRotate(const Vector3& translation, const Quaternion& ro
 	IsDirty = true;
 }
 
-Matrix4 Transform::GetLocal() {
-	if (IsDirty) {
-		UpdateLocal();
-	}
-
-	return Local;
-}
-
 void Transform::UpdateLocal() {
 	Matrix4 R = QuatToMatrix<float>(vRotation);
 	Matrix4 T = Matrix4::FromTranslation(vPosition);
@@ -89,12 +75,10 @@ void Transform::UpdateLocal() {
 	IsDirty = false;
 }
 
-Matrix4 Transform::GetWorldTransform() {
-	Matrix4 l = GetLocal();
-	if (Parent != nullptr) {
-		Matrix4 p = Parent->GetWorldTransform();
-		return l.Multiply(p);
+Matrix4 Transform::GetLocal() {
+	if (IsDirty) {
+		UpdateLocal();
 	}
 
-	return l;
+	return Local;
 }
