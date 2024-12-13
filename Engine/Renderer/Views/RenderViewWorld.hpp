@@ -32,7 +32,6 @@ public:
 
 
 private:
-	bool ReserveY;
 	Shader* UsedShader = nullptr;
 	float NearClip;
 	float FarClip;

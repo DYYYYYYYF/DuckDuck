@@ -34,10 +34,17 @@ struct MeshGroupData {
 
 class Mesh {
 public:
-	Mesh() : geometries(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
+	Mesh() : geometries(nullptr), Parent(nullptr), geometry_count(0), UniqueID(INVALID_ID), Generation(INVALID_ID_U8){}
 	virtual ~Mesh() { Unload(); }
 	DAPI bool LoadFromResource(const std::string& resource_name);
 	DAPI void Unload();
+
+	DAPI Matrix4 GetLocal();
+	DAPI Matrix4 GetWorldTransform();
+
+	DAPI void SetParent(Mesh* parent) { Parent = parent; }
+	DAPI void AttachTo(Mesh* parent) { Parent = parent; }
+	DAPI Mesh* GetParent() const { return Parent; }
 
 private:
 	void LoadJobSuccess(void* params);
@@ -51,6 +58,7 @@ public:
 	unsigned short geometry_count;
 	Geometry** geometries;
 	Transform Transform;
+	Mesh* Parent;
 };
 
 struct MeshLoadParams {

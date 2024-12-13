@@ -124,7 +124,7 @@ bool RenderViewUI::OnBuildPacket(IRenderviewPacketData* data, struct RenderViewP
 		for (uint32_t j = 0; j < pMesh->geometry_count; j++) {
 			GeometryRenderData RenderData;
 			RenderData.geometry = pMesh->geometries[j];
-			RenderData.model = pMesh->Transform.GetWorldTransform();
+			RenderData.model = pMesh->GetWorldTransform();
 			out_packet->geometries.push_back(RenderData);
 			out_packet->geometry_count++;
 		}
@@ -230,7 +230,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			Text->RenderFrameNumber = frame_number;
 
 			// Apply the locals.
-			Matrix4 Model = Text->Trans.GetWorldTransform();
+			Matrix4 Model = Text->Trans.GetLocal();
 			if (!ShaderSystem::SetUniformByIndex(ModelLocation, &Model)) {
 				LOG_ERROR("Failde to apply model matrix for text.");
 			}

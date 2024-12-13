@@ -236,7 +236,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				}
 			}
 			else if (TexcoordCount == 0) {
-				int Result = sscanf(LineBuf, "%s %d//%d %d//%d %d//%d",
+				int Result = sscanf(LineBuf, "%s %d/%*d/%d %d/%*d/%d %d/%*d/%d",
 					t,
 					&Face.vertices[0].position_index,
 					&Face.vertices[0].normal_index,
@@ -359,7 +359,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	size_t GroupCount = Groups.size();
 	SGeometryConfig NewData;
 	for (size_t i = 0; i < GroupCount; ++i) {
-		NewData.name = std::string(name);
+		NewData.name = name;
 
 		if (i > 0) {
 			NewData.name += (int)i;
@@ -402,123 +402,6 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 	// Output a .dsm file, which will be loaded in the future.
 	return WriteDsmFile(out_dsm_filename, name, out_geometries);
 }
-
-void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
-	std::vector<uint32_t> Indices;
-	std::vector<Vertex> Vertices;
-	Indices.reserve(65535);
-	Vertices.reserve(65535);
-	
-	bool ExtentSet = false;
-	Memory::Zero(&out_data->min_extents, sizeof(Vector3));
-	Memory::Zero(&out_data->max_extents, sizeof(Vector3));
-	
-	size_t FaceCount = faces.size();
-	size_t NormalCount = normals.size();
-	size_t TexcoordCount = texcoords.size();
-
-	bool SkipNormal = false;
-	bool SkipTexcoord = false;
-
-	if (NormalCount == 0) {
-		LOG_WARN("No normals are present in this model. Generating normals...");
-		SkipNormal = true;
-	}
-
-	if (TexcoordCount == 0) {
-		LOG_WARN("No tex-coord are present in this model.");
-		SkipTexcoord = true;
-	}
-
-	for (size_t f = 0; f < FaceCount; f++) {
-		// 确保法线存在
-		Vector3 DefaultNormal = Vector3(0, 0, 1);
-		if (SkipNormal) {
-			MeshVertexIndexData IndexData1 = faces[f].vertices[0];
-			MeshVertexIndexData IndexData2 = faces[f].vertices[1];
-			MeshVertexIndexData IndexData3 = faces[f].vertices[2];
-
-			Vector3 Pos1 = positions[IndexData1.position_index];
-			Vector3 Pos2 = positions[IndexData2.position_index];
-			Vector3 Pos3 = positions[IndexData3.position_index];
-
-			Vector3 Edge1 = Pos2 - Pos1;
-			Vector3 Edge2 = Pos3 - Pos2;
-
-			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
-		}
-
-		// Each vertex
-		for (size_t i = 0; i < 3; ++i) {
-			MeshVertexIndexData IndexData = faces[f].vertices[i];
-			Indices.push_back((uint32_t)(i + (f * 3)));
-
-			Vertex Vert;
-			Vector3 Pos = positions[IndexData.position_index];
-			Vert.position = Pos;
-
-			// Check extents - min
-			if (Pos.x < out_data->min_extents.x || !ExtentSet) {
-				out_data->min_extents.x = Pos.x;
-			}
-			if (Pos.y < out_data->min_extents.y || !ExtentSet) {
-				out_data->min_extents.y = Pos.y;
-			}
-			if (Pos.z < out_data->min_extents.z || !ExtentSet) {
-				out_data->min_extents.z = Pos.z;
-			}
-
-			// Check extents - max
-			if (Pos.x > out_data->max_extents.x || !ExtentSet) {
-				out_data->max_extents.x = Pos.x;
-			}
-			if (Pos.y > out_data->max_extents.y || !ExtentSet) {
-				out_data->max_extents.y = Pos.y;
-			}
-			if (Pos.z > out_data->max_extents.z || !ExtentSet) {
-				out_data->max_extents.z = Pos.z;
-			}
-
-			ExtentSet = true;
-
-			if (SkipNormal) {
-				Vert.normal = DefaultNormal;
-			}
-			else {
-				Vert.normal = normals[IndexData.normal_index];
-			}
-
-			if (SkipTexcoord) {
-				Vert.texcoord = Vector2f(0, 0);
-			}
-			else {
-				Vert.texcoord = texcoords[IndexData.texcoord_index];
-			}
-
-			// TODO: Color
-			Vert.color = Vector4(1, 1, 1, 1);
-			Vertices.push_back(Vert);
-		}
-	}
-
-	// Calculate the center based on the extents.
-	for (unsigned short i = 0; i < 3; ++i) {
-		out_data->center.elements[i] = (out_data->min_extents.elements[i] + out_data->max_extents.elements[i]) / 2.0f;
-	}
-
-	out_data->vertex_count = (uint32_t)Vertices.size();
-	out_data->vertex_size = sizeof(Vertex);
-	out_data->vertices = Memory::Allocate(out_data->vertex_count * out_data->vertex_size, MemoryType::eMemory_Type_Array);
-	Memory::Copy(out_data->vertices, Vertices.data(), out_data->vertex_count * out_data->vertex_size);
-
-	out_data->index_count = (uint32_t)Indices.size();
-	out_data->index_size = sizeof(uint32_t);
-	out_data->indices = Memory::Allocate(out_data->index_count * out_data->index_size, MemoryType::eMemory_Type_Array);
-	Memory::Copy(out_data->indices, Indices.data(), out_data->index_count * out_data->index_size);
-
-	std::vector<uint32_t>().swap(Indices);
-	std::vector<Vertex>().swap(Vertices);
-}	
 
 bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 	LOG_DEBUG("Importing obj .mtl file '%s'.", mtl_file_path);
@@ -701,6 +584,123 @@ bool MeshLoader::ImportObjMaterialLibraryFile(const char* mtl_file_path) {
 	FileSystemClose(&MtlFile);
 	return true;
 }
+
+void MeshLoader::ProcessSubobject(std::vector<Vector3>& positions, std::vector<Vector3>& normals, std::vector<Vector2f>& texcoords, std::vector<MeshFaceData>& faces, SGeometryConfig* out_data) {
+	std::vector<uint32_t> Indices;
+	std::vector<Vertex> Vertices;
+	Indices.reserve(65535);
+	Vertices.reserve(65535);
+	
+	bool ExtentSet = false;
+	Memory::Zero(&out_data->min_extents, sizeof(Vector3));
+	Memory::Zero(&out_data->max_extents, sizeof(Vector3));
+	
+	size_t FaceCount = faces.size();
+	size_t NormalCount = normals.size();
+	size_t TexcoordCount = texcoords.size();
+
+	bool SkipNormal = false;
+	bool SkipTexcoord = false;
+
+	if (NormalCount == 0) {
+		LOG_WARN("No normals are present in this model. Generating normals...");
+		SkipNormal = true;
+	}
+
+	if (TexcoordCount == 0) {
+		LOG_WARN("No tex-coord are present in this model.");
+		SkipTexcoord = true;
+	}
+
+	for (size_t f = 0; f < FaceCount; f++) {
+		// 确保法线存在
+		Vector3 DefaultNormal = Vector3(0, 0, 1);
+		if (SkipNormal) {
+			MeshVertexIndexData IndexData1 = faces[f].vertices[0];
+			MeshVertexIndexData IndexData2 = faces[f].vertices[1];
+			MeshVertexIndexData IndexData3 = faces[f].vertices[2];
+
+			Vector3 Pos1 = positions[IndexData1.position_index];
+			Vector3 Pos2 = positions[IndexData2.position_index];
+			Vector3 Pos3 = positions[IndexData3.position_index];
+
+			Vector3 Edge1 = Pos2 - Pos1;
+			Vector3 Edge2 = Pos3 - Pos2;
+
+			DefaultNormal = (Edge1.Cross(Edge2)).Normalize();
+		}
+
+		// Each vertex
+		for (size_t i = 0; i < 3; ++i) {
+			MeshVertexIndexData IndexData = faces[f].vertices[i];
+			Indices.push_back((uint32_t)(i + (f * 3)));
+
+			Vertex Vert;
+			Vector3 Pos = positions[IndexData.position_index];
+			Vert.position = Pos;
+
+			// Check extents - min
+			if (Pos.x < out_data->min_extents.x || !ExtentSet) {
+				out_data->min_extents.x = Pos.x;
+			}
+			if (Pos.y < out_data->min_extents.y || !ExtentSet) {
+				out_data->min_extents.y = Pos.y;
+			}
+			if (Pos.z < out_data->min_extents.z || !ExtentSet) {
+				out_data->min_extents.z = Pos.z;
+			}
+
+			// Check extents - max
+			if (Pos.x > out_data->max_extents.x || !ExtentSet) {
+				out_data->max_extents.x = Pos.x;
+			}
+			if (Pos.y > out_data->max_extents.y || !ExtentSet) {
+				out_data->max_extents.y = Pos.y;
+			}
+			if (Pos.z > out_data->max_extents.z || !ExtentSet) {
+				out_data->max_extents.z = Pos.z;
+			}
+
+			ExtentSet = true;
+
+			if (SkipNormal) {
+				Vert.normal = DefaultNormal;
+			}
+			else {
+				Vert.normal = normals[IndexData.normal_index];
+			}
+
+			if (SkipTexcoord) {
+				Vert.texcoord = Vector2f(0, 0);
+			}
+			else {
+				Vert.texcoord = texcoords[IndexData.texcoord_index];
+			}
+
+			// TODO: Color
+			Vert.color = Vector4(1, 1, 1, 1);
+			Vertices.push_back(Vert);
+		}
+	}
+
+	// Calculate the center based on the extents.
+	for (unsigned short i = 0; i < 3; ++i) {
+		out_data->center.elements[i] = (out_data->min_extents.elements[i] + out_data->max_extents.elements[i]) / 2.0f;
+	}
+
+	out_data->vertex_count = (uint32_t)Vertices.size();
+	out_data->vertex_size = sizeof(Vertex);
+	out_data->vertices = Memory::Allocate(out_data->vertex_count * out_data->vertex_size, MemoryType::eMemory_Type_Array);
+	Memory::Copy(out_data->vertices, Vertices.data(), out_data->vertex_count * out_data->vertex_size);
+
+	out_data->index_count = (uint32_t)Indices.size();
+	out_data->index_size = sizeof(uint32_t);
+	out_data->indices = Memory::Allocate(out_data->index_count * out_data->index_size, MemoryType::eMemory_Type_Array);
+	Memory::Copy(out_data->indices, Indices.data(), out_data->index_count * out_data->index_size);
+
+	std::vector<uint32_t>().swap(Indices);
+	std::vector<Vertex>().swap(Vertices);
+}	
 
 bool MeshLoader::WriteDmtFile(const char* mtl_file_path, SMaterialConfig* config) {
 	// NOTE: The .obj file this came from (and resulting .mtl file) sit in the

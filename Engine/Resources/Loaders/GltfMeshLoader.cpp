@@ -8,7 +8,6 @@
 #include "Systems/GeometrySystem.h"
 #include "Math/GeometryUtils.hpp"
 
-#include <vector>
 #include <stdio.h>	//sscanf
 
 #define TINYGLTF_IMPLEMENTATION
@@ -16,6 +15,16 @@
 #define JSON_NOEXCEPTION
 #define TINYGLTF_NOEXCEPTION
 #include <tiny_gltf.h>
+
+Matrix4  GetGLTFNodeTransform(const std::unordered_map<size_t, Matrix4>& transformMap, const std::unordered_map<size_t, int>& nodeParentMap, const tinygltf::Model& model, int index) {
+	int ParnetIndex = nodeParentMap.at(index);
+	Matrix4 SelfTransform = transformMap.at(index);
+	if (ParnetIndex != -1) {
+		return GetGLTFNodeTransform(transformMap, nodeParentMap, model, ParnetIndex).Multiply(SelfTransform);
+	}
+
+	return SelfTransform;
+}
 
 bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm_filename, std::vector<SGeometryConfig>& out_geometries) {
 	tinygltf::Model model;
@@ -26,7 +35,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	// 加载 GLTF 文件
 	bool success = loader.LoadASCIIFromFile(&model, &err, &warn, obj_file);
 	if (!success) {
-		std::cerr << "Failed to load GLTF model: " << err << std::endl;
+		LOG_INFO("Failed to load GLTF model: ", err.c_str());
 		return false;
 	}
 
@@ -39,8 +48,8 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	// Groups
 	std::vector<MeshGroupData> Groups;
 	// Matrixs
-	std::map<size_t, Matrix4> MeshMatrixMap;
-	std::map<size_t, size_t> NodeMeshMap;
+	std::unordered_map<size_t, Matrix4> MeshMatrixMap;
+	std::unordered_map<size_t, int> NodeParentMap;
 
 	ProcessGltfMaterial(model, obj_file.c_str(), MaterialConfigs);
 	
@@ -59,7 +68,8 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 				LocalTransform.SetScale(Scale);
 			}
 			if (!Node.rotation.empty()) {
-				Quaternion rotation = Quaternion((float)Node.rotation[3], (float)Node.rotation[0], (float)Node.rotation[1], (float)Node.rotation[2]);
+				// x y z w
+				Quaternion rotation = Quaternion((float)Node.rotation[0], (float)Node.rotation[1], (float)Node.rotation[2], (float)Node.rotation[3]);
 				LocalTransform.SetRotation(rotation);
 			}
 			if (!Node.translation.empty()) {
@@ -68,21 +78,17 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 			}
 		}
 
+		NodeParentMap[i] = -1;
 		MeshMatrixMap[i] = LocalTransform.GetLocal();
-
 		for (const auto& child : Node.children) {
-			if (MeshMatrixMap.find(child) == MeshMatrixMap.end()) {
-				MeshMatrixMap[child] = Matrix4::Identity();
-			}
-			MeshMatrixMap[child] = MeshMatrixMap[i].Multiply(MeshMatrixMap[child]);
-			NodeMeshMap[child] = i;
+			NodeParentMap[child] = (int)i;
 		}
 	}
 
 	// Meshes
 	Transform DefaultLocalTransform = Transform();
 	for (size_t im = 0; im < model.meshes.size(); ++im) {
-		ProcessGltfMesh(im, model, MaterialConfigs, out_geometries);
+		ProcessGltfMesh(im, model, MaterialConfigs, NodeParentMap, MeshMatrixMap,out_geometries);
 	}
 
 	MaterialConfigs.clear();
@@ -205,7 +211,8 @@ bool MeshLoader::ProcessGltfMaterial(const tinygltf::Model& model, const char* o
 	return true;
 }
 
-bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model, const std::vector<SMaterialConfig>& materialConfigs, std::vector<SGeometryConfig>& out_geometries) {
+bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model, const std::vector<SMaterialConfig>& materialConfigs, 
+	const std::unordered_map<size_t, int>& nodeParentMap, const std::unordered_map<size_t, Matrix4>& mapMeshMat, std::vector<SGeometryConfig>& out_geometries) {
 	// Positions
 	std::vector<Vector3> Positions;
 	Positions.reserve(65535);
@@ -328,6 +335,8 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 					.data[positionAccessor.byteOffset + positionView.byteOffset]);
 				for (size_t i = 0; i < positionAccessor.count; i++) {
 					Vector3 vPosition = Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+					Matrix4 mTransform = GetGLTFNodeTransform(mapMeshMat, nodeParentMap, model, (int)meshIndex);
+					vPosition = mTransform * vPosition;
 					Positions.push_back(vPosition);
 				}
 			} break;
@@ -387,7 +396,14 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 		}
 
 		SGeometryConfig NewData;
-		NewData.material_name = materialConfigs[primitive.material].name;
+		// No material
+		if (primitive.material == -1) {
+			NewData.material_name = DEFAULT_MATERIAL_NAME;
+		}
+		else {
+			NewData.material_name = materialConfigs[primitive.material].name;
+		}
+		
 		NewData.name = mesh.name;
 
 		ProcessSubobject(Positions, Normals, Texcoords, GroupData.Faces, &NewData);

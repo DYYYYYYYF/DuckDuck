@@ -49,7 +49,7 @@ bool ImageLoader::Load(const std::string& name, void* params, Resource* resource
 	}
 
 	if (!Found) {
-		LOG_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", FullFilePath);
+		LOG_ERROR("Image resource loader failed find file '%s'or with any supported extensions.", name.c_str());
 		return false;
 	}
 
