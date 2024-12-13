@@ -180,6 +180,7 @@ private:
 	 * matrix will be recalculated when needed.
 	 */
 	Vector3 EulerRotation;
+	Quaternion CameraQuaternion;
 
 	/** @brief Internal flag used to determine when the view matrix needs to be rebuilt. */
 	bool IsDirty;

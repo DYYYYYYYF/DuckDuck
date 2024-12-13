@@ -236,7 +236,7 @@ bool MeshLoader::ImportObjFile(FileHandle* obj_file, const char* out_dsm_filenam
 				}
 			}
 			else if (TexcoordCount == 0) {
-				int Result = sscanf(LineBuf, "%s %d//%d %d//%d %d//%d",
+				int Result = sscanf(LineBuf, "%s %d/%*d/%d %d/%*d/%d %d/%*d/%d",
 					t,
 					&Face.vertices[0].position_index,
 					&Face.vertices[0].normal_index,

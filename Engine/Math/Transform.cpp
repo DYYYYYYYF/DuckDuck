@@ -36,8 +36,7 @@ void Transform::Translate(const Vector3& translation) {
 }
 
 void Transform::Rotate(const Quaternion& rotation) {
-	Quaternion r = rotation;
-	vRotation = r.Multiply(vRotation);
+	vRotation = rotation.Multiply(vRotation);
 	IsDirty = true;
 }
 
@@ -61,17 +60,16 @@ void Transform::SetPRS(const Vector3& pos, const Quaternion& rotation, const Vec
 
 void Transform::TransformRotate(const Vector3& translation, const Quaternion& rotation) {
 	vPosition = vPosition + translation;
-	Quaternion r = rotation;
-	vRotation = r.Multiply(vRotation);
+	vRotation = rotation.Multiply(vRotation);
 	IsDirty = true;
 }
 
 void Transform::UpdateLocal() {
-	Matrix4 R = QuatToMatrix<float>(vRotation);
+	Matrix4 R = vRotation.ToRotationMatrix();
 	Matrix4 T = Matrix4::FromTranslation(vPosition);
 	Matrix4 S = Matrix4::FromScale(vScale);
 
-	Local = R.Multiply(S.Multiply(T));
+	Local = T.Multiply(R.Multiply(S));
 	IsDirty = false;
 }
 

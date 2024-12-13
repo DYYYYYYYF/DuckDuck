@@ -53,14 +53,15 @@ public:
 	}
 
 	/*
-	* @brief Returns the result of multiplying
+	* @brief Returns the result of multiplying 
+	* M2 * M1
 	*
 	* @param mat The matrix to be multiplied.
 	* @return The result of the matrix multiplication.
 	*/
 	TMatrix4 Multiply(const TMatrix4& mat) const {
-		const T* MatPtr1 = data;
-		const T* MatPtr2 = mat.data;
+		const T* MatPtr1 = mat.data;
+		const T* MatPtr2 = data;
 
 		TMatrix4 NewMat = TMatrix4::Identity();
 		T* DstPtr = NewMat.data;
@@ -369,43 +370,69 @@ public:
 		return Matrix;
 	}
 
+	static TMatrix4 LookAt(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up, bool isRH = true) {
+		if (isRH) {
+			return LookAtRH(position, target, up);
+		}
+		else {
+			return LookAtLH(position, target, up);
+		}
+	}
+
 	/*
 	* @brief Creates and returns a look-at matrix, or a matrix looking at target from the perspective of position.
+	* Look forward -Z
 	*
 	* @param position The position of the matrix.
 	* @param target The look at target.
 	* @param up The up vector.
 	* @return A matrix looking at target from the perspective of position.
 	*/
-	static TMatrix4 LookAt(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
+	static TMatrix4 LookAtRH(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		if (position.Compare(target)) {
 			return Matrix;
 		}
 
-		TVector3<T> AxisZ = (target - position).Normalize();	// Look forward -Z
-		TVector3<T> AxisX = AxisZ.Cross(up).Normalize();
+		TVector3<T> AxisZ = (position - target).Normalize();	
+		TVector3<T> AxisX = AxisZ.Cross(up);
 		TVector3<T> AxisY = AxisX.Cross(AxisZ);
 
 		Matrix.data[0] = AxisX.x;
-		Matrix.data[1] = AxisY.x;
-		Matrix.data[2] = -AxisZ.x;	// 这里是正的 AxisZ，因为 AxisZ 已经是反向的	
-		Matrix.data[3] = 0;
-		Matrix.data[4] = AxisX.y;
+		Matrix.data[4] = AxisY.x;
+		Matrix.data[8] = AxisZ.x;	
+
+		Matrix.data[1] = AxisX.y;
 		Matrix.data[5] = AxisY.y;
-		Matrix.data[6] = -AxisZ.y;
-		Matrix.data[7] = 0;
-		Matrix.data[8] = AxisX.z;
-		Matrix.data[9] = AxisY.z;
-		Matrix.data[10] = -AxisZ.z;
-		Matrix.data[11] = 0;
-		Matrix.data[12] = -AxisX.Dot(position);
-		Matrix.data[13] = -AxisY.Dot(position);
-		Matrix.data[14] = AxisZ.Dot(position);
-		Matrix.data[15] = 1.0f;
+		Matrix.data[9] = AxisZ.y;
+
+		Matrix.data[2] = AxisX.z;
+		Matrix.data[6] = AxisY.z;
+		Matrix.data[10] = AxisZ.z;
+
+		//Matrix.data[12] = -position.Dot(AxisX);		// Local axis
+		//Matrix.data[13] = -position.Dot(AxisY);		// Local axis
+		//Matrix.data[14] = -position.Dot(AxisZ);		// Local axis
+		Matrix.data[12] = -position.x;		// World axis
+		Matrix.data[13] = -position.y;		// World axis
+		Matrix.data[14] = -position.z;		// World axis
 
 		return Matrix;
 	}
+	/*
+	* @brief Creates and returns a look-at matrix, or a matrix looking at target from the perspective of position.
+	* Look forward -Z
+	*
+	* @param position The position of the matrix.
+	* @param target The look at target.
+	* @param up The up vector.
+	* @return A matrix looking at target from the perspective of position.
+	*/
+	static TMatrix4 LookAtLH(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
+		LOG_WARN("Not support LookAtLH yet!");
+		return TMatrix4();
+	}
+
 
 	static TMatrix4 FromTranslation(const TVector3<T>& trans) {
 		TMatrix4 Ret = TMatrix4::Identity();
@@ -420,10 +447,13 @@ public:
 	}
 
 	/*
-	* Euler
+	* | 1      0       0  |
+	* | 0    cosp	-sinp |
+	* | 0    sinp    cosp |
 	*/
 	static TMatrix4 EulerX(T angle_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
+
 		float c = DCos(angle_radians);
 		float s = DSin(angle_radians);
 
@@ -435,6 +465,11 @@ public:
 		return Matrix;
 	}
 
+	/**
+	* | cosy    0    siny |
+	* |   0     1     0   |
+	* | -siny   0    cosy |
+	*/
 	static TMatrix4 EulerY(T angle_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		float c = DCos(angle_radians);
@@ -448,6 +483,11 @@ public:
 		return Matrix;
 	}
 
+	/**
+	* | cosr   -sinr    0 |
+	* | sinr    cosr    0 |
+	* |   0      0      1 |
+	*/
 	static TMatrix4 EulerZ(T angle_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		float c = DCos(angle_radians);
@@ -461,14 +501,16 @@ public:
 		return Matrix;
 	}
 
+	/**
+	 * @brief Rotation Z - Y - X
+	 */
 	static TMatrix4 EulerXYZ(T x_radians, T y_radians, T z_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		TMatrix4 mx = TMatrix4::EulerX(x_radians);
 		TMatrix4 my = TMatrix4::EulerY(y_radians);
 		TMatrix4 mz = TMatrix4::EulerZ(z_radians);
 
-		Matrix = my.Multiply(mz);
-		Matrix = mx.Multiply(Matrix);
+		Matrix = mz.Multiply(my.Multiply(mx));
 
 		return Matrix;
 	}
@@ -599,13 +641,13 @@ public:
 	}
 
 	/**
-	 * @brief Performs m * v
+	 * @brief Performs v * m
 	 *
 	 * @param m The matrix to be multiplied.
 	 * @param v The vector to multiply by.
 	 * @return The transformed vector.
 	 */
-	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
+	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
 #if defined(SIMD_SUPPORTED_NEON)
         // Load rows of the matrix
            float32x4_t row1 = vld1q_f32(&m.data[0]);
@@ -669,13 +711,13 @@ public:
 	}
 
 	/**
-	 * @brief Performs v * m
+	 * @brief Performs m * v
 	 *
 	 * @param v The vector to be multiplied.
 	 * @param m The matrix to be multiply by.
 	 * @return The transformed vector.
 	 */
-	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
+	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
 #if defined(SIMD_SUPPORTED_NEON)
         // Prepare matrix rows as columns (transposed layout)
             float32x4_t col1 = {m.data[0], m.data[4], m.data[8], m.data[12]};

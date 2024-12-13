@@ -213,19 +213,25 @@ public:
 	* @brief Normalizes vector
 	*/
 	TVector3 Normalize() {
-		x /= Length();
-		y /= Length();
-		z /= Length();
+		T l = Length();
+		if (l < FLT_MIN) {
+			return 0.0f;
+		}
+
+		x = x / l;
+		y = y / l;
+		z = z / l;
 
 		return *this;
 	}
 
 	TVector3 Normalize() const {
-		return TVector3{
-			x / Length(),
-			y / Length(),
-			z / Length()
-		};
+		T l = Length();
+		if (l < FLT_MIN) {
+			return TVector3(0.0f);
+		}
+
+		return TVector3{x / l, y / l, z / l};
 	}
 
 	/*
@@ -368,11 +374,11 @@ public:
 
 	// Div
 	TVector3 operator/(int num) {
-		return TVector3{ x / num, y / num, y / num };
+		return TVector3{ x / num, y / num, z / num };
 	}
 
-	TVector3 operator/(float num) {
-		return TVector3{ x / num, y / num, y / num };
+	TVector3 operator/(T num) {
+		return TVector3{ x / num, y / num, z / num };
 	}
 
 	// Negative
