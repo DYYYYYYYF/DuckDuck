@@ -116,10 +116,10 @@ bool GameInstance::Initialize() {
 	TestPython.SetPythonFile("recompile_shader");
 
 	WorldCamera = CameraSystem::GetDefault();
-	Matrix4 CameraView = Matrix4::LookAt(Vector(0.0f, 0.0f, 60.0f), Vector3(0.0f, 0.0f, 0.0f), Axis::Y);
+	Matrix4 CameraView = Matrix4::LookAt(Vector(0.0f, 0.0f, -90.0f), Vector3(0.0f, 0.0f, 0.0f), Axis::Y);
 	WorldCamera->SetViewMatrix(CameraView);
-	WorldCamera->SetPosition(Vector(0.0f, 10.0f, -60.0f));
-	WorldCamera->SetEulerAngles(Vector(0.0f, 180.0f, 0.0f));
+	//WorldCamera->SetPosition(Vector(0.0f, 10.0f, 60.0f));
+	//WorldCamera->SetEulerAngles(Vector(0.0f, 0.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -164,7 +164,7 @@ bool GameInstance::Initialize() {
 	CubeMesh->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig, true);
 	CubeMesh->Generation = 0;
 	CubeMesh->UniqueID = Identifier::AcquireNewID(CubeMesh);
-	CubeMesh->Transform = Transform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 90.0f)));
+	CubeMesh->Transform = Transform(Vector(0.0f, 0.0f, 0.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
 	Meshes.Push(CubeMesh);
 
 	Mesh* CubeMesh2 = NewObject<Mesh>();
@@ -173,7 +173,7 @@ bool GameInstance::Initialize() {
 	CubeMesh2->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*) * CubeMesh2->geometry_count, MemoryType::eMemory_Type_Array);
 	SGeometryConfig GeoConfig2 = GeometrySystem::GenerateCubeConfig(5.0f, 5.0f, 5.0f, 1.0f, 1.0f, "TestCube2", "Material.World");
 	CubeMesh2->geometries[0] = GeometrySystem::AcquireFromConfig(GeoConfig2, true);
-	CubeMesh2->Transform = Transform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 90.0f, 0.0f)));
+	CubeMesh2->Transform = Transform(Vector3(10.0f, 0.0f, 1.0f), Quaternion(Vector(0.0f, 0.0f, 0.0f)));
 	CubeMesh2->Generation = 0;
 	CubeMesh2->UniqueID = Identifier::AcquireNewID(CubeMesh2);
 	CubeMesh2->AttachTo(CubeMesh);
@@ -305,10 +305,11 @@ bool GameInstance::Update(float delta_time) {
 		}
 	}
 
-	Quaternion Rotation = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
-	/*Meshes[0]->Transform.Rotate(Rotation);
-	Meshes[1]->Transform.Rotate(Rotation);
-	Meshes[2]->Transform.Rotate(Rotation);*/
+	Quaternion RotationY = Quaternion(Axis::Y, 0.5f * (float)delta_time, false);
+	Quaternion RotationX = Quaternion(Axis::X, 0.5f * (float)delta_time, false);
+	Meshes[0]->Transform.Rotate(RotationY);
+	Meshes[1]->Transform.Rotate(RotationY);
+	Meshes[2]->Transform.Rotate(RotationY);
 
 	// Text
 	Camera* WorldCamera = CameraSystem::GetDefault();
@@ -316,8 +317,8 @@ bool GameInstance::Update(float delta_time) {
 	Vector3 Rot = WorldCamera->GetEulerAngles();
 
 	// Mouse state
-	bool LeftDown =Controller::IsButtonDown(eButtons::Left);
-	bool RightDown =Controller::IsButtonDown(eButtons::Right);
+	bool LeftDown = Controller::IsButtonDown(eButtons::Left);
+	bool RightDown = Controller::IsButtonDown(eButtons::Right);
 	int MouseX, MouseY;
 	Controller::GetMousePosition(MouseX, MouseY);
 
@@ -830,8 +831,8 @@ void LoadScene4(GameInstance* GameInst) {
 	}
 
 	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("Duck");	
-	Model->Transform = Transform(Vector3(0.0f, 50.0f, 0.0f), Quaternion(Vector3(0.0f, 180.0f, 0.0f)), Vector3(0.1f));
+	Model->LoadFromResource("model");	
+	Model->Transform = Transform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(-90.0f, 0.0f, 0.0f)), Vector3(10.0f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.Push(Model);
 }
