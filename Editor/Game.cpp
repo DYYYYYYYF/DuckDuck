@@ -816,8 +816,8 @@ void LoadScene3(GameInstance* GameInst) {
 	}
 
 	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("Rectangle");	
-	Model->Transform = Transform(Vector3(0.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(1.f));
+	Model->LoadFromResource("Axis");	
+	Model->Transform = Transform(Vector3(0.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.Push(Model);
 }

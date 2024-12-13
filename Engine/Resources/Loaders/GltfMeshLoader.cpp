@@ -35,7 +35,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 	// 加载 GLTF 文件
 	bool success = loader.LoadASCIIFromFile(&model, &err, &warn, obj_file);
 	if (!success) {
-		std::cerr << "Failed to load GLTF model: " << err << std::endl;
+		LOG_INFO("Failed to load GLTF model: ", err.c_str());
 		return false;
 	}
 
@@ -81,7 +81,7 @@ bool MeshLoader::ImportGltfFile(const std::string& obj_file, const char* out_dsm
 		NodeParentMap[i] = -1;
 		MeshMatrixMap[i] = LocalTransform.GetLocal();
 		for (const auto& child : Node.children) {
-			NodeParentMap[child] = i;
+			NodeParentMap[child] = (int)i;
 		}
 	}
 
@@ -335,7 +335,7 @@ bool MeshLoader::ProcessGltfMesh(size_t meshIndex, const tinygltf::Model& model,
 					.data[positionAccessor.byteOffset + positionView.byteOffset]);
 				for (size_t i = 0; i < positionAccessor.count; i++) {
 					Vector3 vPosition = Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
-					Matrix4 mTransform = GetGLTFNodeTransform(mapMeshMat, nodeParentMap, model, meshIndex);
+					Matrix4 mTransform = GetGLTFNodeTransform(mapMeshMat, nodeParentMap, model, (int)meshIndex);
 					vPosition = mTransform * vPosition;
 					Positions.push_back(vPosition);
 				}
