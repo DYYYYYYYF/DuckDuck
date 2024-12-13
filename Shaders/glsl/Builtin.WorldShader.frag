@@ -110,7 +110,7 @@ vec4 CalculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_di
 
 	vec4 DiffSamp = texture(Samplers[SAMP_DIFFUSE], in_dto.vTexcoord);
 	vec4 Ambient = vec4(vec3(in_dto.vAmbientColor * ObjectUbo.diffuse_color), DiffSamp.a);
-	vec4 Diffuse = vec4(vec3(light.color * fDiffuseFactor), DiffSamp.a);
+	vec4 Diffuse = vec4(vec3( ObjectUbo.diffuse_color.xyz * fDiffuseFactor), DiffSamp.a);
 	vec4 Specular = vec4(vec3(light.color * SpecularFactor), DiffSamp.a);
 
 	if (in_mode == 1){

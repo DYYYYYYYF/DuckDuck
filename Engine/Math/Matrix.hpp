@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector.hpp"
 
 /**
@@ -46,21 +46,22 @@ public:
 			 T d5,  T d6,  T d7,  T d8, 
 			 T d9,  T d10, T d11, T d12, 
 			 T d13, T d14, T d15, T d16) {
-		data[0]  = d1;  data[1]  = d2;  data[2]  = d3;  data[3]  = d4;
-		data[4]  = d5;  data[5]  = d6;  data[6]  = d7;  data[7]  = d8;
-		data[8]  = d9;  data[9]  = d10; data[10] = d11; data[11] = d12;
-		data[12] = d13; data[13] = d14; data[14] = d15; data[15] = d16;
+		data[0]  = d1;  data[4]  = d2;  data[8]  = d3;  data[12]  = d4;
+		data[1]  = d5;  data[5]  = d6;  data[9]  = d7;  data[13]  = d8;
+		data[2]  = d9;  data[6]  = d10; data[10] = d11; data[14] = d12;
+		data[3]  = d13; data[7]  = d14; data[11] = d15; data[15] = d16;
 	}
 
 	/*
-	* @brief Returns the result of multiplying
+	* @brief Returns the result of multiplying 
+	* M2 * M1
 	*
 	* @param mat The matrix to be multiplied.
 	* @return The result of the matrix multiplication.
 	*/
-	TMatrix4 Multiply(const TMatrix4& mat) {
-		const T* MatPtr1 = data;
-		const T* MatPtr2 = mat.data;
+	TMatrix4 Multiply(const TMatrix4& mat) const {
+		const T* MatPtr1 = mat.data;
+		const T* MatPtr2 = data;
 
 		TMatrix4 NewMat = TMatrix4::Identity();
 		T* DstPtr = NewMat.data;
@@ -358,9 +359,9 @@ public:
 
 		Matrix.data[0] = 1.0f / (aspect_ratio * HalfFov);
 		Matrix.data[5] = 1.0f / HalfFov;
-		Matrix.data[10] = -((far_clip + near_clip) / (far_clip - near_clip));
+		Matrix.data[10] = (near_clip + far_clip) / (near_clip - far_clip);
 		Matrix.data[11] = -1.0f;
-		Matrix.data[14] = -((2.0f * far_clip * near_clip) / (far_clip - near_clip));
+		Matrix.data[14] = (2.0f * far_clip * near_clip) / (near_clip - far_clip);
 
 		if (reverse_y) {
 			Matrix.data[5] *= -1.0f;
@@ -369,45 +370,69 @@ public:
 		return Matrix;
 	}
 
+	static TMatrix4 LookAt(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up, bool isRH = true) {
+		if (isRH) {
+			return LookAtRH(position, target, up);
+		}
+		else {
+			return LookAtLH(position, target, up);
+		}
+	}
+
 	/*
 	* @brief Creates and returns a look-at matrix, or a matrix looking at target from the perspective of position.
+	* Look forward -Z
 	*
 	* @param position The position of the matrix.
 	* @param target The look at target.
 	* @param up The up vector.
 	* @return A matrix looking at target from the perspective of position.
 	*/
-	static TMatrix4 LookAt(TVector3<T> position, TVector3<T> target, TVector3<T> up) {
-		TMatrix4 Matrix;
+	static TMatrix4 LookAtRH(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
+		TMatrix4 Matrix = TMatrix4::Identity();
+		if (position.Compare(target)) {
+			return Matrix;
+		}
 
-		TVector3<T> AxisZ;
-		AxisZ.x = target.x - position.x;
-		AxisZ.y = target.y - position.y;
-		AxisZ.z = target.z - position.z;
-		AxisZ.Normalize();
-
-		TVector3<T> AxisX = AxisZ.Cross(up).Normalize();
+		TVector3<T> AxisZ = (position - target).Normalize();	
+		TVector3<T> AxisX = AxisZ.Cross(up);
 		TVector3<T> AxisY = AxisX.Cross(AxisZ);
 
 		Matrix.data[0] = AxisX.x;
-		Matrix.data[1] = AxisY.x;
-		Matrix.data[2] = -AxisZ.x;
-		Matrix.data[3] = 0;
-		Matrix.data[4] = AxisX.y;
+		Matrix.data[4] = AxisY.x;
+		Matrix.data[8] = AxisZ.x;	
+
+		Matrix.data[1] = AxisX.y;
 		Matrix.data[5] = AxisY.y;
-		Matrix.data[6] = -AxisZ.y;
-		Matrix.data[7] = 0;
-		Matrix.data[8] = AxisX.z;
-		Matrix.data[9] = AxisY.z;
-		Matrix.data[10] = -AxisZ.z;
-		Matrix.data[11] = 0;
-		Matrix.data[12] = -AxisX.Dot(position);
-		Matrix.data[13] = -AxisY.Dot(position);
-		Matrix.data[14] = AxisZ.Dot(position);
-		Matrix.data[15] = 1.0f;
+		Matrix.data[9] = AxisZ.y;
+
+		Matrix.data[2] = AxisX.z;
+		Matrix.data[6] = AxisY.z;
+		Matrix.data[10] = AxisZ.z;
+
+		//Matrix.data[12] = -position.Dot(AxisX);		// Local axis
+		//Matrix.data[13] = -position.Dot(AxisY);		// Local axis
+		//Matrix.data[14] = -position.Dot(AxisZ);		// Local axis
+		Matrix.data[12] = -position.x;		// World axis
+		Matrix.data[13] = -position.y;		// World axis
+		Matrix.data[14] = -position.z;		// World axis
 
 		return Matrix;
 	}
+	/*
+	* @brief Creates and returns a look-at matrix, or a matrix looking at target from the perspective of position.
+	* Look forward -Z
+	*
+	* @param position The position of the matrix.
+	* @param target The look at target.
+	* @param up The up vector.
+	* @return A matrix looking at target from the perspective of position.
+	*/
+	static TMatrix4 LookAtLH(const TVector3<T>& position, const TVector3<T>& target, const TVector3<T>& up) {
+		LOG_WARN("Not support LookAtLH yet!");
+		return TMatrix4();
+	}
+
 
 	static TMatrix4 FromTranslation(const TVector3<T>& trans) {
 		TMatrix4 Ret = TMatrix4::Identity();
@@ -422,10 +447,13 @@ public:
 	}
 
 	/*
-	* Euler
+	* | 1      0       0  |
+	* | 0    cosp	-sinp |
+	* | 0    sinp    cosp |
 	*/
 	static TMatrix4 EulerX(T angle_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
+
 		float c = DCos(angle_radians);
 		float s = DSin(angle_radians);
 
@@ -437,6 +465,11 @@ public:
 		return Matrix;
 	}
 
+	/**
+	* | cosy    0    siny |
+	* |   0     1     0   |
+	* | -siny   0    cosy |
+	*/
 	static TMatrix4 EulerY(T angle_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		float c = DCos(angle_radians);
@@ -450,6 +483,11 @@ public:
 		return Matrix;
 	}
 
+	/**
+	* | cosr   -sinr    0 |
+	* | sinr    cosr    0 |
+	* |   0      0      1 |
+	*/
 	static TMatrix4 EulerZ(T angle_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		float c = DCos(angle_radians);
@@ -463,14 +501,16 @@ public:
 		return Matrix;
 	}
 
+	/**
+	 * @brief Rotation Z - Y - X
+	 */
 	static TMatrix4 EulerXYZ(T x_radians, T y_radians, T z_radians) {
 		TMatrix4 Matrix = TMatrix4::Identity();
 		TMatrix4 mx = TMatrix4::EulerX(x_radians);
 		TMatrix4 my = TMatrix4::EulerY(y_radians);
 		TMatrix4 mz = TMatrix4::EulerZ(z_radians);
 
-		Matrix = my.Multiply(mz);
-		Matrix = mx.Multiply(Matrix);
+		Matrix = mz.Multiply(my.Multiply(mx));
 
 		return Matrix;
 	}
@@ -497,6 +537,31 @@ public:
 		return *this;
 	}
 
+	bool operator==(const TMatrix4& other) {
+		return	(
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+										   
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+										  	
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+											
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN) &&
+			(Dabs(other.data[0] - data[0]) <FLT_MIN)
+		);
+	}
+
 	template<typename TypeInex>
 	T& operator[](TypeInex i) {
 		return data[i];
@@ -505,6 +570,66 @@ public:
 	template<typename TypeInex>
 	const T& operator[](TypeInex i) const {
 		return data[i];
+	}
+
+	TMatrix4 operator*(const TMatrix4& other) {
+		const T* MatPtr1 = data;
+		const T* MatPtr2 = other.data;
+
+		TMatrix4 NewMat = TMatrix4::Identity();
+		T* DstPtr = NewMat.data;
+
+#if defined(SIMD_SUPPORTED_NEON)
+		for (int i = 0; i < 4; ++i) {
+			// Load Mat1's i-th row (column-major access)
+			float32x4_t row1 = vld1q_f32(&MatPtr1[i * 4]);
+
+			for (int j = 0; j < 4; j++) {
+				// Load Mat2's j-th column (column-major access)
+				float32x4_t col2 = { MatPtr2[j], MatPtr2[4 + j], MatPtr2[8 + j], MatPtr2[12 + j] };
+
+				// Perform element-wise multiplication and horizontal addition
+				float32x4_t product = vmulq_f32(row1, col2);
+
+				// Horizontal addition to accumulate the results
+				float32x2_t sum_pair = vadd_f32(vget_low_f32(product), vget_high_f32(product)); // Add pairs
+				float32x2_t sum_final = vpadd_f32(sum_pair, sum_pair); // Final horizontal addition
+
+				// Store the resulting scalar into the matrix
+				DstPtr[i * 4 + j] = vget_lane_f32(sum_final, 0); // Extract the final sum
+			}
+		}
+#elif defined(SIMD_SUPPORTED)
+		for (int i = 0; i < 4; ++i) {
+			// 加载Mat1的第i列（按列主序，逐列访问）
+			DataType row1 = _mm_set_ps(MatPtr1[i * 4 + 3], MatPtr1[i * 4 + 2], MatPtr1[i * 4 + 1], MatPtr1[i * 4 + 0]);
+			for (int j = 0; j < 4; j++) {
+				// 加载Mat2的第j列（按列主序，逐列访问）
+				DataType col2 = _mm_set_ps(MatPtr2[12 + j], MatPtr2[8 + j], MatPtr2[4 + j], MatPtr2[0 + j]);
+
+				// 执行乘法并累加
+				DataType result = _mm_mul_ps(row1, col2);
+				result = _mm_hadd_ps(result, result);  // 水平加法：先加前两对元素，再加后两对元素
+				result = _mm_hadd_ps(result, result);  // 再加一次
+
+				// 将结果存储回目标矩阵
+				T FinalRest = _mm_cvtss_f32(result);		// result[0]
+				DstPtr[i * 4 + j] = FinalRest;
+			}
+		}
+#else
+		for (int i = 0; i < 4; ++i) {
+			for (int j = 0; j < 4; j++) {
+				*DstPtr = MatPtr1[i * 4 + 0] * MatPtr2[0 + j] +
+					MatPtr1[i * 4 + 1] * MatPtr2[4 + j] +
+					MatPtr1[i * 4 + 2] * MatPtr2[8 + j] +
+					MatPtr1[i * 4 + 3] * MatPtr2[12 + j];
+				DstPtr++;
+			}
+		}
+#endif
+
+		return NewMat;
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const TMatrix4& mat) {
@@ -516,13 +641,13 @@ public:
 	}
 
 	/**
-	 * @brief Performs m * v
+	 * @brief Performs v * m
 	 *
 	 * @param m The matrix to be multiplied.
 	 * @param v The vector to multiply by.
 	 * @return The transformed vector.
 	 */
-	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
+	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
 #if defined(SIMD_SUPPORTED_NEON)
         // Load rows of the matrix
            float32x4_t row1 = vld1q_f32(&m.data[0]);
@@ -586,13 +711,13 @@ public:
 	}
 
 	/**
-	 * @brief Performs v * m
+	 * @brief Performs m * v
 	 *
 	 * @param v The vector to be multiplied.
 	 * @param m The matrix to be multiply by.
 	 * @return The transformed vector.
 	 */
-	friend TVector3<T> operator*(const TVector3<T>& v, const TMatrix4& m) {
+	friend TVector3<T> operator*(const TMatrix4& m, const TVector3<T>& v) {
 #if defined(SIMD_SUPPORTED_NEON)
         // Prepare matrix rows as columns (transposed layout)
             float32x4_t col1 = {m.data[0], m.data[4], m.data[8], m.data[12]};

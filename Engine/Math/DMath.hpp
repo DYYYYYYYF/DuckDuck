@@ -31,38 +31,77 @@
 // General math functions
 //------------------------------------------------------------
 template<typename T>
-inline DAPI T DSin(T x) {
+inline DAPI T Dabs(T x) {
+	return abs(x);
+}
+
+template<typename T>
+inline DAPI T DSin(T x, float epsilon = 1e-6) {
+	if (Dabs(x - D_HALF_PI) < epsilon) {
+		return 1;
+	}
+	else if (Dabs(x - D_HALF_PI - D_PI) < epsilon) {
+		return -1;
+	}
+	else if (Dabs(x) < epsilon) {
+		return 0;
+	}
+
 	return sin(x);
 }
 
 template<typename T>
-inline DAPI T DCos(T x) {
+inline DAPI T DCos(T x, float epsilon = 1e-6) {
+	if (Dabs(x - D_HALF_PI) < epsilon) {
+		return 0;
+	}
+	else if (Dabs(x - D_PI) < epsilon) {
+		return -1;
+	}
+	else if (Dabs(x) < epsilon) {
+		return 1;
+	}
+
 	return cos(x);
 }
 
 template<typename T>
-inline DAPI T DTan(T x) {
+inline DAPI T DTan(T x, float epsilon = 1e-6) {
+	if (Dabs(std::fmod(x, D_PI)) < epsilon || Dabs(std::fmod(x, D_PI) - D_PI) < epsilon) {
+		return x > 0.0 ? std::numeric_limits<T>::infinity() : -std::numeric_limits<T>::infinity();
+	}
+
 	return tan(x);
 }
 
 template<typename T>
-inline DAPI T DArcTan(T x) {
+inline DAPI T DArcTan(T x, float epsilon = 1e-6) {
+	if (Dabs(x) > std::numeric_limits<T>::max()) {
+		return (x > 0) ? D_HALF_PI : -D_HALF_PI;
+	}
+
 	return atan(x);
 }
 
 template<typename T>
-inline DAPI T DArcTan2(T x, T y) {
+inline DAPI T DArcTan2(T x, T y, float epsilon = 1e-6) {
+	if (Dabs(x) < epsilon && Dabs(y) < epsilon) {
+		return 0;
+	}
+
 	return atan2(x, y);
 }
 
 template<typename T>
-inline DAPI T DAcos(T x) {
-	return acos(x);
-}
+inline DAPI T DAcos(T x, float epsilon = 1e-6) {
+	if (x < -1.0 + epsilon) {
+		return D_PI; 
+	}
+	if (x > 1.0 - epsilon) {
+		return 0.0;  
+	}
 
-template<typename T>
-inline DAPI T Dabs(T x) {
-	return abs(x);
+	return acos(x);
 }
 
 template<typename T>
