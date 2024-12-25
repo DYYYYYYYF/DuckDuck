@@ -18,7 +18,7 @@
 #include "GameCommands.hpp"
 
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
-static bool EnableFrustumCulling = false;
+static bool EnableFrustumCulling = true;
 
 bool ConfigureRenderviews(Application::SConfig* config);
 
@@ -132,8 +132,8 @@ bool GameInstance::Initialize() {
 	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
 		"Noto Sans CJK JP", 26, "Keyboard map:\
 		\nLoad models:\
-		\n\tO: sponza P: car\
-		\n\tK: duck   L: bunny\
+		\n\tO: Scene1 P: Scene2\
+		\n\tK: Scene3 L: Scene4\
 		\nM: Watch memory usage.\
 		\nF1: Physics Based Render Render.\
 		\nF2: Blinn-Phong.\
@@ -817,7 +817,7 @@ void LoadScene3(GameInstance* GameInst) {
 
 	Mesh* Model = NewObject<Mesh>();
 	Model->LoadFromResource("Axis");	
-	Model->Transform = Transform(Vector3(0.0f, -50.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
+	Model->Transform = Transform(Vector3(0.0f, 10.0f, 0.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(500.f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.Push(Model);
 }
@@ -831,8 +831,8 @@ void LoadScene4(GameInstance* GameInst) {
 	}
 
 	Mesh* Model = NewObject<Mesh>();
-	Model->LoadFromResource("model");	
-	Model->Transform = Transform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(-90.0f, 0.0f, 0.0f)), Vector3(10.0f));
+	Model->LoadFromResource("LegoCar");	
+	Model->Transform = Transform(Vector3(0.0f, 0.0f, -50.0f), Quaternion(Vector3(0.0f, 0.0f, 0.0f)), Vector3(0.5f));
 	Model->UniqueID = Identifier::AcquireNewID(Model);
 	GameInst->Meshes.Push(Model);
 }
