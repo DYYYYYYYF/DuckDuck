@@ -375,6 +375,8 @@ bool TextureSystem::CreateDefaultTexture() {
 	if (DefaultRoughnessMetallicTexture == nullptr) {
 		LOG_INFO("Creating default roughness metallic texture...");
 		unsigned char RoughnessMetallicPixels[16 * 16 * 4];
+		size_t tt = sizeof(float);
+		size_t tt1 = sizeof(char);
 		// Default spec map is black (no specular).
 		Memory::Set(RoughnessMetallicPixels, 0, sizeof(unsigned char) * 16 * 16 * 4);
 
@@ -384,10 +386,10 @@ bool TextureSystem::CreateDefaultTexture() {
 				uint32_t Index = (uint32_t)((row * 16) + col);
 				uint32_t IndexBpp = Index * bpp;
 				// Set blue, z-axis by default and alpha.
-				RoughnessMetallicPixels[IndexBpp + 0] = (char)0.1;
-				RoughnessMetallicPixels[IndexBpp + 1] = (char)0.7;
-				RoughnessMetallicPixels[IndexBpp + 2] = (char)0.7;
-				RoughnessMetallicPixels[IndexBpp + 3] = (char)1.0;
+				RoughnessMetallicPixels[IndexBpp + 0] = static_cast<unsigned char>(0.1 * 255);
+				RoughnessMetallicPixels[IndexBpp + 1] = static_cast<unsigned char>(0.7 * 255);
+				RoughnessMetallicPixels[IndexBpp + 2] = static_cast<unsigned char>(0.7 * 255);
+				RoughnessMetallicPixels[IndexBpp + 3] = static_cast<unsigned char>(1.0 * 255);
 			}
 		}
 
