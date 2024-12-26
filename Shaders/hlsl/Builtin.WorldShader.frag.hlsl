@@ -14,12 +14,12 @@ struct LocalUniformObject
 
 struct PSInput
 {
-    [[vk::location(0)]] float2 vTexcoord;
-    [[vk::location(1)]] float3 vNormal;
-    [[vk::location(2)]] float4 vAlbientColor;
-    [[vk::location(3)]] float3 vViewPosition;
-    [[vk::location(4)]] float3 vFragPosition;
-    [[vk::location(5)]] float4 vColor;
+    [[vk::location(0)]] float2 vTexcoord : TEXCOORD0;
+    [[vk::location(1)]] float3 vNormal : NORMAL0;
+    [[vk::location(2)]] float4 vAlbientColor : COLOR0;
+    [[vk::location(3)]] float3 vViewPosition : POSITION0;
+    [[vk::location(4)]] float3 vFragPosition : POSITION1;
+    [[vk::location(5)]] float4 vColor : COLOR1;
     [[vk::location(6)]] float4 vTangent;
 	
 };
