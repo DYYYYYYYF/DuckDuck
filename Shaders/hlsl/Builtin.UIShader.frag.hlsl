@@ -1,4 +1,14 @@
-#include "Builtin.UIShader.structures"
+struct LocalUniformObject
+{
+    float4 DiffusrColor;
+};
+
+struct PSInput
+{
+    [[vk::location(0)]] float4 inColor : COLOR0;
+    [[vk::location(1)]] float2 texCoord : TEXCOORD0;
+};
+
 
 [[vk::binding(0, 1)]] LocalUniformObject localuniform;
 [[vk::binding(1, 1)]] Texture2D DiffuseTexture;
