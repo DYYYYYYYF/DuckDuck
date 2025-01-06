@@ -147,9 +147,9 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 			MaterialLocations.normal_texture = ShaderSystem::GetUniformIndex(s, "normal_texture");
 			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
 			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
-			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
 			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
+			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 			MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
 			MaterialLocations.roughness = ShaderSystem::GetUniformIndex(s, "roughness");
 			MaterialLocations.ambient_occlusion = ShaderSystem::GetUniformIndex(s, "ambient_occlusion");

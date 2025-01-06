@@ -49,8 +49,8 @@ def Compile(sub_file_path, file, filename, shader_language):
         shader_type = sub_filename[1].split('.')[1]
 
         ## Record compile command
-        cmd = compile_command + " --target-env=vulkan -c -fshader-stage=" + shader_type + " -fentry-point=main " + sub_file_path \
-        + "/" + file + " -o " + target_path + filename[0] + ".spv"
+        cmd = compile_command + " --target-env=vulkan1.3 -fpreserve-bindings -c -fshader-stage=" + shader_type \
+            + " -fentry-point=main " + sub_file_path + "/" + file + " -o " + target_path + filename[0] + ".spv"
         print("Compiling " + sub_file_path + "/" + filename[0] + filename[1])
 
         ## Execute compile command
