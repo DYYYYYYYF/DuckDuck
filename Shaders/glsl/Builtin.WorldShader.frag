@@ -85,6 +85,7 @@ void main(){
 	if (in_mode == 0){
 		// Roughness / Metallic / AO
 		vec3 RMA = texture(Samplers[SAMP_ROUGHNESS_METALLIC], in_dto.vTexcoord).rgb;
+		RMA /= 255;
 		FragColor = PBR(point_light_0, Normal, in_dto.vAmbientColor.xyz, in_dto.vViewPosition, in_dto.vFragPosition, RMA.r, RMA.g, RMA.b);
 	}
 	else if (in_mode == 1 || in_mode == 2){
@@ -236,7 +237,7 @@ vec4 PBR(PointLight light, vec3 norm, vec3 albedo, vec3 camPos, vec3 fragPos, fl
 	vec3 HDR_Map_Param = vec3(1.0f);		// 减小分母的值使得更多高亮区域不被压缩，从而让图像整体更亮。不过要适度调整，以免高光区域过曝，导致细节丢失。	通常为1.0f。
     color = color / (color + HDR_Map_Param);
 	// gamma 校正
-	float gamma_correct_param = 2.0f;
+	float gamma_correct_param = 2.2f;
     color = pow(color, vec3(1.0f / gamma_correct_param));	// 通过减小 gamma 值，可以让图像显示器渲染出更亮的效果。不过 gamma 校正应保持在 1.8 到 2.2 之间，以便显示器正确显示细节。
 
     return vec4(color, 1.0f);
