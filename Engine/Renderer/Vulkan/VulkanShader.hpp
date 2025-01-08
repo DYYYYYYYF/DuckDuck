@@ -67,7 +67,7 @@ struct VulkanShaderInstanceState {
 
 class VulkanShader : public Shader {
 public:
-	VulkanShader() {
+	VulkanShader() : Shader() {
 		ID = INVALID_ID;
 		MappedUniformBufferBlock = nullptr;
 		Renderpass = nullptr;
@@ -78,10 +78,37 @@ public:
 		InstanceUniformSamplerCount = 0;
 		LocalUniformCount = 0;
 	}
-	virtual ~VulkanShader() {}
+	
+	VulkanShader(IRenderer* Renderer) : Shader(Renderer) {
+		ID = INVALID_ID;
+		MappedUniformBufferBlock = nullptr;
+		Renderpass = nullptr;
+		InstanceCount = 0;
+		GlobalUniformCount = 0;
+		GlobalUniformSamplerCount = 0;
+		InstanceUniformCount = 0;
+		InstanceUniformSamplerCount = 0;
+		LocalUniformCount = 0;
+	}
+
+	virtual ~VulkanShader() {
+		if (Status != ShaderStatus::eShader_State_Not_Created) {
+			Destroy();
+		}
+	}
 
 public:
-	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) override;
+	virtual bool Initialize() override;
+	virtual bool Reload() override;
+	virtual void Destroy() override;
+
+protected:
+	virtual bool CreateModule();
+	virtual bool CompileShaderFile(bool writeToDisk = true);
+	virtual std::vector<uint32_t> CompileShaderFile(const std::string& filename, shaderc_shader_kind shadercStage, bool writeToDisk = true);
+
+private:
+	bool CreatePipeline();
 
 public:
 	void* MappedUniformBufferBlock;

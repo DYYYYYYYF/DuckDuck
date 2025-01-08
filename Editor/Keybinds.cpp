@@ -203,7 +203,7 @@ void GameOnCompilerShader(eKeys key, KeymapEntryBindType type, KeymapModifierFla
 		return;
 	}
 
-	GameInst->TestPython.ExecuteFunc("CompileShaders", "glsl");
+	//GameInst->TestPython.ExecuteFunc("CompileShaders", "glsl");
 	// Reload
 	SEventContext Context = {};
 	EngineEvent::Fire(eEventCode::Reload_Shader_Module, GameInst, Context);

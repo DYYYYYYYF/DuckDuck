@@ -1,6 +1,7 @@
 # Dimension shader config file
 version=1.0
 name=Shader.Builtin.World
+language=hlsl
 renderpass=Renderpass.Builtin.World
 stages=vertex,fragment
 stagefiles=Shaders/Builtin.WorldShader.vert.spv,Shaders/Builtin.WorldShader.frag.spv

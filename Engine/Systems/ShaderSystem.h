@@ -169,7 +169,7 @@ public:
 
 	static void Destroy(const char* shader_name);
 
-	static bool Reload(Shader* shader);
+	static bool ReloadShader(Shader* shader, ShaderLanguage language = ShaderLanguage::eGLSL);
 	
 private:
 	static bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
@@ -192,6 +192,8 @@ public:
 	static std::vector<Shader*> Shaders;
 	
 	static bool Initilized;
+	static ShaderLanguage GLOBAL_SHADER_TYPE;
+
 };
 
 

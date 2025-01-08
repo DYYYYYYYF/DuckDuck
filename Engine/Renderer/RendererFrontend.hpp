@@ -80,7 +80,7 @@ public:
 	 * @brief Destroys the given shader and releases any resources held by it.
 	 * @param shader A pointer to the shader to be destroyed.
 	 */
-	virtual bool DestroyRenderShader(Shader* shader);
+	virtual void DestroyRenderShader(Shader* shader);
 
 	/**
 	 * @brief Initializes a configured shader. Will be automatically destroyed if this step fails.

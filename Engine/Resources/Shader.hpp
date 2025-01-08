@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#define GlobalShaderType ShaderType::eGLSL
-
 #include "Resource.hpp"
 #include "Math/MathTypes.hpp"
 #include "Containers/THashTable.hpp"
@@ -11,8 +9,9 @@
 #include <shaderc/shaderc.hpp>
 
 struct TextureMap;
+class IRenderer;
 
-enum class ShaderType {
+enum class ShaderLanguage {
 	eHLSL,
 	eGLSL
 };
@@ -24,7 +23,7 @@ enum ShaderRenderMode {
 	eShader_Render_Mode_Depth
 };
 
-enum ShaderState {
+enum ShaderStatus {
 	eShader_State_Not_Created,
 	eShader_State_Uninitialized,
 	eShader_State_Initialized,
@@ -187,44 +186,74 @@ struct ShaderConfig {
 
 	bool depthTest;
 	bool depthWrite;
+
+	ShaderLanguage language;
 };
 
 class Shader{
 public:
 	Shader() {
-		ID = INVALID_ID;
-		Name = nullptr;
-		RenderFrameNumber = INVALID_ID_U64;
-		BoundInstanceId = INVALID_ID;
-		State = ShaderState::eShader_State_Uninitialized;
-		Type = GlobalShaderType;
-		Flags = 0;
-		AttributeStride = 0;
-		PushConstantsRangeCount = 0;
-		RenderFrameNumber = 0;
-		RequiredUboAlignment = 0;
-		GlobalUboSize = 0;
-		GlobalUboOffset = 0;
-		GlobalUboStride = 0;
-		UboSize = 0;
-		UboStride = 0;
-		PushConstantsSize = 0;
-		PushConstantsStride = 0;
-		InstanceTextureCount = 0;
-		BoundScope = ShaderScope::eShader_Scope_Instance;
-		BoundUboOffset = 0;
+		this->ID = INVALID_ID;
+		this->RenderFrameNumber = INVALID_ID_U64;
+		this->BoundInstanceId = INVALID_ID;
+		this->Status = ShaderStatus::eShader_State_Uninitialized;
+		this->Language = ShaderLanguage::eGLSL;
+		this->Flags = 0;
+		this->AttributeStride = 0;
+		this->PushConstantsRangeCount = 0;
+		this->RenderFrameNumber = 0;
+		this->RequiredUboAlignment = 0;
+		this->GlobalUboSize = 0;
+		this->GlobalUboOffset = 0;
+		this->GlobalUboStride = 0;
+		this->UboSize = 0;
+		this->UboStride = 0;
+		this->PushConstantsSize = 0;
+		this->PushConstantsStride = 0;
+		this->InstanceTextureCount = 0;
+		this->BoundScope = ShaderScope::eShader_Scope_Instance;
+		this->BoundUboOffset = 0;
+		this->Renderer = nullptr;
+	}
+
+	Shader(IRenderer* Renderer)
+	{
+		this->ID = INVALID_ID;
+		this->RenderFrameNumber = INVALID_ID_U64;
+		this->BoundInstanceId = INVALID_ID;
+		this->Status = ShaderStatus::eShader_State_Uninitialized;
+		this->Language = ShaderLanguage::eGLSL;
+		this->Flags = 0;
+		this->AttributeStride = 0;
+		this->PushConstantsRangeCount = 0;
+		this->RenderFrameNumber = 0;
+		this->RequiredUboAlignment = 0;
+		this->GlobalUboSize = 0;
+		this->GlobalUboOffset = 0;
+		this->GlobalUboStride = 0;
+		this->UboSize = 0;
+		this->UboStride = 0;
+		this->PushConstantsSize = 0;
+		this->PushConstantsStride = 0;
+		this->InstanceTextureCount = 0;
+		this->BoundScope = ShaderScope::eShader_Scope_Instance;
+		this->BoundUboOffset = 0;
+		this->Renderer = Renderer;
 	}
 
 	virtual ~Shader() {}
 
 public:
-	virtual std::vector<uint32_t> CompileShaderFile(const char* filename, shaderc_shader_kind shadercStage, bool writeToDisk = true) = 0;
+	virtual bool Initialize() = 0;
+	virtual bool Reload() = 0;
+	virtual void Destroy() = 0;
 
 public:
+	IRenderer* Renderer;
 	ShaderFlagBits Flags;
 	uint32_t ID;
-	char* Name;
-	ShaderType Type;
+	std::string Name;
+	ShaderLanguage Language;
 
 	size_t RenderFrameNumber;
 	size_t RequiredUboAlignment;
@@ -240,7 +269,7 @@ public:
 	uint32_t BoundInstanceId;
 	uint32_t BoundUboOffset;
 	std::unordered_map<std::string, unsigned short> HashMap;
-	ShaderState State;
+	ShaderStatus Status;
 	unsigned short PushConstantsRangeCount;
 	Range PushConstantsRanges[32];
 	unsigned short AttributeStride;

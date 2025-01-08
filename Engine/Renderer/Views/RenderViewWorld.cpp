@@ -80,7 +80,7 @@ bool ReloadShader(eEventCode code, void* sender, void* listenerInst, SEventConte
 		return false;
 	}
 
-	if (!ShaderSystem::Reload(self->GetShader())) {
+	if (!ShaderSystem::ReloadShader(self->GetShader())) {
 		LOG_ERROR("Failed to load builtin world shader.");
 		return false;
 	}
