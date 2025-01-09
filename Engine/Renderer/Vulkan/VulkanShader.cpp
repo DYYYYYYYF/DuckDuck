@@ -92,11 +92,23 @@ bool VulkanShader::Reload() {
 	vk::Device LogicalDevice = vkRenderer->Context.Device.GetLogicalDevice();
 	vk::AllocationCallbacks* VkAllocator = vkRenderer->Context.Allocator;
 
-	// Wait for frame. Can not reoload when the shader in used.
+	// Wait for frame. Can not reload when the shader in used.
 	LogicalDevice.waitIdle();
 
+	// Grab the UBO alignment requirement from the device.
+	RequiredUboAlignment = Context.Device.GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
+
+	// Make sure the UBO is aligned according to device requirements.
+	GlobalUboStride = PaddingAligned(GlobalUboSize, RequiredUboAlignment);
+	UboStride = PaddingAligned(UboSize, RequiredUboAlignment);
+
 	// Uniform buffer.
-	Renderer->UnmapMemory(&UniformBuffer, 0, VK_WHOLE_SIZE);
+	vk::MemoryPropertyFlags DeviceLocalBits = Context.Device.GetIsSupportDeviceLocalHostVisible() ? vk::MemoryPropertyFlagBits::eDeviceLocal : vk::MemoryPropertyFlags();
+	// TODO: max count should be configurable, or perhaps long term support of buffer resizing.
+	size_t TotalBufferSize = GlobalUboStride + (UboStride * VULKAN_MAX_MATERIAL_COUNT);
+
+	// Uniform buffer.
+	Renderer->UnmapMemory(&UniformBuffer, 0, TotalBufferSize);
 	MappedUniformBufferBlock = nullptr;
 	Renderer->DestroyRenderbuffer(&UniformBuffer);
 

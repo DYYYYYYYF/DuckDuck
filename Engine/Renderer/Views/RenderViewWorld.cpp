@@ -74,20 +74,6 @@ static bool RenderViewWorldOnEvent(eEventCode code, void* sender, void* listener
 	return false;
 }
 
-bool ReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
-	RenderViewWorld* self = (RenderViewWorld*)listenerInst;
-	if (self == nullptr) {
-		return false;
-	}
-
-	if (!ShaderSystem::ReloadShader(self->GetShader())) {
-		LOG_ERROR("Failed to load builtin world shader.");
-		return false;
-	}
-
-	return true;
-}
-
 RenderViewWorld::RenderViewWorld() {
 	
 }
@@ -135,10 +121,6 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
 	}
-	if (!EngineEvent::Register(eEventCode::Reload_Shader_Module, this, ReloadShader)) {
-		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
-		return false;
-	}
 	if (!EngineEvent::Register(eEventCode::Set_Render_Mode, this, RenderViewWorldOnEvent)) {
 		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
 		return false;
@@ -150,7 +132,6 @@ bool RenderViewWorld::OnCreate(const RenderViewConfig& config) {
 
 void RenderViewWorld::OnDestroy() {
 	EngineEvent::Unregister(eEventCode::Default_Rendertarget_Refresh_Required, this, RenderViewWorldOnEvent);
-	EngineEvent::Unregister(eEventCode::Reload_Shader_Module, this, ReloadShader);
 	EngineEvent::Unregister(eEventCode::Set_Render_Mode, this, RenderViewWorldOnEvent);
 }
 

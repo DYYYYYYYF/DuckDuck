@@ -63,7 +63,7 @@ public:
 	 * @param shader_name The name to search for. Case sensitive.
 	 * @return A pointer to a shader, if found; otherwise 0.
 	 */
-	static Shader* Get(const char* shader_name);
+	static Shader* Get(const std::string& shader_name);
 
 	/**
 	 * @brief Uses the shader with the given name.
@@ -169,13 +169,14 @@ public:
 
 	static void Destroy(const char* shader_name);
 
+	static bool ReloadShader(const std::string& shader_name, ShaderLanguage language = ShaderLanguage::eGLSL);
 	static bool ReloadShader(Shader* shader, ShaderLanguage language = ShaderLanguage::eGLSL);
 	
 private:
 	static bool AddAttribute(Shader* shader, const ShaderAttributeConfig& config);
 	static bool AddSampler(Shader* shader, ShaderUniformConfig& config);
 	static bool AddUniform(Shader* shader, ShaderUniformConfig& config);
-	static uint32_t GetShaderID(const char* shader_name);
+	static uint32_t GetShaderID(const std::string& shader_name);
 	static uint32_t NewShaderID();
 	static bool AddUniform(Shader* shader, const char* uniform_name, uint32_t size,
 		ShaderUniformType type, ShaderScope scope, uint32_t set_location, bool is_sampler);

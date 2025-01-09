@@ -174,6 +174,16 @@ struct MaterialShaderInstanceUbo {
 };
 
 struct ShaderConfig {
+public:
+	ShaderConfig() {
+		name = nullptr;
+		cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
+		polygon_mode = PolygonMode::ePology_Mode_Fill;
+		depthTest = true;
+		depthWrite = true;
+		language = ShaderLanguage::eGLSL;
+	}
+
 	char* name = nullptr;
 	FaceCullMode cull_mode;
 	PolygonMode polygon_mode;

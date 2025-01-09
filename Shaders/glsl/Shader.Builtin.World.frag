@@ -14,6 +14,7 @@ layout (set = 1, binding = 0) uniform LocalUniformObject{
  struct DirectionalLight{
  	vec3 direction;
  	vec4 color;
+
  };
 
  struct PointLight{

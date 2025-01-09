@@ -3,6 +3,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
 
+#include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
@@ -16,6 +17,16 @@ uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
 bool ShaderSystem::Initilized = false;
 ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eGLSL;
+
+bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
+	std::string ShaderName = context.data.c;
+	if (!ShaderSystem::ReloadShader(ShaderName)) {
+		LOG_ERROR("Failed to reload shader %s.", ShaderName.c_str());
+		return false;
+	}
+
+	return true;
+}
 
 bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) {
 	if (renderer == nullptr) {
@@ -40,6 +51,11 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	ShaderSystemConfig = config;
 	CurrentShaderID = INVALID_ID;
 
+	if (!EngineEvent::Register(eEventCode::Reload_Shader_Module, nullptr, OnReloadShader)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+
 	Initilized = true;
 	return true;
 }
@@ -58,9 +74,20 @@ void ShaderSystem::Shutdown() {
 			}
 		}
 
+		EngineEvent::Unregister(eEventCode::Reload_Shader_Module, nullptr, OnReloadShader);
+
 		ShaderMap.clear();
 		std::vector<Shader*>().swap(Shaders);
 	}
+}
+
+bool ShaderSystem::ReloadShader(const std::string& shader_name, ShaderLanguage language) {
+	Shader* s = Get(shader_name);
+	if (s == nullptr) {
+		return false;
+	}
+
+	return ReloadShader(s, language);
 }
 
 bool ShaderSystem::ReloadShader(Shader* shader, ShaderLanguage language) {
@@ -182,7 +209,7 @@ Shader* ShaderSystem::GetByID(uint32_t shader_id) {
 	return Shaders[shader_id];
 }
 
-Shader* ShaderSystem::Get(const char* shader_name) {
+Shader* ShaderSystem::Get(const std::string& shader_name) {
 	uint32_t ShaderID = GetShaderID(shader_name);
 	if (ShaderID != INVALID_ID) {
 		return GetByID(ShaderID);
@@ -434,7 +461,7 @@ bool ShaderSystem::AddUniform(Shader* shader, ShaderUniformConfig& config) {
 	return AddUniform(shader, config.name, config.size, config.type, config.scope, 0, false);
 }
 
-uint32_t ShaderSystem::GetShaderID(const char* shader_name) {
+uint32_t ShaderSystem::GetShaderID(const std::string& shader_name) {
 	uint32_t ShaderID = INVALID_ID;
 	auto it = ShaderMap.find(shader_name);
 	if (it == ShaderMap.end()){

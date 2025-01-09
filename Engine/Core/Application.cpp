@@ -26,6 +26,7 @@
 #include "Systems/RenderViewSystem.hpp"
 #include "Systems/JobSystem.hpp"
 #include "Systems/FontSystem.hpp"
+#include "Utils/FileWatcher.h"
 
 bool Application::Initialize(){
 	if (Initialized) {
@@ -229,6 +230,8 @@ bool Application::Initialize(){
 	return true;
 }
 
+static FileWatcher* GlobalFileWatcher = nullptr;
+
 bool Application::Run() {
 	AppClock.Start();
 	AppClock.Update();
@@ -240,6 +243,18 @@ bool Application::Run() {
 
 	LOG_DEBUG(Memory::GetMemoryUsageStr());
 
+	GlobalFileWatcher = NewObject<FileWatcher>();
+
+	char WorldShaderH[1024] = { 0 };
+	char WorldShaderG[1024] = { 0 };
+	_fullpath(WorldShaderH, "../Shaders/hlsl/Shader.Builtin.World.frag.hlsl", 1024);
+	/*_fullpath(WorldShaderG, "../Shaders/glsl/Shader.Builtin.World.frag", 1024);
+	GlobalFileWatcher->AddWatchFile(WorldShaderH);
+	GlobalFileWatcher->AddWatchFile(WorldShaderG);*/
+	_fullpath(WorldShaderG, "../Shaders/glsl/", 1024);
+
+	GlobalFileWatcher->AddWatchFolder(WorldShaderG);
+
 	while (is_running) {
 		if (!Platform::PlatformPumpMessage(&platform)) {
 			is_running = false;
@@ -250,6 +265,9 @@ bool Application::Run() {
 			double CurrentTime = AppClock.GetElapsedTime();		// Seconds
 			double DeltaTime = (CurrentTime - last_time);
 			double FrameStartTime = Platform::PlatformGetAbsoluteTime();
+
+			// Detective file status.
+			GlobalFileWatcher->Update();
 
 			// Update Job system.
 			JobSystem::Update();
