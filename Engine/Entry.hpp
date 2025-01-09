@@ -1,6 +1,4 @@
-﻿#include "Core/Application.hpp"
-#include "Core/EngineLogger.hpp"
-#include "Core/DMemory.hpp"
+﻿#include "Core/Engine.hpp"
 #include "IGame.hpp"
 
 // Init logger

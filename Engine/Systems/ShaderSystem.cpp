@@ -16,7 +16,7 @@ std::unordered_map<std::string, uint32_t> ShaderSystem::ShaderMap;
 uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
 bool ShaderSystem::Initilized = false;
-ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eGLSL;
+ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eHLSL;
 
 bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
 	std::string ShaderName = context.data.c;
@@ -141,7 +141,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	}
 	
 	OutShader->Name = StringCopy(config->name);
-	OutShader->Language = config->language;
+	OutShader->Language = GLOBAL_SHADER_TYPE;
 	Memory::Zero(OutShader->PushConstantsRanges, sizeof(Range) * 32);
 
 	// A running total of the actual global uniform buffer object size.

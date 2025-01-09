@@ -78,14 +78,6 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 		if (strcmp(RawVarName, "version") == 0) {
 			// TODO: version.
 		}
-		else if (strcmp(RawVarName, "language") == 0) {
-			if (strcmp(TrimmedValue, "glsl") == 0) {
-				ResourceData->language = ShaderLanguage::eGLSL;
-			}
-			else {
-				ResourceData->language = ShaderLanguage::eHLSL;
-			}
-		}
 		else if (strcmp(RawVarName, "name") == 0) {
 			ResourceData->name = StringCopy(TrimmedValue);
 		}

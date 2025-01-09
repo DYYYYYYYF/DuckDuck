@@ -181,7 +181,6 @@ public:
 		polygon_mode = PolygonMode::ePology_Mode_Fill;
 		depthTest = true;
 		depthWrite = true;
-		language = ShaderLanguage::eGLSL;
 	}
 
 	char* name = nullptr;
@@ -196,8 +195,6 @@ public:
 
 	bool depthTest;
 	bool depthWrite;
-
-	ShaderLanguage language;
 };
 
 class Shader{

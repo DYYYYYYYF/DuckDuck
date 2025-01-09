@@ -1,7 +1,6 @@
 ﻿#include "TextureSystem.h"
 
-#include "Core/EngineLogger.hpp"
-#include "Core/Application.hpp"
+#include "Core/Engine.hpp"
 
 #include "Containers/TString.hpp"
 

@@ -1,4 +1,4 @@
-﻿#include "Application.hpp"
+﻿#include "Engine.hpp"
 
 #include "EngineLogger.hpp"
 #include "Event.hpp"
@@ -245,15 +245,12 @@ bool Application::Run() {
 
 	GlobalFileWatcher = NewObject<FileWatcher>();
 
-	char WorldShaderH[1024] = { 0 };
-	char WorldShaderG[1024] = { 0 };
-	_fullpath(WorldShaderH, "../Shaders/hlsl/Shader.Builtin.World.frag.hlsl", 1024);
-	/*_fullpath(WorldShaderG, "../Shaders/glsl/Shader.Builtin.World.frag", 1024);
-	GlobalFileWatcher->AddWatchFile(WorldShaderH);
-	GlobalFileWatcher->AddWatchFile(WorldShaderG);*/
-	_fullpath(WorldShaderG, "../Shaders/glsl/", 1024);
-
-	GlobalFileWatcher->AddWatchFolder(WorldShaderG);
+	if (ShaderSystem::GLOBAL_SHADER_TYPE == ShaderLanguage::eGLSL) {
+		GlobalFileWatcher->AddWatchFolder("../Shaders/glsl/");
+	}
+	else {
+		GlobalFileWatcher->AddWatchFolder("../Shaders/hlsl/");
+	}
 
 	while (is_running) {
 		if (!Platform::PlatformPumpMessage(&platform)) {
