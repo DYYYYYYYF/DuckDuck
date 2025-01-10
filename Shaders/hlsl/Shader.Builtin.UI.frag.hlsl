@@ -10,7 +10,7 @@ struct PSInput
 };
 
 
-[[vk::binding(0, 1)]] LocalUniformObject localuniform;
+[[vk::binding(0, 1)]] ConstantBuffer<LocalUniformObject> localuniform;
 [[vk::binding(1, 1)]] Texture2D DiffuseTexture;
 [[vk::binding(1, 1)]] SamplerState DiffuseSampler;
 

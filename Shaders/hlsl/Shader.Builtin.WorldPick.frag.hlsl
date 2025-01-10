@@ -3,7 +3,7 @@ struct LocalUniformObject
     float3 IDColor;
 };
 
-[[vk::binding(0, 1)]] LocalUniformObject localuniform;
+[[vk::binding(0, 1)]] ConstantBuffer<LocalUniformObject> localuniform;
 
 float4 main() : SV_TARGET
 {
