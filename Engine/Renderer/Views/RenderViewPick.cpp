@@ -431,7 +431,7 @@ bool RenderViewPick::OnRender(struct RenderViewPacket* packet, IRendererBackend*
 		ShaderSystem::ApplyGlobal();
 
 		// Draw geometries. Start off where world geometries left off.
-		for (uint32_t i = WorldGeometryCount; i < packet->geometry_count; ++i) {
+		for (uint32_t i = WorldGeometryCount; i < packet->geometries.size(); ++i) {
 			GeometryRenderData* Geo = &packet->geometries[i];
 			CurrentInstanceID = Geo->uniqueID;
 

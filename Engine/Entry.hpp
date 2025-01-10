@@ -49,6 +49,7 @@ int main(void) {
     }
 
     Memory::Shutdown();
+    delete(GlobalLogger);
 
     return 0;
 }

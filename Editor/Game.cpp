@@ -239,6 +239,7 @@ bool GameInstance::Initialize() {
 
 	// Get UI geometry from config.
 	Mesh* UIMesh = NewObject<Mesh>();
+	UIMesh->Name = "Engine Logo UI";
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
