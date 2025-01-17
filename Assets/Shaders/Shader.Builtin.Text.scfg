@@ -1,0 +1,20 @@
+# Dimension shader config file
+version=1.0
+name=Shader.Builtin.Text
+renderpass=Renderpass.Builtin.Text
+stages=vertex,fragment
+stagefiles=Shaders/Shader.Builtin.Text.vert.spv,Shaders/Shader.Builtin.Text.frag.spv
+depth_test=0
+depth_write=0
+
+# Attributes: type,name
+attribute=vec2,in_position
+attribute=vec2,in_texcoord
+
+# Uniforms: type,scope,name
+# NOTE: For scope: 0=global, 1=instance, 2=local
+uniform=mat4,0,projection
+uniform=mat4,0,view
+uniform=vec4,1,diffuse_color
+uniform=samp,1,diffuse_texture
+uniform=mat4,2,model

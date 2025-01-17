@@ -24,7 +24,10 @@ float AlphaTest(float a, float b){
 }
 
 void main(){
+    FragColor = texture(Samplers[SAMP_DIFFUSE], in_dto.tex_coord);
     
-
-   FragColor = ObjectUbo.diffuse_color * texture(Samplers[SAMP_DIFFUSE], in_dto.tex_coord);
+    if (FragColor.a > 0.35f)
+    {
+        FragColor *= ObjectUbo.diffuse_color;
+    } 
 }

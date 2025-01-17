@@ -423,10 +423,10 @@ bool GameInstance::Update(float delta_time) {
 	std::string HoverdObjectName = "None";
 	if (HoveredObjectID != INVALID_ID) {
 		if (HoveredObjectID == TestText.UniqueID) {
-			HoverdObjectName = TestText.Name;
+			HoverdObjectName = TestText.GetName();
 		}
 		if (HoveredObjectID == TestSysText.UniqueID) {
-			HoverdObjectName = TestSysText.Name;
+			HoverdObjectName = TestSysText.GetName();
 		}
 
 		for (Mesh* Mesh : Meshes) {
@@ -462,6 +462,7 @@ bool GameInstance::Update(float delta_time) {
 		DrawCount
 	);
 	TestText.SetText(FPSText);
+	TestText.SetColor(Vector4(1.0f, 1.0f, 0.0f, 1.0f));
 
 	GameConsole->Update();
 

@@ -16,5 +16,12 @@ struct PSInput
 
 float4 main(PSInput pin) : SV_TARGET
 {
-    return DiffuseTexture.Sample(DiffuseSampler, pin.texCoord);
+    float4 FontColor = DiffuseTexture.Sample(DiffuseSampler, pin.texCoord);
+    
+    if (FontColor.a > 0.35f)
+    {
+        FontColor *= localuniform.DiffusrColor;
+    } 
+    
+    return FontColor;
 }

@@ -217,8 +217,8 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			}
 
 			// TODO: font color
-			static Vector4 WhiteColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &WhiteColor)) {
+			Vector4 FontColor = Text->GetColor();
+			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
 				LOG_ERROR("Failed to apply bitmap font diffuse color uniform.");
 				return false;
 			}

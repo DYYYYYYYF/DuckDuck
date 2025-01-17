@@ -23,14 +23,17 @@ public:
 
 	void Draw();
 
+public:
 	DAPI std::string GetName() const { return Name; }
 	DAPI void SetName(const std::string& n) { Name = n; }
+
+	DAPI Vector4 GetColor() const { return Color; }
+	DAPI void SetColor(Vector4 col) { Color = col; }
 
 private:
 	void RegenerateGeometry();
 
 public:
-	std::string Name;
 	uint32_t UniqueID = INVALID_ID;
 	IRenderer* Renderer = nullptr;
 	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
@@ -41,4 +44,9 @@ public:
 	Transform Trans;
 	uint32_t InstanceID = INVALID_ID;
 	size_t RenderFrameNumber = 0;
+
+private:
+	std::string Name;
+	Vector4 Color = Vector4(1.0f);
+
 };
