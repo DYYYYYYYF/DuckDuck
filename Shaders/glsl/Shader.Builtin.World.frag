@@ -228,10 +228,10 @@ vec4 PBR(PointLight light, vec3 norm, vec3 albedo, vec3 camPos, vec3 fragPos, fl
     kD *= 1.0f - metallic;
 
     float NdotL = max(dot(N, L), 0.0f);
-    vec3 Lo = (kD * DiffSamp.xyz / PI + specular) * albedo * NdotL;
+    vec3 Lo = (kD * DiffSamp.xyz / PI + specular) * in_dto.vAmbientColor.xyz * NdotL;
 
     // 环境光（近似处理）
-    vec3 ambient = vec3(0.03f) * albedo * ao;
+    vec3 ambient = vec3(0.03f) * DiffSamp.xyz * ObjectUbo.ambient_occlusion;
     vec3 color = ambient + Lo;
 
     // HDR 映射 

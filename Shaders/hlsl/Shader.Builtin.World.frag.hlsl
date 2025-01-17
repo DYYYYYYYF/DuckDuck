@@ -122,10 +122,10 @@ float4 CalculatePBR(PSInput pin)
     KD *= 1.0f - Metallic;
     
     float NdotL = max(dot(N, L), 0.0f);
-    float3 Lo = (KD * DiffuseColor.xyz / PI + Specular) * dir_light.color * NdotL;
+    float3 Lo = (KD * DiffuseColor.xyz / PI + Specular) * pin.vAlbientColor* NdotL;
     
     // »·¾³¹â
-    float3 Ambient = float3(0.03f, 0.03f, 0.03f) * Albedo * AO;
+    float3 Ambient = float3(0.03f, 0.03f, 0.03f) * DiffuseColor.xyz * Localuniform.AlbientOcclusion;
     float3 Color = Ambient + Lo;
     
     // HDR & GAMMA
