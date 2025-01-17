@@ -148,6 +148,7 @@ Material* MaterialSystem::AcquireFromConfig(SMaterialConfig config) {
 			MaterialLocations.roughness_metallic_texture = ShaderSystem::GetUniformIndex(s, "roughness_metallic_texture");
 			MaterialLocations.view_position = ShaderSystem::GetUniformIndex(s, "view_position");
 			MaterialLocations.model = ShaderSystem::GetUniformIndex(s, "model");
+			MaterialLocations.time = ShaderSystem::GetUniformIndex(s, "time");
 			MaterialLocations.render_mode = ShaderSystem::GetUniformIndex(s, "mode");
 			MaterialLocations.shininess = ShaderSystem::GetUniformIndex(s, "shininess");
 			MaterialLocations.metallic = ShaderSystem::GetUniformIndex(s, "metallic");
@@ -494,7 +495,9 @@ bool MaterialSystem::CreateDefaultMaterial() {
 #define MATERIAL_APPLY_OR_FAIL(expr) expr
 #endif
 
-bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, const Vector3& view_position, uint32_t render_mode) {
+bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_number, 
+	const Matrix4& projection, const Matrix4& view, const Vector4& ambient_color, 
+	const Vector3& view_position, uint32_t render_mode, float global_time) {
 	Shader* s = ShaderSystem::GetByID(shader_id);
 	if (s == nullptr) {
 		return false;
@@ -510,6 +513,7 @@ bool MaterialSystem::ApplyGlobal(uint32_t shader_id, size_t renderer_frame_numbe
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.ambient_color, &ambient_color));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.view_position, &view_position));
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.render_mode, &render_mode));
+		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(MaterialLocations.time, &global_time));
 	}
 	else if (shader_id == UIShaderID) {
 		MATERIAL_APPLY_OR_FAIL(ShaderSystem::SetUniformByIndex(UILocations.projection, &projection));

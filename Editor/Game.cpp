@@ -468,7 +468,10 @@ bool GameInstance::Update(float delta_time) {
 	return true;
 }
 
+static float GameTime = 0.0f;
+
 bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
+	GameTime += delta_time;
 
 	// TODO: Read from config.
 	packet->view_count = 4;
@@ -491,6 +494,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	if(WorldView) {
 		WorldPacketData WorldData;
 		WorldData.Meshes = FrameData.WorldGeometries;
+		WorldData.GlobalTime = GameTime;
 		if (!RenderViewSystem::BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
 			LOG_ERROR("Failed to build packet for view 'World'.");
 			return false;

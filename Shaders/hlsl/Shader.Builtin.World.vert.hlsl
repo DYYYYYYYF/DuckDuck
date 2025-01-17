@@ -5,6 +5,7 @@ struct UBO
     float4 ambient_color;
     float3 view_position;
     int mode;
+    float global_time;
 };
 
 struct PushConstant
@@ -23,7 +24,7 @@ struct VSInput
 
 struct VSOutput
 {
-    float4 outPosition : SV_POSITION;
+    float4 outPosition      : SV_POSITION;
     int outMode             : INT0;
     float2 outTexcoord      : TEXCOORD0;
     float3 outNormal        : NORMAL0;
@@ -39,8 +40,10 @@ struct VSOutput
 
 VSOutput main(VSInput input) 
 {
+    float4 Position = float4(input.vPosition, 1.0f);
+    
 	VSOutput output = (VSOutput)0;
-    output.outPosition = mul(ubo.proj, mul(ubo.view, mul(push_constants.model, float4(input.vPosition, 1.0f))));
+    output.outPosition = mul(ubo.proj, mul(ubo.view, mul(push_constants.model, Position)));
     output.outColor = input.vColor;
 	output.outTexcoord = input.vTexCoord;
     output.outAmbientColor = ubo.ambient_color;

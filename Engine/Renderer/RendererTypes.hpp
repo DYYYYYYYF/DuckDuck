@@ -94,6 +94,7 @@ public:
 	}
 
 	std::vector<GeometryRenderData> Meshes;
+	float GlobalTime;
 };
 
 struct MeshPacketData : public IRenderviewPacketData {

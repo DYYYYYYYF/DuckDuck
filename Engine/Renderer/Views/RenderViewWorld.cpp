@@ -165,6 +165,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 	out_packet->view_matrix = WorldCamera->GetViewMatrix();
 	out_packet->view_position = WorldCamera->GetPosition();
 	out_packet->ambient_color = AmbientColor;
+	out_packet->global_time = Data->GlobalTime;
 
 	// Obtain all geometries from the current scene.
 	std::vector<GeometryDistance> GeometryDistances;
@@ -236,7 +237,7 @@ bool RenderViewWorld::OnRender(struct RenderViewPacket* packet, IRendererBackend
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, render_mode)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, packet->ambient_color, packet->view_position, render_mode, packet->global_time)) {
 			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}

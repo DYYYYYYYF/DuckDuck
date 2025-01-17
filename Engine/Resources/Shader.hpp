@@ -99,6 +99,7 @@ struct MaterialShaderUniformLocations {
 	unsigned short shininess = INVALID_ID_U16;
 	unsigned short view_position = INVALID_ID_U16;
 	unsigned short model = INVALID_ID_U16;
+	unsigned short time = INVALID_ID_U16;
 	unsigned short render_mode = INVALID_ID_U16;
 	unsigned short metallic = INVALID_ID_U16;
 	unsigned short roughness = INVALID_ID_U16;
@@ -184,6 +185,7 @@ public:
 	}
 
 	char* name = nullptr;
+	float time = 0.0f;
 	FaceCullMode cull_mode;
 	PolygonMode polygon_mode;
 

@@ -75,6 +75,7 @@ struct RenderViewPacket {
 	Matrix4 projection_matrix;
 	Vector3 view_position;
 	Vector4 ambient_color;
+	float global_time;
 	uint32_t geometry_count = 0;
 	std::vector<struct GeometryRenderData> geometries;
 	const char* custom_shader_name = nullptr;

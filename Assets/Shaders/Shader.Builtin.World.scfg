@@ -27,6 +27,7 @@ uniform=mat4,0,view
 uniform=vec4,0,ambient_color
 uniform=vec3,0,view_position
 uniform=u32,0,mode
+uniform=float,0,time
 uniform=vec4,1,diffuse_color
 uniform=float,1,shininess
 uniform=float,1,metallic
