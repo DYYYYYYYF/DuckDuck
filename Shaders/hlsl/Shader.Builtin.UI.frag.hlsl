@@ -10,11 +10,18 @@ struct PSInput
 };
 
 
-[[vk::binding(0, 1)]] LocalUniformObject localuniform;
+[[vk::binding(0, 1)]] ConstantBuffer<LocalUniformObject> localuniform;
 [[vk::binding(1, 1)]] Texture2D DiffuseTexture;
 [[vk::binding(1, 1)]] SamplerState DiffuseSampler;
 
 float4 main(PSInput pin) : SV_TARGET
 {
-    return DiffuseTexture.Sample(DiffuseSampler, pin.texCoord);
+    float4 FontColor = DiffuseTexture.Sample(DiffuseSampler, pin.texCoord);
+    
+    if (FontColor.a > 0.35f)
+    {
+        FontColor *= localuniform.DiffusrColor;
+    } 
+    
+    return FontColor;
 }

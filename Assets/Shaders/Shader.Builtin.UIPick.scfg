@@ -3,7 +3,7 @@ version=1.0
 name=Shader.Builtin.UIPick
 renderpass=Renderpass.Builtin.UIPick
 stages=vertex,fragment
-stagefiles=Shaders/Builtin.UIPickShader.vert.spv,Shaders/Builtin.UIPickShader.frag.spv
+stagefiles=Shaders/Shader.Builtin.UIPick.vert.spv,Shaders/Shader.Builtin.UIPick.frag.spv
 depth_test=0
 depth_write=0
 

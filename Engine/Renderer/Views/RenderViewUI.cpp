@@ -145,8 +145,9 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 			PacketData->Textes = nullptr;
 		}
 
-		if (!PacketData->meshData.meshes.IsEmpty()) {
-			PacketData->meshData.meshes.Destroy();
+		if (PacketData->meshData.meshes != nullptr) {
+			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * PacketData->meshData.mesh_count, MemoryType::eMemory_Type_Array);
+			PacketData->meshData.meshes = nullptr;
 		}
 
 		DeleteObject(packet->extended_data);
@@ -172,7 +173,7 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 		}
 
 		// Apply globals.
-		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), render_mode)) {
+		if (!MaterialSystem::ApplyGlobal(SID, frame_number, packet->projection_matrix, packet->view_matrix, Vector4(0), Vector3(0), render_mode, 0.0f)) {
 			LOG_ERROR("RenderViewUI::OnRender() Failed to use global shader. Render frame failed.");
 			return false;
 		}
@@ -217,8 +218,8 @@ bool RenderViewUI::OnRender(struct RenderViewPacket* packet, IRendererBackend* b
 			}
 
 			// TODO: font color
-			static Vector4 WhiteColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &WhiteColor)) {
+			Vector4 FontColor = Text->GetColor();
+			if (!ShaderSystem::SetUniformByIndex(DiffuseColorLocation, &FontColor)) {
 				LOG_ERROR("Failed to apply bitmap font diffuse color uniform.");
 				return false;
 			}

@@ -19,7 +19,7 @@ struct UBO
     float4x4 view;
 };
 
-[[vk::binding(0, 0)]] UBO Ubo;
+[[vk::binding(0, 0)]] ConstantBuffer<UBO> Ubo;
 
 VSSkyboxOutput main(VSSkyboxInput input)
 {

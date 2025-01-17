@@ -7,6 +7,8 @@
 class VulkanBuffer;
 
 class VulkanBackend : public IRendererBackend {
+	friend VulkanShader;
+
 public:
 	VulkanBackend();
 	virtual ~VulkanBackend();
@@ -70,8 +72,6 @@ public:
 
 	// Shaders.
 	virtual bool CreateShader(Shader* shader, const ShaderConfig* config, IRenderpass* pass, const std::vector<char*>& stage_filenames, std::vector<ShaderStage>& stages) override;
-	virtual bool DestroyShader(Shader* shader) override;
-	virtual bool InitializeShader(Shader* shader) override;
 	virtual bool UseShader(Shader* shader) override;
 	virtual bool BindGlobalsShader(Shader* shader) override;
 	virtual bool BindInstanceShader(Shader* shader, uint32_t instance_id) override;
@@ -92,7 +92,7 @@ public:
 	virtual bool VerifyShaderID(uint32_t shader_id);
 
 private:
-	bool CreateModule(VulkanShader* shader, VulkanShaderStageConfig config, VulkanShaderStage* shader_stage);
+	bool CreateModule(VulkanShader* shader);
 	vk::SamplerAddressMode ConvertRepeatType(const char* axis, TextureRepeat repeat);
 	vk::Filter ConvertFilterType(const char* op, TextureFilter filter);
 	vk::Format ChannelCountToFormat(unsigned char channel_count, vk::Format default_format = vk::Format::eR8G8B8A8Unorm);

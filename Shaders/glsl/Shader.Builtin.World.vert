@@ -12,6 +12,7 @@ layout (set = 0, binding = 0, std140) uniform GlobalUniformObject{
 	vec4 ambient_color;
 	vec3 view_position;
 	int mode;
+	float global_time;
 }GlobalUBO;
 
 layout (push_constant) uniform PushConstants{

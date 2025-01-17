@@ -16,7 +16,7 @@ struct VSInput
     [[vk::location(0)]] float3 vPosition : POSITION0;
 };
 
-[[vk::binding(0, 0)]] UBO ubo;
+[[vk::binding(0, 0)]] ConstantBuffer<UBO> ubo;
 [[vk::push_constant]] ConstantBuffer<PushConstant> push_constants;
 
 float4 main(VSInput input) : SV_POSITION

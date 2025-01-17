@@ -19,12 +19,18 @@ public:
 	virtual ~File() {}
 
 public:
-	std::string GetFilename() const { return Name; }
+	std::string GetFilename() const { return FileName; }
+	std::string GetFullPath() const { return FullPath; }
+	std::string GetPrePath() const { return PrePath; }
+	std::string GetFileType() const { return FileType; }
 	std::string ReadBytes();
 	bool WriteBytes(const char* source, size_t size, std::ios::openmode mode = std::ios::ate);
 	bool IsExist();
 
-private:
-	std::string Name;
+protected:
+	std::string FullPath;
+	std::string FileName;
+	std::string PrePath;
+	std::string FileType;
 	bool IsValid;
 };

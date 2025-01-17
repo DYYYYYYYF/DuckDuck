@@ -1,9 +1,10 @@
 # Dimension shader config file
 version=1.0
 name=Shader.Builtin.World
+language=hlsl
 renderpass=Renderpass.Builtin.World
 stages=vertex,fragment
-stagefiles=Shaders/Builtin.WorldShader.vert.spv,Shaders/Builtin.WorldShader.frag.spv
+stagefiles=Shaders/Shader.Builtin.World.vert.spv,Shaders/Shader.Builtin.World.frag.spv
 
 # 1=enable, 0=disable
 depth_test=1
@@ -26,6 +27,7 @@ uniform=mat4,0,view
 uniform=vec4,0,ambient_color
 uniform=vec3,0,view_position
 uniform=u32,0,mode
+uniform=float,0,time
 uniform=vec4,1,diffuse_color
 uniform=float,1,shininess
 uniform=float,1,metallic

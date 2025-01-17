@@ -36,10 +36,6 @@ bool ShaderLoader::Load(const std::string& name, void* params, Resource* resourc
 	ResourceData = new(ResourceData)ShaderConfig();
 	ASSERT(ResourceData);
 
-	ResourceData->cull_mode = FaceCullMode::eFace_Cull_Mode_Back;
-	ResourceData->polygon_mode = PolygonMode::ePology_Mode_Fill;
-	ResourceData->name = nullptr;
-
 	// Read each line of the file.
 	char LineBuf[512] = "";
 	char* p = &LineBuf[0];

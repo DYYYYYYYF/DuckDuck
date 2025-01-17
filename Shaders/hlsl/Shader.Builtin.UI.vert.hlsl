@@ -22,7 +22,7 @@ struct VSOutput
     [[vk::location(1)]] float2 texCoord : TEXCOORD0;
 };
 
-[[vk::binding(0, 0)]] UBO ubo;
+[[vk::binding(0, 0)]] ConstantBuffer<UBO> ubo;
 [[vk::push_constant]] ConstantBuffer<PushConstant> push_constants;
 
 VSOutput main(VSInput input)

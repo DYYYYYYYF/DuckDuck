@@ -213,12 +213,12 @@ bool IRenderer::CreateRenderShader(Shader* shader, const ShaderConfig* config, I
 	return Backend->CreateShader(shader, config, pass, stage_filenames, stages);
 }
 
-bool IRenderer::DestroyRenderShader(Shader* shader) {
-	return Backend->DestroyShader(shader);
+void IRenderer::DestroyRenderShader(Shader* shader) {
+	shader->Destroy();
 }
 
 bool IRenderer::InitializeRenderShader(Shader* shader) {
-	return Backend->InitializeShader(shader);
+	return shader->Initialize();
 }
 
 bool IRenderer::UseRenderShader(Shader* shader) {

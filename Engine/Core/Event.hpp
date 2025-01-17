@@ -23,7 +23,7 @@ struct SEventContext {
 		signed char i8[16];
 		unsigned char u8[16];
 
-		char c[16];
+		char c[128];
 	}data;
 };
 

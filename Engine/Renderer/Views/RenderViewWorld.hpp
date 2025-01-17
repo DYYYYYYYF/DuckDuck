@@ -20,11 +20,11 @@ public:
 
 public:
 	const char* GetShaderName() const {
-		if (UsedShader->Name == nullptr) {
+		if (UsedShader->Name.empty()) {
 			return nullptr;
 		}
 
-		return CustomShaderName ? CustomShaderName : UsedShader->Name;
+		return CustomShaderName ? CustomShaderName : UsedShader->Name.c_str();
 	}
 
 	void SetShader(Shader* shader) { UsedShader = shader; }

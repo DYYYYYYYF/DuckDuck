@@ -3,6 +3,7 @@
 #include "Renderer/RendererFrontend.hpp"
 #include "Systems/TextureSystem.h"
 
+#include "Core/Event.hpp"
 #include "Core/DMemory.hpp"
 #include "Core/EngineLogger.hpp"
 #include "Containers/TString.hpp"
@@ -15,6 +16,17 @@ std::unordered_map<std::string, uint32_t> ShaderSystem::ShaderMap;
 uint32_t ShaderSystem::CurrentShaderID;
 std::vector<Shader*> ShaderSystem::Shaders;
 bool ShaderSystem::Initilized = false;
+ShaderLanguage ShaderSystem::GLOBAL_SHADER_TYPE = ShaderLanguage::eHLSL;
+
+bool OnReloadShader(eEventCode code, void* sender, void* listenerInst, SEventContext context) {
+	std::string ShaderName = context.data.c;
+	if (!ShaderSystem::ReloadShader(ShaderName)) {
+		LOG_ERROR("Failed to reload shader %s.", ShaderName.c_str());
+		return false;
+	}
+
+	return true;
+}
 
 bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) {
 	if (renderer == nullptr) {
@@ -39,6 +51,11 @@ bool ShaderSystem::Initialize(IRenderer* renderer, ShaderSystem::Config config) 
 	ShaderSystemConfig = config;
 	CurrentShaderID = INVALID_ID;
 
+	if (!EngineEvent::Register(eEventCode::Reload_Shader_Module, nullptr, OnReloadShader)) {
+		LOG_ERROR("Unable to listen for refresh required event, creation failed.");
+		return false;
+	}
+
 	Initilized = true;
 	return true;
 }
@@ -49,7 +66,7 @@ void ShaderSystem::Shutdown() {
 			Shader* s = Shaders[i];
 			if (s != nullptr) {
 				if (s->ID != INVALID_ID) {
-					DestroyShader(s);
+					s->Destroy();
 				}
 
 				DeleteObject(s);
@@ -57,22 +74,36 @@ void ShaderSystem::Shutdown() {
 			}
 		}
 
+		EngineEvent::Unregister(eEventCode::Reload_Shader_Module, nullptr, OnReloadShader);
+
 		ShaderMap.clear();
 		std::vector<Shader*>().swap(Shaders);
 	}
 }
 
-bool ShaderSystem::Reload(Shader* shader) {
-	// Initialize the shader.
-	shader->State = ShaderState::eShader_State_Reloading;
-	if (!Renderer->InitializeRenderShader(shader)) {
-		LOG_ERROR("shader_system_create: initialization failed for shader '%s'.", shader->Name);
-		// NOTE: initialize automatically destroys the shader if it fails.
-		DestroyShader(shader);
+bool ShaderSystem::ReloadShader(const std::string& shader_name, ShaderLanguage language) {
+	Shader* s = Get(shader_name);
+	if (s == nullptr) {
 		return false;
 	}
 
-	shader->State = ShaderState::eShader_State_Initialized;
+	return ReloadShader(s, language);
+}
+
+bool ShaderSystem::ReloadShader(Shader* shader, ShaderLanguage language) {
+	// Change shader status.
+	shader->Status = ShaderStatus::eShader_State_Reloading;
+	GLOBAL_SHADER_TYPE = language;
+
+	if (!shader->Reload()) {
+		LOG_ERROR("shader_system_create: reload shader failed for shader '%s'.", shader->Name.c_str());
+		// NOTE: initialize automatically destroys the shader if it fails.
+		shader->Destroy();
+		return false;
+	}
+
+
+	shader->Status = ShaderStatus::eShader_State_Initialized;
 	return true;
 }
 
@@ -90,7 +121,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	switch (BackendAPI)
 	{
 	case eRenderer_Backend_Type_Vulkan:
-		Shaders[ID] = NewObject<VulkanShader>();
+		Shaders[ID] = NewObject<VulkanShader>(Renderer);
 		break;
 		// TODO
 	case eRenderer_Backend_Type_OpenGL:
@@ -98,7 +129,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	case eRenderer_Backend_Type_DirecX:
 		break;
 	default:
-		Shaders[ID] = NewObject<VulkanShader>();
+		Shaders[ID] = NewObject<VulkanShader>(Renderer);
 		break;
 	}
 	
@@ -110,6 +141,7 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	}
 	
 	OutShader->Name = StringCopy(config->name);
+	OutShader->Language = GLOBAL_SHADER_TYPE;
 	Memory::Zero(OutShader->PushConstantsRanges, sizeof(Range) * 32);
 
 	// A running total of the actual global uniform buffer object size.
@@ -155,13 +187,13 @@ bool ShaderSystem::Create(IRenderpass* pass, ShaderConfig* config) {
 	}
 
 	// Initialize the shader.
-	if (!Renderer->InitializeRenderShader(OutShader)) {
+	if (!OutShader->Initialize()) {
 		LOG_ERROR("shader_system_create: initialization failed for shader '%s'.", config->name);
 		// NOTE: initialize automatically destroys the shader if it fails.
 		return false;
 	}
 
-	OutShader->State = ShaderState::eShader_State_Initialized;
+	OutShader->Status = ShaderStatus::eShader_State_Initialized;
 	return true;
 }
 
@@ -177,7 +209,7 @@ Shader* ShaderSystem::GetByID(uint32_t shader_id) {
 	return Shaders[shader_id];
 }
 
-Shader* ShaderSystem::Get(const char* shader_name) {
+Shader* ShaderSystem::Get(const std::string& shader_name) {
 	uint32_t ShaderID = GetShaderID(shader_name);
 	if (ShaderID != INVALID_ID) {
 		return GetByID(ShaderID);
@@ -187,24 +219,7 @@ Shader* ShaderSystem::Get(const char* shader_name) {
 }
 
 void ShaderSystem::DestroyShader(Shader* s) {
-	Renderer->DestroyRenderShader(s);
-
-	// Set it to be unusable right away.
-	s->State = ShaderState::eShader_State_Not_Created;
-
-	uint32_t SamplerCount = (uint32_t)s->GlobalTextureMaps.size();
-	for (uint32_t i = 0; i < SamplerCount; ++i) {
-		s->GlobalTextureMaps[i] = nullptr;
-	}
-	s->GlobalTextureMaps.clear();
-
-	// Free the name.
-	if (s->Name) {
-		size_t Length = strlen(s->Name);
-		Memory::Free(s->Name, Length + 1, MemoryType::eMemory_Type_String);
-	}
-
-	s->Name = nullptr;
+	s->Destroy();
 }
 
 void ShaderSystem::Destroy(const char* shader_name) {
@@ -214,7 +229,7 @@ void ShaderSystem::Destroy(const char* shader_name) {
 	}
 
 	Shader* s = Shaders[ShaderID];
-	DestroyShader(s);
+	s->Destroy();
 }
 
 bool ShaderSystem::Use(const char* shader_name) {
@@ -446,7 +461,7 @@ bool ShaderSystem::AddUniform(Shader* shader, ShaderUniformConfig& config) {
 	return AddUniform(shader, config.name, config.size, config.type, config.scope, 0, false);
 }
 
-uint32_t ShaderSystem::GetShaderID(const char* shader_name) {
+uint32_t ShaderSystem::GetShaderID(const std::string& shader_name) {
 	uint32_t ShaderID = INVALID_ID;
 	auto it = ShaderMap.find(shader_name);
 	if (it == ShaderMap.end()){
@@ -538,7 +553,7 @@ bool ShaderSystem::IsUniformNameValid(Shader* shader, const char* uniform_name) 
 }
 
 bool ShaderSystem::IsUniformAddStateValid(Shader* shader) {
-	if (shader->State != ShaderState::eShader_State_Uninitialized) {
+	if (shader->Status != ShaderStatus::eShader_State_Uninitialized) {
 		LOG_ERROR("Uniforms may only be added to shaders before initialization.");
 		return false;
 	}

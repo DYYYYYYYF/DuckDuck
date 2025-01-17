@@ -94,11 +94,12 @@ public:
 	}
 
 	std::vector<GeometryRenderData> Meshes;
+	float GlobalTime;
 };
 
 struct MeshPacketData : public IRenderviewPacketData {
 	uint32_t mesh_count = 0;
-	TArray<Mesh*> meshes;
+	Mesh** meshes = nullptr;
 };
 
 struct UIPacketData : public IRenderviewPacketData {

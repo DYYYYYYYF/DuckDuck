@@ -118,8 +118,6 @@ bool GameInstance::Initialize() {
 	WorldCamera = CameraSystem::GetDefault();
 	Matrix4 CameraView = Matrix4::LookAt(Vector(0.0f, 0.0f, -90.0f), Vector3(0.0f, 0.0f, 0.0f), Axis::Y);
 	WorldCamera->SetViewMatrix(CameraView);
-	//WorldCamera->SetPosition(Vector(0.0f, 10.0f, 60.0f));
-	//WorldCamera->SetEulerAngles(Vector(0.0f, 0.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -239,6 +237,7 @@ bool GameInstance::Initialize() {
 
 	// Get UI geometry from config.
 	Mesh* UIMesh = NewObject<Mesh>();
+	UIMesh->Name = "Engine Logo UI";
 	UIMesh->geometry_count = 1;
 	UIMesh->geometries = (Geometry**)Memory::Allocate(sizeof(Geometry*), MemoryType::eMemory_Type_Array);
 	UIMesh->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
@@ -422,10 +421,10 @@ bool GameInstance::Update(float delta_time) {
 	std::string HoverdObjectName = "None";
 	if (HoveredObjectID != INVALID_ID) {
 		if (HoveredObjectID == TestText.UniqueID) {
-			HoverdObjectName = TestText.Name;
+			HoverdObjectName = TestText.GetName();
 		}
 		if (HoveredObjectID == TestSysText.UniqueID) {
-			HoverdObjectName = TestSysText.Name;
+			HoverdObjectName = TestSysText.GetName();
 		}
 
 		for (Mesh* Mesh : Meshes) {
@@ -461,13 +460,17 @@ bool GameInstance::Update(float delta_time) {
 		DrawCount
 	);
 	TestText.SetText(FPSText);
+	TestText.SetColor(Vector4(1.0f, 1.0f, 0.0f, 1.0f));
 
 	GameConsole->Update();
 
 	return true;
 }
 
+static float GameTime = 0.0f;
+
 bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
+	GameTime += delta_time;
 
 	// TODO: Read from config.
 	packet->view_count = 4;
@@ -490,6 +493,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	if(WorldView) {
 		WorldPacketData WorldData;
 		WorldData.Meshes = FrameData.WorldGeometries;
+		WorldData.GlobalTime = GameTime;
 		if (!RenderViewSystem::BuildPacket(WorldView, &WorldData, &packet->views[ViewCounter++])) {
 			LOG_ERROR("Failed to build packet for view 'World'.");
 			return false;
@@ -498,7 +502,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	
 	// UI
 	uint32_t UIMeshCount = 0;
-	TArray<Mesh*> TempUIMeshes(10);
+	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->Generation != INVALID_ID_U8) {
