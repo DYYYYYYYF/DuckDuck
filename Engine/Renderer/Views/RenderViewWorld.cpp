@@ -157,7 +157,7 @@ bool RenderViewWorld::OnBuildPacket(IRenderviewPacketData* data, struct RenderVi
 	}
 
 	WorldPacketData* Data = (WorldPacketData*)data;
-	const std::vector<GeometryRenderData>& GeometryData = Data->Meshes;
+	const std::vector<GeometryRenderData> GeometryData = Data->Meshes;
 	out_packet->view = this;
 
 	// Set matrix, etc.

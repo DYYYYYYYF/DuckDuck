@@ -118,8 +118,6 @@ bool GameInstance::Initialize() {
 	WorldCamera = CameraSystem::GetDefault();
 	Matrix4 CameraView = Matrix4::LookAt(Vector(0.0f, 0.0f, -90.0f), Vector3(0.0f, 0.0f, 0.0f), Axis::Y);
 	WorldCamera->SetViewMatrix(CameraView);
-	//WorldCamera->SetPosition(Vector(0.0f, 10.0f, 60.0f));
-	//WorldCamera->SetEulerAngles(Vector(0.0f, 0.0f, 0.0f));
 
 	// Create test ui text objects.
 	if (!TestText.Create(Renderer, UITextType::eUI_Text_Type_Bitmap, "Ubuntu Mono 21px", 21, "Test! \n Yooo!")) {
@@ -504,7 +502,7 @@ bool GameInstance::Render(SRenderPacket* packet, float delta_time) {
 	
 	// UI
 	uint32_t UIMeshCount = 0;
-	TArray<Mesh*> TempUIMeshes(10);
+	Mesh** TempUIMeshes = (Mesh**)Memory::Allocate(sizeof(Mesh*) * 10, MemoryType::eMemory_Type_Array);
 	// TODO: Flexible size array.
 	for (uint32_t i = 0; i < (uint32_t)UIMeshes.Size(); ++i) {
 		if (UIMeshes[i]->Generation != INVALID_ID_U8) {

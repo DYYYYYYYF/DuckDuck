@@ -145,8 +145,9 @@ void RenderViewUI::OnDestroyPacket(struct RenderViewPacket* packet) {
 			PacketData->Textes = nullptr;
 		}
 
-		if (!PacketData->meshData.meshes.IsEmpty()) {
-			PacketData->meshData.meshes.Destroy();
+		if (PacketData->meshData.meshes != nullptr) {
+			Memory::Free(PacketData->meshData.meshes, sizeof(Mesh) * PacketData->meshData.mesh_count, MemoryType::eMemory_Type_Array);
+			PacketData->meshData.meshes = nullptr;
 		}
 
 		DeleteObject(packet->extended_data);
