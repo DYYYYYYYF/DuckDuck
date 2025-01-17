@@ -65,9 +65,6 @@ OpenAL and sniffle lib to load audio resource (.wma) and play.
 
 ## Short cut
 
-Blinn-Phong  
-![](Assets/Shortcuts/BlinnPhong.png)
-
 PBR  
 ![](Assets/Shortcuts/PBR.png)
 
@@ -79,5 +76,11 @@ Vulkan: https://www.vulkan.org
 
 UncleDon-Logger: https://github.com/DYYYYYYYF/UncleDon-Logger
 
-stb: https://github.com/nothings/stb/tree/master
+stb: https://github.com/nothings/stb/tree/master  
+
+gltf：https://github.com/syoyo/tinygltf  
+
+audio：  
+https://github.com/kcat/openal-soft  
+https://github.com/libsndfile/libsndfile
 
