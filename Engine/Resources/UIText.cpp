@@ -32,8 +32,6 @@ bool UIText::Create(class IRenderer* renderer, UITextType type, const std::strin
 
 	Text = StringCopy(textContent);
 	Trans = Transform();
-	InstanceID = INVALID_ID;
-	RenderFrameNumber = INVALID_ID_U64;
 
 	static const size_t QuadSize = (sizeof(Vertex2D) * 4);
 

@@ -20,8 +20,6 @@
 static FrustumCullMode CullMode = FrustumCullMode::eAABB_Cull;
 static bool EnableFrustumCulling = true;
 
-bool ConfigureRenderviews(Application::SConfig* config);
-
 bool GameOnEvent(eEventCode code, void* sender, void* listender_inst, SEventContext context) {
 	GameInstance* GameInst = (GameInstance*)listender_inst;
 
@@ -91,11 +89,9 @@ bool GameInstance::Boot(IRenderer* renderer) {
 	AppConfig.FontConfig.autoRelease = false;
 	AppConfig.FontConfig.defaultBitmapFontCount = 1;
 	AppConfig.FontConfig.bitmapFontConfigs = (BitmapFontConfig*)Memory::Allocate(sizeof(BitmapFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	//AppConfig.FontConfig.bitmapFontConfigs[0] = BmpFontConfig;
 	new (static_cast<BitmapFontConfig*>(AppConfig.FontConfig.bitmapFontConfigs)) BitmapFontConfig(BmpFontConfig);
 	AppConfig.FontConfig.defaultSystemFontCount = 1;
 	AppConfig.FontConfig.systemFontConfigs = (SystemFontConfig*)Memory::Allocate(sizeof(SystemFontConfig) * 1, MemoryType::eMemory_Type_Array);
-	//AppConfig.FontConfig.systemFontConfigs[0] = SysFontConfig;
 	new (static_cast<SystemFontConfig*>(AppConfig.FontConfig.systemFontConfigs)) SystemFontConfig(SysFontConfig);
 	AppConfig.FontConfig.maxBitmapFontCount = 100;
 	AppConfig.FontConfig.maxSystemFontCount = 100;
@@ -128,7 +124,7 @@ bool GameInstance::Initialize() {
 	TestText.SetName("Render information window.");
 
 	if (!TestSysText.Create(Renderer, UITextType::eUI_Text_Type_system, 
-		"Noto Sans CJK JP", 26, "Keyboard map:\
+		"Noto Sans CJK JP", 25, "Keyboard map:\
 		\nLoad models:\
 		\n\tO: Scene1 P: Scene2\
 		\n\tK: Scene3 L: Scene4\
@@ -460,7 +456,6 @@ bool GameInstance::Update(float delta_time) {
 		DrawCount
 	);
 	TestText.SetText(FPSText);
-	TestText.SetColor(Vector4(1.0f, 1.0f, 0.0f, 1.0f));
 
 	GameConsole->Update();
 
@@ -600,7 +595,7 @@ void GameInstance::OnResize(unsigned int width, unsigned int height) {
 	UIMeshes[0]->geometries[0] = GeometrySystem::AcquireFromConfig(UIConfig, true);
 }
 
-bool ConfigureRenderviews(Application::SConfig* config) {
+bool GameInstance::ConfigureRenderviews(Application::SConfig* config) {
 	RenderViewConfig SkyboxConfig;
 	SkyboxConfig.type = RenderViewKnownType::eRender_View_Known_Type_Skybox;
 	SkyboxConfig.width = 0;

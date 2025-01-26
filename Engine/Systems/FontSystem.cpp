@@ -15,17 +15,6 @@
 #include <stb_truetype.h>
 
 // Material system member
-struct BitmapFontInternalData {
-	Resource loadedResource;
-	// Casted pointer to resource data for convenience.
-	BitmapFontResourceData* resourceData = nullptr;
-};
-
-struct SystemFontVariantData {
-	std::vector<int> codepoints;
-	float scale;
-};
-
 struct BitmapFontLookup {
 	unsigned short id;
 	unsigned short referenceCount;
@@ -35,7 +24,7 @@ struct BitmapFontLookup {
 struct SystemFontLookup {
 	unsigned short id;
 	unsigned short referenceCount;
-	std::vector<FontData> sizeVariants;
+	std::vector<IFontDataBase*> sizeVariants;
 	size_t binarySize;
 	char* face = nullptr;
 	void* fontBinary = nullptr;
@@ -92,9 +81,8 @@ void FontSystem::Shutdown() {
 		// Clean up bitmap fonts.
 		for (unsigned short i = 0; i < Config.maxBitmapFontCount; ++i) {
 			if (BitmapFonts[i] != nullptr) {
-				FontData* Data = &BitmapFonts[i]->font.resourceData->data;
-				CleanupFontData(Data);
-				Data = nullptr;
+				CleanupFontData(BitmapFonts[i]->font.resourceData->data);
+				BitmapFonts[i]->font.resourceData->data = nullptr;
 				BitmapFonts[i]->id = INVALID_ID_U16;
 				DeleteObject(BitmapFonts[i]);
 			}
@@ -106,9 +94,8 @@ void FontSystem::Shutdown() {
 				// Clean up each variant.
 				uint32_t VariantCount = (uint32_t)SystemFonts[i]->sizeVariants.size();
 				for (uint32_t j = 0; j < VariantCount; ++j) {
-					FontData* Data = &SystemFonts[i]->sizeVariants[j];
-					CleanupFontData(Data);
-					Data = nullptr;
+					CleanupFontData(SystemFonts[i]->sizeVariants[j]);
+					SystemFonts[i]->sizeVariants[j] = nullptr;
 				}
 
 				SystemFonts[i]->id = INVALID_ID_U16;
@@ -173,14 +160,14 @@ bool FontSystem::LoadSystemFont(SystemFontConfig* config){
 		}
 
 		// Create a default size variant.
-		FontData Variant;
-		if (!CreateSystemFontVariant(Lookup, config->defaultSize, Face->name.c_str(), &Variant)) {
+		SystemFontVariantData* Variant = CreateSystemFontVariant(Lookup, config->defaultSize, Face->name.c_str());
+		if (!Variant) {
 			LOG_ERROR("Failed to create variant: %s, index %i.", Face->name.c_str(), i);
 			continue;
 		}
 
 		// Also perform setup for the variant.
-		if (!SetupFontData(&Variant)) {
+		if (!SetupFontData(Variant)) {
 			LOG_ERROR("Failed to setup font data.");
 			continue;
 		}
@@ -231,9 +218,9 @@ bool FontSystem::LoadBitmapFont(BitmapFontConfig* config) {
 
 	// Acquire the texture.
 	// TODO: only accounts for one page at the moment.
-	Lookup->font.resourceData->data.atlas.texture = TextureSystem::Acquire(Lookup->font.resourceData->Pages[0].file.c_str(), true);
+	Lookup->font.resourceData->data->atlas.texture = TextureSystem::Acquire(Lookup->font.resourceData->Pages[0].file.c_str(), true);
 
-	bool Result = SetupFontData(&Lookup->font.resourceData->data);
+	bool Result = SetupFontData(Lookup->font.resourceData->data);
 
 	// Set the entry id here last before updating the hastable.
 	Lookup->id = ID;
@@ -255,7 +242,7 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		BitmapFontLookup* Lookup = BitmapFonts[ID];
 
 		// Assign the data, increment the reference.
-		text->Data = &Lookup->font.resourceData->data;
+		text->Data = Lookup->font.resourceData->data;
 		Lookup->referenceCount++;
 
 		return true;
@@ -273,23 +260,23 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		// Search the size variants for the correct size.
 		uint32_t Count = (uint32_t)Lookup->sizeVariants.size();
 		for (uint32_t i = 0; i < Count; ++i) {
-			if (Lookup->sizeVariants[i].size == fontSize) {
+			if (Lookup->sizeVariants[i]->size == fontSize) {
 				// Assign the data, increment the reference.
-				text->Data = &Lookup->sizeVariants[i];
+				text->Data = Lookup->sizeVariants[i];
 				Lookup->referenceCount++;
 				return true;
 			}
 		}
 
 		// If we reach this point, the size variant doesn't exist. Create it.
-		FontData Variant;
-		if (!CreateSystemFontVariant(Lookup, fontSize, fontName, &Variant)) {
+		SystemFontVariantData* Variant = CreateSystemFontVariant(Lookup, fontSize, fontName);
+		if (!Variant) {
 			LOG_ERROR("Failed to create variant: %s, index %i, size %i", Lookup->face, Lookup->index, fontSize);
 			return false;
 		}
 
 		// Also perform setup for the variant.
-		if (!SetupFontData(&Variant)) {
+		if (!SetupFontData(Variant)) {
 			LOG_ERROR("Failed to setup font data.");
 		}
 
@@ -297,7 +284,7 @@ bool FontSystem::Acquire(const std::string& fontName, unsigned short fontSize, c
 		Lookup->sizeVariants.push_back(Variant);
 		uint32_t Length = (uint32_t)Lookup->sizeVariants.size();
 		// Assign the data, increment the reference.
-		text->Data = &Lookup->sizeVariants[Length - 1];
+		text->Data = Lookup->sizeVariants[Length - 1];
 		Lookup->referenceCount++;
 		SystemFonts[ID] = Lookup;
 		return true;
@@ -312,7 +299,7 @@ bool FontSystem::Release(UIText* text) {
 	return true;
 }
 
-bool FontSystem::VerifyAtlas(FontData* font, const std::string& text) {
+bool FontSystem::VerifyAtlas(IFontDataBase* font, const std::string& text) {
     if (font == nullptr || text.length() == 0){ return false;}
     
 	if (font->type == FontType::eFont_Type_Bitmap) {
@@ -336,7 +323,7 @@ bool FontSystem::VerifyAtlas(FontData* font, const std::string& text) {
 	return false;
 }
 
-bool FontSystem::SetupFontData(FontData* font) {
+bool FontSystem::SetupFontData(IFontDataBase* font) {
 	// Create map resource.
 	font->atlas.filter_magnify = TextureFilter::eTexture_Filter_Mode_Linear;
 	font->atlas.filter_minify = TextureFilter::eTexture_Filter_Mode_Linear;
@@ -376,7 +363,7 @@ bool FontSystem::SetupFontData(FontData* font) {
 	return true;
 }
 
-void FontSystem::CleanupFontData(FontData* font) {
+void FontSystem::CleanupFontData(IFontDataBase* font) {
 	// Relase the texture map resource.
 	Renderer->ReleaseTextureMap(&font->atlas);
 
@@ -387,16 +374,18 @@ void FontSystem::CleanupFontData(FontData* font) {
 	font->atlas.texture = nullptr;
 }
 
-bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName, FontData* outVariant) {
-	outVariant->atlasSizeX = 1024;	// TODO: Configurable
-	outVariant->atlasSizeY = 1024;
-	outVariant->size = size;
-	outVariant->type = FontType::eFont_Type_System;
-	outVariant->face = std::move(fontName);
-	outVariant->internalDataSize = sizeof(SystemFontVariantData);
-	outVariant->internalData = Memory::Allocate(outVariant->internalDataSize, MemoryType::eMemory_Type_System_Font);
+SystemFontVariantData* FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName) {
+	SystemFontVariantData* InternalData = NewObject<SystemFontVariantData>();
+	if (!InternalData) {
+		return nullptr;
+	}
 
-	SystemFontVariantData* InternalData = (SystemFontVariantData*)outVariant->internalData;
+	InternalData->atlasSizeX = 1024;	// TODO: Configurable
+	InternalData->atlasSizeY = 1024;
+	InternalData->size = size;
+	InternalData->type = FontType::eFont_Type_System;
+	InternalData->face = std::move(fontName);
+	InternalData->internalDataSize = sizeof(SystemFontVariantData);
 
 	// Push default codepoints (ascii 32-127) always, plus a -1 for unknown.
 	InternalData->codepoints = std::vector<int>(96);
@@ -408,19 +397,23 @@ bool FontSystem::CreateSystemFontVariant(SystemFontLookup* lookup, unsigned shor
 	// Create textures.
 	char FontTexName[255];
 	StringFormat(FontTexName, 255, "__system_text_atlas_%s_i%i_sz%i__", fontName.c_str(), lookup->index, size);
-	outVariant->atlas.texture = TextureSystem::AcquireWriteable(FontTexName, outVariant->atlasSizeX, outVariant->atlasSizeY, 4, true);
+	InternalData->atlas.texture = TextureSystem::AcquireWriteable(FontTexName, InternalData->atlasSizeX, InternalData->atlasSizeY, 4, true);
 
 	// Obtain some metrics.
 	InternalData->scale = stbtt_ScaleForPixelHeight(&lookup->info, (float)size);
 	int Ascent, Descent, Linegap;
 	stbtt_GetFontVMetrics(&lookup->info, &Ascent, &Descent, &Linegap);
-	outVariant->lineHeight = static_cast<int>((Ascent - Descent + Linegap) * InternalData->scale);
+	InternalData->lineHeight = static_cast<int>((Ascent - Descent + Linegap) * InternalData->scale);
 
-	return RebuildSystemFontVariantAtlas(lookup, outVariant);
+	if (!RebuildSystemFontVariantAtlas(lookup, InternalData)) {
+		return nullptr;
+	}
+
+	return InternalData;
 }
 
-bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontData* variant) {
-	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant->internalData;
+bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDataBase* variant) {
+	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant;
 
 	uint32_t PackImageSize = variant->atlasSizeX * variant->atlasSizeY * sizeof(unsigned char);
 	unsigned char* Pixels = (unsigned char* )Memory::Allocate(PackImageSize, MemoryType::eMemory_Type_Array);
@@ -521,8 +514,8 @@ bool FontSystem::RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontDat
 	return true;
 }
 
-bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const std::string& text) {
-	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant->internalData;
+bool FontSystem::VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontDataBase* variant, const std::string& text) {
+	SystemFontVariantData* InternalData = (SystemFontVariantData*)variant;
 
 	uint32_t CharLength = (uint32_t)text.length();
 	uint32_t AddedCodepointCount = 0;

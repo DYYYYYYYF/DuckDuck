@@ -6,7 +6,7 @@
 #include "Renderer/Vulkan/VulkanBuffer.hpp"
 #include "Renderer/Interface/IRenderbuffer.hpp"
 
-class FontData;
+class IFontDataBase;
 
 enum UITextType {
 	eUI_Text_Type_Bitmap,
@@ -37,7 +37,7 @@ public:
 	uint32_t UniqueID = INVALID_ID;
 	IRenderer* Renderer = nullptr;
 	UITextType Type = UITextType::eUI_Text_Type_Bitmap;
-	FontData* Data = nullptr;
+	IFontDataBase* Data = nullptr;
 	IRenderbuffer* VertexBuffer = nullptr;
 	IRenderbuffer* IndexBuffer = nullptr;
 	char* Text = nullptr;
