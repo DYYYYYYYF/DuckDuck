@@ -50,8 +50,6 @@ bool BitmapFontLoader::Load(const std::string& name, void* params, Resource* res
 	resource->Name = name;
 
 	BitmapFontResourceData ResourceData;
-	ResourceData.data.type = FontType::eFont_Type_Bitmap;
-
 	bool Result = false;
 	switch (Type)
 	{
@@ -93,14 +91,14 @@ void BitmapFontLoader::Unload(Resource* resource) {
 
 	if (resource->Data) {
 		BitmapFontResourceData* Data = (BitmapFontResourceData*)resource->Data;
-		if (Data->data.glyphCount && Data->data.glyphs) {
-			Memory::Free(Data->data.glyphs, sizeof(FontGlyph) * Data->data.glyphCount, MemoryType::eMemory_Type_Array);
-			Data->data.glyphs = nullptr;
+		if (Data->data->glyphCount && Data->data->glyphs) {
+			Memory::Free(Data->data->glyphs, sizeof(FontGlyph) * Data->data->glyphCount, MemoryType::eMemory_Type_Array);
+			Data->data->glyphs = nullptr;
 		}
 
-		if (Data->data.kerningCount && Data->data.kernings) {
-			Memory::Free(Data->data.kernings, sizeof(FontKerning) * Data->data.kerningCount, MemoryType::eMemory_Type_Array);
-			Data->data.kernings = nullptr;
+		if (Data->data->kerningCount && Data->data->kernings) {
+			Memory::Free(Data->data->kernings, sizeof(FontKerning) * Data->data->kerningCount, MemoryType::eMemory_Type_Array);
+			Data->data->kernings = nullptr;
 		}
 
 		if (Data->pageCount && Data->Pages) {
@@ -155,9 +153,9 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 			int ElementsRead = sscanf(
 				LineBuf, "info face=\"%[^\"]\" size=%u",
 				TempFacePoint,
-				&out_data->data.size
+				&out_data->data->size
 			);
-			out_data->data.face = std::string(TempFacePoint);
+			out_data->data->face = std::string(TempFacePoint);
 			VERIFY_LINE("info", LineNum, 2, ElementsRead);
 			break;
 		}
@@ -168,10 +166,10 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 				int ElementsRead = sscanf(
 					LineBuf,
 					"common lineHeight=%d base=%u scaleW=%d scaleH=%d pages=%d",
-					&out_data->data.lineHeight,
-					&out_data->data.baseLine,
-					&out_data->data.atlasSizeX,
-					&out_data->data.atlasSizeY,
+					&out_data->data->lineHeight,
+					&out_data->data->baseLine,
+					&out_data->data->atlasSizeX,
+					&out_data->data->atlasSizeY,
 					&out_data->pageCount
 					);
 				VERIFY_LINE("common", LineNum, 5, ElementsRead);
@@ -190,12 +188,12 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 			else if (LineBuf[1] == 'h') {
 				if (LineBuf[4] == 's') {
 					// chars line
-					int ElementsRead = sscanf(LineBuf, "chars count=%u", &out_data->data.glyphCount);
+					int ElementsRead = sscanf(LineBuf, "chars count=%u", &out_data->data->glyphCount);
 					VERIFY_LINE("chars", LineNum, 1, ElementsRead);
 
 					// Allocate the glyphs array
-					if (out_data->data.glyphCount > 0) {
-						out_data->data.glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * out_data->data.glyphCount, MemoryType::eMemory_Type_Array);
+					if (out_data->data->glyphCount > 0) {
+						out_data->data->glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * out_data->data->glyphCount, MemoryType::eMemory_Type_Array);
 					}
 					else {
 						LOG_ERROR("Glyph count is 0, which should not be possible. Font file reading aborted.");
@@ -204,7 +202,7 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 				}
 				else {
 					// Assume char line.
-					FontGlyph* g = &out_data->data.glyphs[GlyphsRead];
+					FontGlyph* g = &out_data->data->glyphs[GlyphsRead];
 					int ElementsRead = sscanf(
 						LineBuf, "char id=%d x=%hu y=%hu width=%hu height=%hu xoffset=%hd yoffset=%hd xadvance=%hd page=%hhu chnl=%*u",
 						&g->codePoint,
@@ -249,18 +247,18 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 			// Kernings or kerning line
 			if (LineBuf[7] == 's') {
 				// Kernings
-				int ElementRead = sscanf(LineBuf, "kernings count=%u", &out_data->data.kerningCount);
+				int ElementRead = sscanf(LineBuf, "kernings count=%u", &out_data->data->kerningCount);
 
 				VERIFY_LINE("kernings", LineNum, 1, ElementRead);
 
 				// Allocate kernings array.
-				if (out_data->data.kerningCount > 0 && out_data->data.kernings == nullptr) {
-					out_data->data.kernings = (FontKerning*)Memory::Allocate(sizeof(FontKerning) * out_data->data.kerningCount, MemoryType::eMemory_Type_Array);
+				if (out_data->data->kerningCount > 0 && out_data->data->kernings == nullptr) {
+					out_data->data->kernings = (FontKerning*)Memory::Allocate(sizeof(FontKerning) * out_data->data->kerningCount, MemoryType::eMemory_Type_Array);
 				}
 			}
 			else if (LineBuf[7] == ' ') {
 				// Kerning record
-				FontKerning* Kerning = &out_data->data.kernings[KerningsRead];
+				FontKerning* Kerning = &out_data->data->kernings[KerningsRead];
 				int ElementsRead = sscanf(
 					LineBuf,
 					"kerning first=%i second=%i amount=%hi",
@@ -283,14 +281,23 @@ bool BitmapFontLoader::ImportFntFile(FileHandle* fntFile, const char* outDbfFile
 }
 
 bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* data) {
-	Memory::Zero(data, sizeof(BitmapFontResourceData));
-
 	size_t BytesRead = 0;
 	uint32_t ReadSize = 0;
 
 	// Write the resource header first.
 	ResourceHeader Header;
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(ResourceHeader), &Header, &BytesRead), file);
+	switch (Header.resourceType)
+	{
+	case ResourceType::eResource_Type_Bitmap_Font: {
+		data->data = NewObject<BitmapFontInternalData>();
+	} break;
+	case ResourceType::eResource_Type_System_Font: {
+		data->data = NewObject<SystemFontVariantData>();
+	}break;
+	default:
+		break;
+	}
 
 	// Verify hreader contents.
 	if (Header.magicNumber != RESOURCES_MAGIC && Header.resourceType == ResourceType::eResource_Type_Bitmap_Font) {
@@ -309,23 +316,23 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	ReadSize = sizeof(char) * FaceLength;
 	char* f = (char*)Memory::Allocate(sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
 	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, f, &BytesRead), file);
-	data->data.face = std::string(f);
+	data->data->face = std::string(f);
 	Memory::Free(f, sizeof(char) * ReadSize, MemoryType::eMemory_Type_String);
 
 	// Font size.
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data.size, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data->size, &BytesRead), file);
 
 	// line height
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.lineHeight, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data->lineHeight, &BytesRead), file);
 
 	// Baseline
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.baseLine, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data->baseLine, &BytesRead), file);
 
 	// Scale x
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.atlasSizeX, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data->atlasSizeX, &BytesRead), file);
 
 	// Scale Y
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data.atlasSizeY, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(int), &data->data->atlasSizeY, &BytesRead), file);
 
 	// Page count
 	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->pageCount, &BytesRead), file);
@@ -351,27 +358,27 @@ bool BitmapFontLoader::ReadDbfFile(FileHandle* file, BitmapFontResourceData* dat
 	}
 
 	// Glyph count
-	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data.glyphCount, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, sizeof(uint32_t), &data->data->glyphCount, &BytesRead), file);
 
 	// Allocate glyphs array.
-	data->data.glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * data->data.glyphCount, MemoryType::eMemory_Type_Array);
+	data->data->glyphs = (FontGlyph*)Memory::Allocate(sizeof(FontGlyph) * data->data->glyphCount, MemoryType::eMemory_Type_Array);
 
 	// Read glyphs.
-	ReadSize = sizeof(FontGlyph) * data->data.glyphCount;
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.glyphs, &BytesRead), file);
+	ReadSize = sizeof(FontGlyph) * data->data->glyphCount;
+	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data->glyphs, &BytesRead), file);
 
 	// Kerning count
 	ReadSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data.kerningCount, &BytesRead), file);
+	CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, &data->data->kerningCount, &BytesRead), file);
 
 	// It's possible to have a font with no kernings. If this is the case, nothing can be written. This
 	// is also why this is done last.
-	if (data->data.kerningCount > 0) {
-		data->data.kernings = (FontKerning*)Memory::Allocate(sizeof(FontKerning) * data->data.kerningCount, MemoryType::eMemory_Type_Array);
+	if (data->data->kerningCount > 0) {
+		data->data->kernings = (FontKerning*)Memory::Allocate(sizeof(FontKerning) * data->data->kerningCount, MemoryType::eMemory_Type_Array);
 
 		// No strings for kernings, so write the entire block.
-		ReadSize = sizeof(FontKerning) * data->data.kerningCount;
-		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data.kernings, &BytesRead), file);
+		ReadSize = sizeof(FontKerning) * data->data->kerningCount;
+		CLOSE_IF_FAILED(FileSystemRead(file, ReadSize, data->data->kernings, &BytesRead), file);
 	}
 
 	return true;
@@ -398,33 +405,33 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &Header, &BytesWritten), &file);
 
 	// Length of face string.
-	uint32_t FaceLength = (uint32_t)data->data.face.length() + 1;
+	uint32_t FaceLength = (uint32_t)data->data->face.length() + 1;
 	WriteSize = sizeof(uint32_t);
 	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &FaceLength, &BytesWritten), &file);
 
 	// Face string
 	WriteSize = sizeof(char) * FaceLength;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data.face.c_str(), &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, (void*)data->data->face.c_str(), &BytesWritten), &file);
 
 	// Font size
 	WriteSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.size, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->size, &BytesWritten), &file);
 
 	// Line height
 	WriteSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.lineHeight, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->lineHeight, &BytesWritten), &file);
 
 	// Baseline
 	WriteSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.baseLine, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->baseLine, &BytesWritten), &file);
 
 	// scale x
 	WriteSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.atlasSizeX, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->atlasSizeX, &BytesWritten), &file);
 
 	// scale y
 	WriteSize = sizeof(int);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.atlasSizeY, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->atlasSizeY, &BytesWritten), &file);
 
 	// page count
 	WriteSize = sizeof(uint32_t);
@@ -448,22 +455,22 @@ bool BitmapFontLoader::WriteDbfFile(const char* path, BitmapFontResourceData* da
 
 	// Glyph count
 	WriteSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.glyphCount, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->glyphCount, &BytesWritten), &file);
 
 	// Write glyphs. These don't contain ant strings, so can just write out the entire block.
-	WriteSize = sizeof(FontGlyph) * data->data.glyphCount;
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->data.glyphs, &BytesWritten), &file);
+	WriteSize = sizeof(FontGlyph) * data->data->glyphCount;
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->data->glyphs, &BytesWritten), &file);
 
 	// Kerning count
 	WriteSize = sizeof(uint32_t);
-	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data.kerningCount, &BytesWritten), &file);
+	CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, &data->data->kerningCount, &BytesWritten), &file);
 
 	// It's possible to have a font with no kernings. If this is the case, nothing can be written. This
 	// is also why this is done last.
-	if (data->data.kerningCount > 0) {
+	if (data->data->kerningCount > 0) {
 		// No strings for kernings, so write the entire block.
-		WriteSize = sizeof(FontKerning) * data->data.kerningCount;
-		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->data.kernings, &BytesWritten), &file);
+		WriteSize = sizeof(FontKerning) * data->data->kerningCount;
+		CLOSE_IF_FAILED(FileSystemWrite(&file, WriteSize, data->data->kernings, &BytesWritten), &file);
 	}
 
 	// Done, close the file.

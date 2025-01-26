@@ -66,17 +66,17 @@ public:
 	static bool Acquire(const std::string& fontName, unsigned short fontSize, class UIText* text);
 	static bool Release(UIText* text);
 
-	static bool VerifyAtlas(FontData* data, const std::string& text);
+	static bool VerifyAtlas(IFontDataBase* data, const std::string& text);
 
 
 private:
-	static bool SetupFontData(FontData* font);
-	static void CleanupFontData(FontData* font);
+	static bool SetupFontData(IFontDataBase* font);
+	static void CleanupFontData(IFontDataBase* font);
 
 	// System fonts.
-	static bool CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName, FontData* outVariant);
-	static bool RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, FontData* variant);
-	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, FontData* variant, const std::string& text);
+	static SystemFontVariantData* CreateSystemFontVariant(SystemFontLookup* lookup, unsigned short size, const std::string& fontName);
+	static bool RebuildSystemFontVariantAtlas(SystemFontLookup* lookip, IFontDataBase* variant);
+	static bool VerifySystemFontSizeVariant(SystemFontLookup* lookup, IFontDataBase* variant, const std::string& text);
 
 private:
 	static bool Initilized;
