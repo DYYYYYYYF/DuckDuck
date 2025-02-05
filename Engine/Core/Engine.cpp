@@ -295,7 +295,9 @@ bool Application::Run() {
 			// Cleanup the packet.
 			for (uint32_t i = 0; i < (uint32_t)Packet.views.size(); ++i) {
 				IRenderView* RenderView = Packet.views[i].view;
-				RenderView->OnDestroyPacket(&Packet.views[i]);
+				if (RenderView) {
+					RenderView->OnDestroyPacket(&Packet.views[i]);
+				}
 			}
 			Packet.views.clear();
 			std::vector<struct RenderViewPacket>().swap(Packet.views);

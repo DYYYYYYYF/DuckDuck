@@ -293,13 +293,8 @@ unsigned char IRenderer::GetWindowAttachmentIndex() {
 	return Backend->GetWindowAttachmentIndex();
 }
 
-bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig* config) {
-	if (config == nullptr) {
-		LOG_ERROR("Renderpass config is required.");
-		return false;
-	}
-
-	if (config->renderTargetCount == 0) {
+bool IRenderer::CreateRenderpass(IRenderpass* out_renderpass, const RenderpassConfig& config) {
+	if (config.renderTargetCount == 0) {
 		LOG_ERROR("Can not have a renderpass target count of0.");
 		return false;
 	}
