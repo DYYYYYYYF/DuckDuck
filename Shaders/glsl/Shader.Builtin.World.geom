@@ -20,7 +20,7 @@
 #version 450
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = 9) out;
+layout (triangle_strip, max_vertices = 3) out;
 
 layout (location = 0) in int in_mode[];
 layout (location = 1) in struct in_dto{
@@ -46,33 +46,17 @@ layout (location = 1) out struct out_dto{
 	vec4 vTangent;
 }OutDto;
 
-out_dto VertexInfo(int index){
-	out_dto NewOut;
-	NewOut.vTexcoord		 = InDto[index].vTexcoord;
-	NewOut.vNormal			 = InDto[index].vNormal;
-	NewOut.vAmbientColor	 = InDto[index].vAmbientColor;
-	NewOut.vViewPosition	 = InDto[index].vViewPosition;
-	NewOut.vFragPosition	 = InDto[index].vFragPosition;
-	NewOut.vVertPosition	 = InDto[index].vVertPosition;
-	NewOut.vColor			 = InDto[index].vColor;
-	NewOut.vTangent			 = InDto[index].vTangent;
-	return NewOut;
-}
+out_dto VertexInfo(int index);
+out_dto VertexCenterInfo();
 
-out_dto VertexCenterInfo(){
-	out_dto NewOut;
-	NewOut.vTexcoord		 = (InDto[0].vTexcoord 	  + InDto[1].vTexcoord	   + InDto[2].vTexcoord		   ) * 0.33333;
-	NewOut.vNormal			 = (InDto[0].vNormal 	  + InDto[1].vNormal	   + InDto[2].vNormal		   ) * 0.33333;
-	NewOut.vAmbientColor	 = (InDto[0].vAmbientColor + InDto[1].vAmbientColor + InDto[2].vAmbientColor   ) * 0.33333;
-	NewOut.vViewPosition	 = (InDto[0].vViewPosition + InDto[1].vViewPosition + InDto[2].vViewPosition   ) * 0.33333;
-	NewOut.vFragPosition	 = (InDto[0].vFragPosition + InDto[1].vFragPosition + InDto[2].vFragPosition   ) * 0.33333;
-	NewOut.vVertPosition	 = (InDto[0].vVertPosition + InDto[1].vVertPosition + InDto[2].vVertPosition   ) * 0.33333;
-	NewOut.vColor			 = (InDto[0].vColor 		  + InDto[1].vColor		   + InDto[2].vColor	   ) * 0.33333;
-	NewOut.vTangent			 = (InDto[0].vTangent 	  + InDto[1].vTangent	   + InDto[2].vTangent		   ) * 0.33333;
-	return NewOut;
-}																										   
-
+// 空操作
+//layout (triangles) in;
+//layout (triangle_strip, max_vertices = 3) out;
 void EmptyGeometryPipe();
+
+// 获取每一个三角面的中心点并与三个顶点连接
+//layout (triangles) in;
+//layout (triangle_strip, max_vertices = 9) out;
 void ComplexGeometryPipe();
 
 void main()
@@ -83,6 +67,7 @@ void main()
 	EmptyGeometryPipe();
 }
 
+// ------------------------------ Functions ------------------------------------
 void EmptyGeometryPipe(){
 	for (int i = 0; i < 3; i++) {
         // 直接传递顶点的位置
@@ -148,3 +133,33 @@ void ComplexGeometryPipe(){
 	
 	EndPrimitive();
 }
+
+
+
+
+// -------------------------- Utils ------------------------------------
+out_dto VertexInfo(int index){
+	out_dto NewOut;
+	NewOut.vTexcoord		 = InDto[index].vTexcoord;
+	NewOut.vNormal			 = InDto[index].vNormal;
+	NewOut.vAmbientColor	 = InDto[index].vAmbientColor;
+	NewOut.vViewPosition	 = InDto[index].vViewPosition;
+	NewOut.vFragPosition	 = InDto[index].vFragPosition;
+	NewOut.vVertPosition	 = InDto[index].vVertPosition;
+	NewOut.vColor			 = InDto[index].vColor;
+	NewOut.vTangent			 = InDto[index].vTangent;
+	return NewOut;
+}
+
+out_dto VertexCenterInfo(){
+	out_dto NewOut;
+	NewOut.vTexcoord		 = (InDto[0].vTexcoord 	  + InDto[1].vTexcoord	   + InDto[2].vTexcoord		   ) * 0.33333;
+	NewOut.vNormal			 = (InDto[0].vNormal 	  + InDto[1].vNormal	   + InDto[2].vNormal		   ) * 0.33333;
+	NewOut.vAmbientColor	 = (InDto[0].vAmbientColor + InDto[1].vAmbientColor + InDto[2].vAmbientColor   ) * 0.33333;
+	NewOut.vViewPosition	 = (InDto[0].vViewPosition + InDto[1].vViewPosition + InDto[2].vViewPosition   ) * 0.33333;
+	NewOut.vFragPosition	 = (InDto[0].vFragPosition + InDto[1].vFragPosition + InDto[2].vFragPosition   ) * 0.33333;
+	NewOut.vVertPosition	 = (InDto[0].vVertPosition + InDto[1].vVertPosition + InDto[2].vVertPosition   ) * 0.33333;
+	NewOut.vColor			 = (InDto[0].vColor 		  + InDto[1].vColor		   + InDto[2].vColor	   ) * 0.33333;
+	NewOut.vTangent			 = (InDto[0].vTangent 	  + InDto[1].vTangent	   + InDto[2].vTangent		   ) * 0.33333;
+	return NewOut;
+}	

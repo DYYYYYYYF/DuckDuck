@@ -10,7 +10,7 @@ target_path      = os.path.abspath(".") + "/Assets/Shaders/"
 
 # compile failed files
 failed_shaders = []
-glsl_list = [".vert", ".frag", "geom", "tesc", "tese", "comp"]
+glsl_list = [".vert", ".frag", ".geom", ".tesc", ".tese", ".comp"]
 
 def CheckGlslc():
     # global value will be changed, so we need define the value inside func
